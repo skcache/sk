@@ -160,12 +160,31 @@ test("no fabricated links: private repo never linked, no invented URLs", () => {
 
 test("experience list only contains the supplied facts", () => {
   for (const line of [
-    "President, GDG UC San Diego",
-    "Undergraduate research, Chiba Lab, UC San Diego",
+    "building Orvia",
+    'label="Google Developer Groups (GDG)"',
+    "Undergraduate research, Chiba/HECD Lab, UC San Diego",
+    "AI Research Intern @",
     "Keywords Studios",
-    "Oracle REACH",
-    "Palantir Winter Tech Fellowship",
   ]) {
     assert.equal(source.includes(line), true, `experience entry missing: ${line}`);
+  }
+  for (const gone of ["Oracle REACH", "Palantir"]) {
+    assert.equal(source.includes(gone), false, `entry should be gone: ${gone}`);
+  }
+});
+
+test("easter egg brand colors are pinned", () => {
+  for (const color of [
+    "#4285F4", // Google blue, red, yellow, green
+    "#EA4335",
+    "#FBBC05",
+    "#34A853",
+    "#0042FF", // Keywords Studios brand blue (their stylesheet)
+  ]) {
+    assert.equal(
+      source.includes(color),
+      true,
+      `brand color missing: ${color}`
+    );
   }
 });

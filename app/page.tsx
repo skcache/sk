@@ -1,4 +1,10 @@
 import Intro from "./components/Intro";
+import ColorFlashWord from "./components/ColorFlashWord";
+
+// Google's official brand palette; Keywords Studios brand blue from
+// their own stylesheet (keywordsstudios.com/assets/styles.css).
+const GOOGLE_COLORS = ["#4285F4", "#EA4335", "#FBBC05", "#34A853"];
+const KEYWORDS_BLUE = "#0042FF";
 
 const socials = [
   { label: "GitHub", href: "https://github.com/skcache" },
@@ -7,11 +13,8 @@ const socials = [
 ];
 
 const things = [
-  "President, GDG UC San Diego",
-  "Undergraduate research, Chiba Lab, UC San Diego",
-  "Keywords Studios",
-  "Oracle REACH",
-  "Palantir Winter Tech Fellowship",
+  "building Orvia",
+  "Undergraduate research, Chiba/HECD Lab, UC San Diego",
 ];
 
 type ProjectLink = {
@@ -153,14 +156,45 @@ export default function Home() {
             some things i&apos;ve done
           </h2>
           <ul className="mt-6 space-y-4">
-            {things.map((thing) => (
-              <li key={thing} className="flex gap-3 text-base leading-snug">
-                <span aria-hidden="true" className="select-none text-muted">
-                  •
-                </span>
-                <span>{thing}</span>
-              </li>
-            ))}
+            <li className="flex gap-3 text-base leading-snug">
+              <span aria-hidden="true" className="select-none text-muted">
+                •
+              </span>
+              <span>{things[0]}</span>
+            </li>
+            <li className="flex gap-3 text-base leading-snug">
+              <span aria-hidden="true" className="select-none text-muted">
+                •
+              </span>
+              <span>
+                President,{" "}
+                <ColorFlashWord
+                  label="Google Developer Groups (GDG)"
+                  colors={GOOGLE_COLORS}
+                  reducedColor={GOOGLE_COLORS[0]}
+                />{" "}
+                UC San Diego
+              </span>
+            </li>
+            <li className="flex gap-3 text-base leading-snug">
+              <span aria-hidden="true" className="select-none text-muted">
+                •
+              </span>
+              <span>{things[1]}</span>
+            </li>
+            <li className="flex gap-3 text-base leading-snug">
+              <span aria-hidden="true" className="select-none text-muted">
+                •
+              </span>
+              <span>
+                AI Research Intern @{" "}
+                <ColorFlashWord
+                  label="Keywords Studios"
+                  colors={[KEYWORDS_BLUE]}
+                  reducedColor={KEYWORDS_BLUE}
+                />
+              </span>
+            </li>
           </ul>
         </section>
 
