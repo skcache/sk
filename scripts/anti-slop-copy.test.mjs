@@ -163,10 +163,9 @@ test("experience list only contains the supplied facts", () => {
   for (const line of [
     "Building",
     'label="Orvia"',
-    "President,",
-    'label="GDG"',
-    "at UC San Diego",
-    "Google Dev Group",
+    "President at",
+    'label="Google Dev Group"',
+    ", UC San Diego",
     "Undergraduate Research Assistant at Chiba Lab",
     "AI Research Intern at",
     'label="Keywords Studios"',
@@ -180,8 +179,8 @@ test("experience list only contains the supplied facts", () => {
     "Undergraduate research, Chiba/HECD Lab, UC San Diego",
     "CV undergrad RA",
     "HECD",
-    "President at",
-    'label="Google Dev Group"',
+    "President,",
+    'label="GDG"',
   ]) {
     assert.equal(source.includes(gone), false, `entry should be gone: ${gone}`);
   }
@@ -283,6 +282,17 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   const ucsd = read("components/UCSDWord.tsx");
   assert.equal(ucsd.includes("onAnimationComplete"), false, "no child unmounts the badge");
   assert.equal(ucsd.includes("badge-plaque"), false, "the plaque box is gone");
+  // shared identity language: fixed reserved slots, zero width animation
+  for (const slot of ["o-slot", "gdg-slot", "k-slot"]) {
+    assert.equal(css.includes(`.${slot}`), true, `slot missing: ${slot}`);
+  }
+  assert.equal(all.includes("gdg-box"), false, "gdg width animation must be gone");
+  assert.equal(all.includes("orvia-mark-o"), false, "hand-drawn circles must be gone");
+  // Orvia: the exact canonical asset from skcache/orvia/public/logo.svg
+  assert.equal(all.includes("public/orvia-logo.svg"), true, "canonical orvia asset missing");
+  const orvia = read("components/OrviaWord.tsx");
+  assert.equal(orvia.includes("<circle"), false, "no circle approximations");
+  assert.equal(orvia.includes('x="14"'), true, "canonical O-ring geometry missing");
   // inference: thinking-orbs signature interaction
   const inf = read("components/InferenceWord.tsx");
   assert.equal(inf.includes("ThinkingOrb"), true, "thinking orb missing");

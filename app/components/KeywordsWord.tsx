@@ -11,15 +11,18 @@ const KW_BLUE = "#0042ff";
 /**
  * Keywords Studios identity toggle.
  *
- * Rest: neutral "Keywords Studios".
- * Active: the name turns the authentic brand blue and the K is visually
- * replaced by the official Keywords mark (their own favicon asset,
- * first-party from keywordsstudios.com). Click again: back to the K.
+ * The K-slot is permanently reserved (fixed width), so nothing shifts.
+ * Inactive: the letter K sits in the slot. Active: the official
+ * Keywords mark (their own favicon asset, keyed from keywordsstudios.com)
+ * fills the same slot at logo scale, and the organization text turns
+ * the authentic brand blue. Click again: back to K.
  */
 export default function KeywordsWord() {
   const [on, setOn] = useState(false);
   const reduceMotion = useReducedMotion();
-  const t = reduceMotion ? { duration: 0.01 } : { duration: 0.15, ease: "easeOut" as const };
+  const t = reduceMotion
+    ? { duration: 0.01 }
+    : { type: "spring" as const, stiffness: 850, damping: 30, mass: 0.4 };
 
   return (
     <TactileWord
@@ -28,26 +31,25 @@ export default function KeywordsWord() {
       ariaPressed={on}
     >
       <span className="identity-slot">
-        <motion.span
-          animate={{ color: on ? KW_BLUE : INK }}
-          transition={reduceMotion ? { duration: 0.01 } : { duration: 0.2, ease: "easeOut" }}
-        >
+        <span className="k-slot" aria-hidden="true">
           {on ? (
-            /* official mark (white K on brand blue) in the K's slot */
             <motion.img
-              key="kw-k"
+              key="kw-mark"
               src="/kw-mark.png"
               alt=""
               className="k-mark"
-              initial={{ opacity: 0, scale: 0.6 }}
+              initial={{ opacity: 0, scale: 0.85 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={t}
             />
           ) : (
-            <motion.span key="k" initial={false}>
-              K
-            </motion.span>
+            <span className="k-glyph">K</span>
           )}
+        </span>
+        <motion.span
+          animate={{ color: on ? KW_BLUE : INK }}
+          transition={reduceMotion ? { duration: 0.01 } : { duration: 0.22, ease: "easeOut" }}
+        >
           eywords Studios
         </motion.span>
       </span>

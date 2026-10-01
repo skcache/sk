@@ -229,74 +229,84 @@ body {
   white-space: nowrap;
 }
 
-/* the gliding box: width is the only thing that animates, so the
-   sentence flows continuously while the phrase is revealed by the clip */
-.gdg-box {
-  position: relative;
+/* ---------------- Orvia O-slot ---------------- */
+
+/* permanently reserved: the O glyph or the logo shares one fixed box,
+   so `rvia` and the rest of the sentence never move. Fixed 1em layout
+   box + visible overflow: the logo paints larger, never layout. */
+.o-slot {
   display: inline-block;
-  overflow: hidden;
-  white-space: nowrap;
-  vertical-align: baseline;
+  width: 0.95em;
+  height: 1em;
+  text-align: center;
+  vertical-align: -0.06em;
+  overflow: visible;
+  line-height: 1;
 }
 
-.gdg-short {
+.o-glyph {
   display: inline-block;
-  white-space: nowrap;
+  line-height: 1;
 }
 
-.gdg-overlay {
-  position: absolute;
-  left: 0;
-  top: 0;
-  white-space: nowrap;
-}
-
-.gdg-measure {
-  position: absolute;
-  visibility: hidden;
-  white-space: nowrap;
-  pointer-events: none;
-  font: inherit;
-}
-
-/* identity marks: real inline elements at ~1em (visible, aligned,
-   one family across Orvia / Google Dev Group / Keywords Studios) */
-.identity-mark {
-  display: inline-block;
-  height: 0.95em;
+.o-logo {
+  display: block;
+  height: 1.12em;
   width: auto;
-  vertical-align: -0.24em;
-  margin-left: 0.24em;
+  margin: -0.05em auto 0;
   pointer-events: none;
 }
 
-.orvia-mark {
-  height: 0.95em;
-}
+/* ---------------- GDG logo slot ---------------- */
 
-/* O-slot mark: the real aperture logo, rendered big and crisp */
-.orvia-mark-o {
+/* permanently reserved slot before the phrase; the official G stamps
+   inside it. Fixed 1em layout box + visible overflow: the mark paints
+   larger but never contributes to line height. */
+.gdg-slot {
   display: inline-block;
-  height: 1.3em;
+  width: 1.92em;
+  height: 1em;
+  margin-right: 0.13em;
+  vertical-align: -0.06em;
+  overflow: visible;
+  line-height: 1;
+}
+
+.gdg-mark-slot {
+  display: block;
+  height: 1.08em;
   width: auto;
-  vertical-align: -0.33em;
-  margin-right: 0.08em;
+  margin: -0.05em auto 0;
   pointer-events: none;
 }
 
-/* K-slot mark: official K tile at cap height */
+/* ---------------- Keywords K-slot ---------------- */
+
+/* permanently reserved: K glyph and official mark share one fixed box.
+   Fixed 1em layout box + visible overflow: the mark is bigger than the
+   box but never changes line height. */
+.k-slot {
+  display: inline-block;
+  width: 1.1em;
+  height: 1em;
+  text-align: center;
+  vertical-align: -0.06em;
+  overflow: visible;
+  line-height: 1;
+}
+
+.k-glyph {
+  display: inline-block;
+  line-height: 1;
+}
+
 .k-mark {
-  display: inline-block;
-  height: 0.78em;
+  display: block;
+  height: 1.08em;
   width: auto;
-  vertical-align: -0.14em;
-  margin-right: 0.05em;
+  margin: -0.05em auto 0;
   pointer-events: none;
   border-radius: 3px;
-}
-
-.keywords-mark {
-  height: 0.95em;
 }
 
 /* ---------- page reveal (progressive enhancement) ---------- */
