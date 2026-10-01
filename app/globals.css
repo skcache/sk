@@ -237,8 +237,10 @@ body {
 }
 
 /* the live box: springs open from letter width to logo width, so
-   `rvia` glides aside. Fixed 1em layout box + visible overflow: the
-   logo paints larger but never grows the line. */
+   `rvia` glides aside. Fixed 1em layout box; horizontal-only clip
+   (clip-path inset negative vertical) so the mark is unveiled by the
+   growing box and cleanly clipped away on close - no ghosting, no
+   overlap, no line growth. */
 .o-markbox {
   display: inline-block;
   height: 1em;
@@ -246,6 +248,7 @@ body {
   overflow: visible;
   white-space: nowrap;
   vertical-align: -0.06em;
+  clip-path: inset(-100% 0 -100% 0);
 }
 
 .o-mark {
@@ -260,7 +263,7 @@ body {
 /* ---------------- GDG mark ---------------- */
 
 /* springs open from 0 before the phrase; text glides aside. Fixed 1em
-   layout box + visible overflow: the mark never grows the line. */
+   layout box; horizontal-only clip like the other two marks. */
 .gdg-markbox {
   display: inline-block;
   height: 1em;
@@ -268,14 +271,15 @@ body {
   overflow: visible;
   white-space: nowrap;
   vertical-align: -0.06em;
+  clip-path: inset(-100% 0 -100% 0);
 }
 
 .gdg-mark {
   display: block;
-  height: 0.68em;
+  height: 1em;
   width: auto;
-  margin-top: 0.17em;
-  margin-right: 0.08em;
+  margin-top: 0.11em;
+  margin-right: 0.09em;
   pointer-events: none;
 }
 
@@ -286,8 +290,8 @@ body {
   display: inline;
 }
 
-/* springs open from letter width to mark width. Fixed 1em layout box
-   + visible overflow: the mark never grows the line. */
+/* springs open from letter width to mark width. Fixed 1em layout box;
+   horizontal-only clip, same language as its siblings. */
 .k-markbox {
   display: inline-block;
   height: 1em;
@@ -295,6 +299,7 @@ body {
   overflow: visible;
   white-space: nowrap;
   vertical-align: -0.06em;
+  clip-path: inset(-100% 0 -100% 0);
 }
 
 .k-mark {
