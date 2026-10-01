@@ -29,8 +29,9 @@ export default function TactileWord({
       type="button"
       aria-label={label}
       onClick={onActivate}
-      whileTap={reduceMotion ? undefined : { scale: 0.978, y: 1 }}
+      whileTap={reduceMotion ? undefined : { scale: 0.98 }}
       transition={{ type: "spring", stiffness: 800, damping: 42, mass: 0.45 }}
+      style={{ transformOrigin: "0% 100%" }}
       className={`word-button ${className}`}
     >
       {children}

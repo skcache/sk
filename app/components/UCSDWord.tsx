@@ -114,11 +114,11 @@ export default function UCSDWord() {
 
         {active && (
           <>
-            {/* navy plaque assembles behind the phrase */}
+            {/* navy plaque assembles behind the phrase, hugging the word box */}
             <motion.span
               key={`plaque-${run}`}
               aria-hidden="true"
-              className="absolute -inset-[3px] z-0 rounded-[3px] bg-[#182b49]"
+              className="absolute -inset-y-[2px] inset-x-0 z-0 rounded-[3px] bg-[#182b49]"
               initial={{ scale: 0.94, opacity: 0 }}
               animate={{
                 scale: [0.94, 1, 1, 0.96],
@@ -134,7 +134,7 @@ export default function UCSDWord() {
             <motion.span
               key={`rule-${run}`}
               aria-hidden="true"
-              className="absolute bottom-[1px] left-[3px] z-10 h-[2px] w-[72%] rounded-full bg-[#c69214]"
+              className="absolute bottom-[1px] left-0 z-10 h-[2px] w-[70%] rounded-full bg-[#c69214]"
               initial={{ x: -14, opacity: 0 }}
               animate={{ x: 0, opacity: [0, 1, 1, 0] }}
               transition={{
@@ -148,7 +148,7 @@ export default function UCSDWord() {
             <motion.span
               key={`tri-${run}`}
               aria-hidden="true"
-              className="absolute right-[3px] top-1/2 z-10 -translate-y-1/2"
+              className="absolute right-0 top-1/2 z-10 -translate-y-1/2"
               initial={{ scale: 0.4, opacity: 0 }}
               animate={{ scale: [0.4, 1, 1, 0.8], opacity: [0, 1, 1, 0] }}
               transition={{
