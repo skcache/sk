@@ -244,13 +244,13 @@ body {
   height: 0.95em;
 }
 
-/* O-slot mark: circle at cap height, seated on the baseline */
+/* O-slot mark: the real aperture logo, rendered big and crisp */
 .orvia-mark-o {
   display: inline-block;
-  height: 0.75em;
+  height: 1.3em;
   width: auto;
-  vertical-align: -0.12em;
-  margin-right: 0.01em;
+  vertical-align: -0.33em;
+  margin-right: 0.08em;
   pointer-events: none;
 }
 

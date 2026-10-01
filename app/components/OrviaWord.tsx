@@ -19,8 +19,8 @@ export default function OrviaWord() {
     <TactileWord label="Orvia" onActivate={() => setOn((v) => !v)} ariaPressed={on}>
       <span className="identity-slot">
         {on ? (
-          /* canonical aperture mark in the O's slot: thick outer ring,
-             thinner middle ring, solid center dot */
+          /* canonical aperture mark in the O's slot: chunky outer
+             torus, hairline middle ring, small solid dot */
           <motion.svg
             key="orvia-mark"
             viewBox="0 0 180 180"
@@ -31,9 +31,9 @@ export default function OrviaWord() {
             animate={{ opacity: 1, scale: 1 }}
             transition={t}
           >
-            <circle cx="90" cy="90" r="52" stroke="currentColor" strokeWidth="16" />
-            <circle cx="90" cy="90" r="30" stroke="currentColor" strokeWidth="9" />
-            <circle cx="90" cy="90" r="11" fill="currentColor" />
+            <circle cx="90" cy="90" r="56" stroke="currentColor" strokeWidth="24" />
+            <circle cx="90" cy="90" r="26" stroke="currentColor" strokeWidth="6" />
+            <circle cx="90" cy="90" r="7" fill="currentColor" />
           </motion.svg>
         ) : (
           <motion.span key="o" initial={false} animate={{ opacity: 1 }}>
