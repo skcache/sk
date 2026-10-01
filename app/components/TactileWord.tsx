@@ -6,30 +6,27 @@ import { motion, useReducedMotion } from "motion/react";
 /**
  * Shared physical base for every interactive word.
  *
- * THE PRESS IS A MECHANISM, NOT A SPRING TOY:
- * - pointer/key down  -> immediate 1px travel + uniform 0.987 scale.
- *   No per-axis glyph squash, no rubbery scaleY deformation.
- * - release           -> the key snaps back on a heavily damped spring
- *   (stiffness 1150 / damping 68 / mass 0.25), then the bespoke
- *   animation (if any) begins. The click itself is the feedback.
- * - keyboard Enter/Space actuate the same travel visibly.
+ * NO BOX. At rest the word is normal inline typography with only a faint
+ * dotted underline as an affordance. The press is a mechanism:
  *
- * `signature` adds the precision-machined plate treatment; without it
- * the control keeps the lighter dotted-underline affordance.
+ * - pointer/key down  -> immediate 1px travel + uniform 0.987 scale.
+ *   Rigid object, no per-axis glyph squash, no rubbery deformation.
+ * - release           -> the key snaps back on a heavily damped spring
+ *   (stiffness 1150 / damping 68 / mass 0.25), THEN the caller's
+ *   bespoke identity response begins. The click itself is the feedback.
+ * - keyboard Enter/Space actuate the same travel visibly.
  */
 export default function TactileWord({
   label,
   onActivate,
   className = "",
   ariaPressed,
-  signature = false,
   children,
 }: {
   label: string;
   onActivate: () => void;
   className?: string;
   ariaPressed?: boolean;
-  signature?: boolean;
   children?: React.ReactNode;
 }) {
   const reduceMotion = useReducedMotion();
@@ -58,9 +55,7 @@ export default function TactileWord({
       type="button"
       aria-label={label}
       aria-pressed={ariaPressed}
-      className={`word-button ${signature ? "word-signature" : ""} ${
-        down ? "is-pressed" : ""
-      } ${className}`}
+      className={`word-button ${down ? "is-pressed" : ""} ${className}`}
       onPointerDown={(e) => {
         if (e.button === 0) press();
       }}
@@ -84,11 +79,7 @@ export default function TactileWord({
         }
       }}
       onBlur={cancel}
-      animate={
-        down && !reduceMotion
-          ? { y: 1, scale: 0.987 }
-          : { y: 0, scale: 1 }
-      }
+      animate={down && !reduceMotion ? { y: 1, scale: 0.987 } : { y: 0, scale: 1 }}
       transition={
         down
           ? { duration: 0.035, ease: "easeOut" } // immediate actuation

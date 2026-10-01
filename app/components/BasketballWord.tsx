@@ -68,7 +68,7 @@ export default function BasketballWord() {
   if (reduceMotion) {
     // Static: the ball simply appears at rest beside the word, then leaves.
     return (
-      <TactileWord label="basketball" onActivate={activate} signature>
+      <TactileWord label="basketball" onActivate={activate}>
         <span className="word-anchor">
           basketball
           {active && (
@@ -92,7 +92,7 @@ export default function BasketballWord() {
   }
 
   return (
-    <TactileWord label="basketball" onActivate={activate} signature>
+    <TactileWord label="basketball" onActivate={activate}>
       <span className="word-anchor">
         basketball
         {active && (

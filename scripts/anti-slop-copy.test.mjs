@@ -161,17 +161,25 @@ test("no fabricated links: private repo never linked, no invented URLs", () => {
 
 test("experience list only contains the supplied facts", () => {
   for (const line of [
-    "building Orvia",
-    "President,",
-    'label="GDG"',
-    "at UC San Diego",
-    "Undergraduate research, Chiba/HECD Lab, UC San Diego",
-    "AI Research Intern @",
-    "Keywords Studios",
+    "building",
+    'label="Orvia"',
+    "President at",
+    'label="Google Dev Group"',
+    ", UC San Diego",
+    "CV undergrad RA at HECD Lab",
+    "AI Research Intern at",
+    'label="Keywords Studios"',
   ]) {
     assert.equal(source.includes(line), true, `experience entry missing: ${line}`);
   }
-  for (const gone of ["Oracle REACH", "Palantir", "Google Developer Groups (GDG)"]) {
+  for (const gone of [
+    "Oracle REACH",
+    "Palantir",
+    "Google Developer Groups (GDG)",
+    "Undergraduate research, Chiba/HECD Lab, UC San Diego",
+    "President,",
+    'label="GDG"',
+  ]) {
     assert.equal(source.includes(gone), false, `entry should be gone: ${gone}`);
   }
 });
@@ -210,9 +218,11 @@ test("polish pass: reveal, grain, plaque, affordance, autoplay", () => {
   // grain is SVG feTurbulence fixed overlay
   assert.equal(css.includes("feTurbulence"), true, "grain turbulence missing");
   assert.equal(css.includes("pointer-events: none"), true, "overlay must not block clicks");
-  // plaque contrast + gold hairline
-  assert.equal(css.includes("#22385e"), true, "plaque contrast lift missing");
-  assert.equal(css.includes("rgba(201, 162, 39, 0.2)"), true, "plaque gold border missing");
+  // UCSD local identity: gold rule + trident, no plaque box
+  assert.equal(css.includes("#c9a227"), true, "UCSD gold identity missing");
+  assert.equal(css.includes(".badge-rule"), true, "gold rule missing");
+  assert.equal(css.includes(".badge-trident-wrap"), true, "trident mark missing");
+  assert.equal(css.includes(".identity-slot"), true, "experience identity slots missing");
   // affordance: rest 28%, hover/focus 72%
   assert.equal(css.includes("rgba(243, 241, 234, 0.28)"), true, "rest affordance alpha wrong");
   assert.equal(css.includes("rgba(243, 241, 234, 0.72)"), true, "hover affordance alpha wrong");
@@ -237,31 +247,50 @@ test("polish pass: reveal, grain, plaque, affordance, autoplay", () => {
   assert.equal((page.match(/data-reveal/g) || []).length, 5, "expected 5 reveal slots");
 });
 
-test("mechanical press pass: plate, no squash, no hint, no stale systems", () => {
+test("mechanical press pass: no box, no squash, no hint, no stale systems", () => {
   const css = read("globals.css");
   // rigid-object press: uniform scale only, no per-axis glyph squash
   assert.equal(css.includes("scaleY: 0.96"), false, "rubbery squash must be gone");
   assert.equal(css.includes("transform-origin: 50% 100%"), true, "rigid origin missing");
-  // signature plate treatment exists with layout-compensated padding
-  assert.equal(css.includes(".word-signature"), true, "signature plate missing");
-  assert.equal(css.includes("margin: -1px -4px"), true, "plate layout compensation missing");
-  assert.equal(css.includes(".word-signature.is-pressed"), true, "pressed keycap state missing");
+  // keycap plates are GONE: at rest the words are plain typography
+  assert.equal(css.includes(".word-signature"), false, "keycap plate must be gone");
+  assert.equal(css.includes("background: none"), true, "buttons carry no fill at rest");
+  assert.equal(css.includes(".word-button.is-pressed"), true, "contrast press state missing");
+  assert.equal(css.includes("color: #ffffff"), true, "press brightens the word (contrast only)");
   // FirstLoadHint system fully removed
   const all = source;
   assert.equal(all.includes("FirstLoadHint"), false, "FirstLoadHint must be gone");
   assert.equal(all.includes("hint-draw"), false, "hint-draw CSS must be gone");
   assert.equal(all.includes("first-hint"), false, ".first-hint must be gone");
-  // no scaleY treatment anywhere in the component sources
   assert.equal(all.includes("scaleY: 0.96"), false, "no scaleY:0.96 anywhere");
-  // UCSD: single parent window, no child-owned unmount
+  // stale systems deleted
+  for (const stale of [
+    "word-chassis",
+    "word-stage",
+    "word-segs",
+    "word-result",
+    "badge-plaque",
+    "google-accent",
+    "keywords-chip",
+    "badge-assembly",
+  ]) {
+    assert.equal(all.includes(stale), false, `stale system present: ${stale}`);
+  }
+  // UCSD: single parent window, no child-owned unmount, local identity
   const ucsd = read("components/UCSDWord.tsx");
   assert.equal(ucsd.includes("onAnimationComplete"), false, "no child unmounts the badge");
-  assert.equal(ucsd.includes("0.985"), true, "stamped plaque scale bound missing");
-  // inference: no overshoot, notch after-state
+  assert.equal(ucsd.includes("badge-plaque"), false, "the plaque box is gone");
+  // inference: thinking-orbs signature interaction
   const inf = read("components/InferenceWord.tsx");
-  assert.equal(inf.includes("1.02"), false, "segment overshoot must be gone");
-  assert.equal(inf.includes("word-notch"), true, "notch after-state missing");
-  // basketball: long settle hold
+  assert.equal(inf.includes("ThinkingOrb"), true, "thinking orb missing");
+  assert.equal(inf.includes('state="solving"'), true, "solving state missing");
+  assert.equal(inf.includes("size={20}"), true, "20px inline orb missing");
+  assert.equal(inf.includes("word-morph"), true, "fixed morph slot missing");
+  // experience identities use the canonical public assets
+  for (const asset of ["gdg-mark.svg", "kw-mark.png", "github-mark.png"]) {
+    assert.equal(all.includes(asset), true, `canonical asset missing: ${asset}`);
+  }
+  // basketball: long settle hold kept
   const bb = read("components/BasketballWord.tsx");
   assert.equal(bb.includes("0.87"), true, "ball hold segment missing");
 });

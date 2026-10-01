@@ -4,36 +4,31 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import TactileWord from "./TactileWord";
 
-// One controlling window. ALL children normalize their keyframes to this
-// duration; the parent unmounts everything together at the end, so no
-// child can ever outlive the active state.
-const SEQUENCE_MS = 760;
+// One controlling window; every child normalizes to this duration and
+// the parent unmounts everything together at the end.
+const SEQUENCE_MS = 720;
 const HOLD_MS = 40;
 
-const INK = "#f3f1ea"; // rest text, light on dark
-const PAPER = "#f3f1ea"; // badge type on the navy plaque: stays light
+const INK = "#f3f1ea";
 const GOLD = "#c9a227";
 
-// normalized phases inside the 760ms window
-const SNAP = 0.16; // plaque snaps in: 0-122ms
-const RULE = [0.16, 0.34] as const; // gold rule resolves: 122-258ms
-const STROKE_START = 0.21; // trident first stroke: 160ms
-const COLLAPSE = 0.86; // everything still until 654ms, then exits
+// normalized phases inside the 720ms window
+const SNAP = 0.17; // identity on: 0-122ms
+const RULE = [0.17, 0.36] as const; // gold rule resolves: 122-260ms
+const STROKE_START = 0.22; // trident first stroke: ~160ms
+const COLLAPSE = 0.88; // holds until ~630ms, then exits
 
 /**
- * Object: "UC San Diego" briefly becomes a struck name badge.
- *
- * One parent window owns the whole sequence. The navy plaque is stamped
- * into place (hard 0.985 -> 1, no spring overshoot), type flips to
- * paper, the gold rule resolves, the trident's three strokes complete
- * well inside the window, everything holds, then the assembly collapses
- * and unmounts as one unit.
+ * LOCAL UCSD identity response. No plaque, no box: on release the
+ * phrase itself flips to gold, a 1px gold rule draws under it, and a
+ * tiny trident stamps in at the phrase's end. All marks live inside
+ * the word's own box, layout untouched, then everything collapses.
  */
 function Trident({ run }: { run: number }) {
   const track = {
-    duration: 0.12,
+    duration: 0.1,
     ease: "easeOut" as const,
-    times: [0, 0.3, 0.8, 1],
+    times: [0, 0.35, 0.85, 1],
   };
   const strokes = [
     { d: "M7 13.5V5.5", delay: STROKE_START },
@@ -79,7 +74,7 @@ export default function UCSDWord() {
     clearSafety();
     setActive(true);
     setRun((r) => r + 1);
-    // the ONLY unmount signal: every child lives inside this window
+    // the ONLY unmount signal; every child lives inside this window
     safety.current = setTimeout(() => {
       setActive(false);
       safety.current = null;
@@ -89,14 +84,9 @@ export default function UCSDWord() {
   useEffect(() => clearSafety, [clearSafety]);
 
   if (reduceMotion) {
-    // Static: instant gold treatment with the rule, no assembly motion.
+    // Static: instant gold identity (text + rule), no assembly motion.
     return (
-      <TactileWord
-        label="UC San Diego"
-        onActivate={activate}
-        signature
-        className="whitespace-nowrap"
-      >
+      <TactileWord label="UC San Diego" onActivate={activate} className="whitespace-nowrap">
         <span className="word-anchor">
           <motion.span
             key={run}
@@ -122,19 +112,12 @@ export default function UCSDWord() {
   }
 
   return (
-    <TactileWord
-      label="UC San Diego"
-      onActivate={activate}
-      signature
-      className="whitespace-nowrap"
-    >
+    <TactileWord label="UC San Diego" onActivate={activate} className="whitespace-nowrap">
       <span className="word-anchor">
-        {/* in-flow phrase; color flips to paper while the assembly lives */}
+        {/* the phrase itself becomes the identity; no box around it */}
         <motion.span
           className="badge-type"
-          animate={
-            active ? { color: [INK, PAPER, PAPER, INK] } : { color: INK }
-          }
+          animate={active ? { color: [INK, GOLD, GOLD, INK] } : { color: INK }}
           transition={
             active
               ? {
@@ -149,21 +132,8 @@ export default function UCSDWord() {
         </motion.span>
 
         {active && (
-          <span key={`assembly-${run}`} className="badge-assembly">
-            {/* navy plaque: stamped in, held, collapsed: hard, no bounce */}
-            <motion.span
-              className="badge-plaque"
-              aria-hidden="true"
-              initial={{ opacity: 0, scale: 0.985 }}
-              animate={{ opacity: [0, 1, 1, 0], scale: [0.985, 1, 1, 0.985] }}
-              transition={{
-                times: [0, SNAP, COLLAPSE, 1],
-                duration: SEQUENCE_MS / 1000,
-                ease: "easeOut",
-              }}
-            />
-
-            {/* gold rule resolves after the stamp, exits with the parent */}
+          <span key={`identity-${run}`} className="badge-identity">
+            {/* gold rule resolves after the identity lands */}
             <motion.span
               className="badge-rule"
               aria-hidden="true"
@@ -176,7 +146,7 @@ export default function UCSDWord() {
               }}
             />
 
-            {/* trident strokes finish by ~340ms, hold, collapse with parent */}
+            {/* tiny trident stamps in, finishes well inside the window */}
             <span className="badge-trident-wrap" aria-hidden="true">
               <Trident run={run} />
             </span>

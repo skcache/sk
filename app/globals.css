@@ -98,143 +98,74 @@ body {
   text-decoration-color: rgba(243, 241, 234, 0.72);
 }
 
-/* ---- signature words: precision-machined plate treatment ----
-   Three keys from the same keyboard. The plate is a tiny keycap set
-   into the prose: internal padding with negative margins keeps the
-   word's layout footprint unchanged. */
-.word-signature {
-  margin: -1px -4px;
-  padding: 1px 4px;
-  text-decoration: none; /* the plate itself is the affordance */
-  background: rgba(243, 241, 234, 0.03);
-  box-shadow:
-    inset 0 0 0 1px rgba(243, 241, 234, 0.12),
-    inset 0 1px 0 rgba(243, 241, 234, 0.05),
-    0 1px 0 rgba(243, 241, 234, 0.08);
-  transition:
-    background 0.1s ease,
-    box-shadow 0.1s ease;
+/* inference scopes the affordance to the word itself; the button's own
+   underline would paint across the reserved tail */
+.word-button.word-morph-btn {
+  text-decoration: none;
 }
 
-.word-signature:hover,
-.word-signature:focus-visible {
-  background: rgba(243, 241, 234, 0.05);
-  box-shadow:
-    inset 0 0 0 1px rgba(243, 241, 234, 0.2),
-    inset 0 1px 0 rgba(243, 241, 234, 0.07),
-    0 1px 0 rgba(243, 241, 234, 0.1);
+/* press = contrast only, no box: the word brightens and its dotted
+   underline compresses while the key travels */
+.word-button.is-pressed {
+  color: #ffffff;
+  text-decoration-color: rgba(243, 241, 234, 0.85);
 }
 
-/* keycap depressed: lower edge collapses, cap tint deepens clearly.
-   The static state must read as "down" even in a single frame. */
-.word-signature.is-pressed {
-  background: rgba(243, 241, 234, 0.09);
-  box-shadow:
-    inset 0 0 0 1px rgba(243, 241, 234, 0.32),
-    inset 0 2px 4px rgba(6, 8, 11, 0.55);
-}
+/* ---------- inference: thinking morph ---------- */
 
-/* shared anchor box: the word's own box, all decoration sits inside it */
-.word-anchor {
+/* fixed inline slot: sized to the word itself (the "thinking" overlay
+   with the orb as the final letter fits inside it), so surrounding
+   prose never moves and there is no visible reserve gap at rest */
+.word-morph {
   position: relative;
   display: inline-block;
+  width: max-content;
+  text-align: left;
   white-space: nowrap;
 }
 
-/* one assembly subtree per run: children exit with the parent window */
-.badge-assembly {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-}
-
-/* ---------- inference: computation carriage ---------- */
-
-.word-machine {
-  position: relative;
-  display: inline-block;
-  white-space: nowrap;
-  transform-origin: left center;
-}
-
-.word-text {
+.word-morph-base {
   display: inline-block;
   white-space: nowrap;
   font: inherit;
+  /* the affordance hugs the WORD, not the reserved tail */
+  text-decoration: underline dotted;
+  text-decoration-color: rgba(243, 241, 234, 0.28);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
 }
 
-/* hairline chassis frames the machine from inside the word box */
-.word-chassis {
-  position: absolute;
-  inset: 0;
-  border-radius: 1px;
-  box-shadow: inset 0 0 0 1px rgba(243, 241, 234, 0.16);
+.word-button:hover .word-morph-base,
+.word-button:focus-visible .word-morph-base {
+  text-decoration-color: rgba(243, 241, 234, 0.72);
 }
 
-/* the stage clips the beam so it never leaves the word box */
-.word-stage {
+/* absolute overlay: thinking chars + orb, no layout participation */
+.word-morph-overlay {
   position: absolute;
-  inset: 0;
-  overflow: hidden;
-}
-
-/* hard-edged reader beam: flat cell between two crisp rules */
-.word-beam {
-  position: absolute;
-  top: 0;
-  bottom: 0;
   left: 0;
-  width: 30%;
-  background: rgba(243, 241, 234, 0.07);
-}
-
-.word-beam::before {
-  content: "";
-  position: absolute;
   top: 0;
   bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.word-morph-char {
+  display: inline-block;
+  font: inherit;
+}
+
+/* resolved marker sits at the baseline under the returning word */
+.word-morph-resolve {
+  bottom: -3px;
+  left: 0;
   right: 0;
-  width: 2px;
-  background: rgba(243, 241, 234, 0.55);
 }
 
-.word-beam::after {
-  content: "";
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 1px;
-  background: rgba(243, 241, 234, 0.2);
-}
-
-/* register cells: same glyphs as the base text, hairline-apart */
-.word-segs {
-  position: absolute;
-  left: 0;
-  top: 0;
-  display: inline-flex;
-  gap: 2px;
-  white-space: nowrap;
-}
-
-.word-seg {
-  flex: none;
-  font: inherit;
-}
-
-/* square result cell at the final edge */
-.word-result {
-  position: absolute;
-  top: 50%;
-  right: 2px;
-  width: 3px;
-  height: 3px;
-  margin-top: -1.5px;
-  background: #4fa3d1;
-}
-
-/* ---------- uc san diego: die-struck badge ---------- */
+/* ---------- uc san diego: local identity ---------- */
 
 .badge-type {
   position: relative;
@@ -242,16 +173,11 @@ body {
   display: inline-block;
 }
 
-/* navy plaque behind the phrase, flush to the word box.
-   #22385e reads clearly off the #0d0f12 canvas; a 1px gold border at
-   20% alpha gives the die-struck material separation. */
-.badge-plaque {
+.badge-identity {
   position: absolute;
-  inset: -3px 0;
+  inset: 0;
   z-index: 0;
-  border-radius: 2px;
-  background: #22385e;
-  box-shadow: inset 0 0 0 1px rgba(201, 162, 39, 0.2);
+  pointer-events: none;
 }
 
 /* gold rule, drawn with scaleX from the left edge */
@@ -266,11 +192,11 @@ body {
   background: #c9a227;
 }
 
-/* trident rises from the rule in the plaque's bottom band */
+/* tiny trident stamps in at the phrase's end */
 .badge-trident-wrap {
   position: absolute;
-  right: 2px;
-  bottom: 3px;
+  right: 0;
+  bottom: -2px;
   z-index: 1;
   line-height: 0;
 }
@@ -288,34 +214,53 @@ body {
   pointer-events: none;
 }
 
-/* ---------- google four-color accent (GDG) ---------- */
+/* ---------- experience identity slots ---------- */
 
-.google-accent {
+.identity-slot {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+/* shared mark treatment: absolute, never participates in layout */
+.identity-mark {
   position: absolute;
-  display: inline-flex;
-  gap: 2px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  display: block;
+}
+
+.orvia-mark {
+  left: 0;
+  height: 0.72em;
+  width: auto;
+}
+
+/* GDG: permanently reserved ~half-space slot after the phrase; the
+   official G stamps inside it, so no sentence shift on toggle */
+.gdg-reserve {
+  position: relative;
+  display: inline-block;
+  width: 11px;
+  margin-left: 4px;
+  vertical-align: -0.02em;
+}
+
+.gdg-mark-inline {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 0.62em;
+  width: auto;
   pointer-events: none;
 }
 
-.google-accent span {
-  width: 4px;
-  height: 7px;
-  border-radius: 1px;
-}
-
-/* ---------- keywords chip ---------- */
-
-.keywords-chip {
-  position: absolute;
-  padding: 1px 5px;
-  border-radius: 3px;
-  background: #0042ff;
-  color: #ffffff;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.04em;
-  line-height: 1.4;
-  pointer-events: none;
+.keywords-mark {
+  right: -15px;
+  height: 0.8em;
+  width: auto;
 }
 
 /* ---------- page reveal (progressive enhancement) ---------- */
