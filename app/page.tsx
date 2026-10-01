@@ -1,5 +1,4 @@
 import Intro from "./components/Intro";
-import FirstLoadHint from "./components/FirstLoadHint";
 import GDGWord from "./components/GDGWord";
 import KeywordsWord from "./components/KeywordsWord";
 import PageReveal from "./components/PageReveal";
@@ -125,7 +124,7 @@ export default function Home() {
 
       <header
         data-reveal
-        className="mx-auto flex w-full max-w-[44rem] items-center justify-between px-5 py-7 sm:px-6"
+        className="mx-auto flex w-full max-w-[42rem] items-center justify-between px-5 py-8 sm:px-6"
       >
         <span className="text-[15px] font-medium tracking-tight">
           Siddhant Kuwar
@@ -145,27 +144,26 @@ export default function Home() {
         </nav>
       </header>
 
-      <main className="mx-auto w-full max-w-[44rem] px-5 sm:px-6">
+      <main className="mx-auto w-full max-w-[42rem] px-5 sm:px-6">
         <PageReveal />
         <section
           id="intro"
           data-reveal
           aria-label="Intro"
-          className="pt-10 pb-24 sm:pt-14 sm:pb-28"
+          className="pt-12 pb-28 sm:pt-16 sm:pb-32"
         >
           <Intro />
-          <FirstLoadHint />
           <IntroAutoplay />
         </section>
 
-        <section data-reveal aria-labelledby="things-done" className="pb-20 sm:pb-24">
+        <section data-reveal aria-labelledby="things-done" className="pb-24 sm:pb-28">
           <h2
             id="things-done"
-            className="border-t border-hairline pt-9 text-[15px] font-medium"
+            className="border-t border-hairline pt-10 text-[15px] font-medium"
           >
             some things i&apos;ve done
           </h2>
-          <ul className="mt-6 space-y-4">
+          <ul className="mt-7 space-y-5">
             <li className="flex gap-3 text-base leading-snug">
               <span aria-hidden="true" className="select-none text-muted">
                 •
@@ -200,10 +198,10 @@ export default function Home() {
           </ul>
         </section>
 
-        <section data-reveal aria-labelledby="things-built" className="pb-16 sm:pb-20">
+        <section data-reveal aria-labelledby="things-built" className="pb-20 sm:pb-24">
           <h2
             id="things-built"
-            className="border-t border-hairline pt-9 text-[15px] font-medium"
+            className="border-t border-hairline pt-10 text-[15px] font-medium"
           >
             things i&apos;ve built
           </h2>
@@ -211,7 +209,7 @@ export default function Home() {
             {projects.map((project) => (
               <li
                 key={project.name}
-                className="group flex items-center justify-between gap-4 border-b border-hairline py-3.5 transition-colors duration-200 hover:border-ink/20"
+                className="group flex items-center justify-between gap-4 border-b border-hairline py-4 transition-colors duration-200 hover:border-ink/20"
               >
                 <span className="text-[15px] transition-transform duration-200 ease-out group-hover:translate-x-[2px]">{project.name}</span>
                 <span className="flex shrink-0 items-center gap-1">
@@ -237,7 +235,7 @@ export default function Home() {
 
       <footer
         data-reveal
-        className="mx-auto w-full max-w-[44rem] px-5 pb-10 sm:px-6"
+        className="mx-auto w-full max-w-[42rem] px-5 pb-12 sm:px-6"
       >
         <p className="text-sm text-muted">© {year} Siddhant Kuwar</p>
       </footer>

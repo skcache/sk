@@ -4,28 +4,42 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import TactileWord from "./TactileWord";
 
-const SEQUENCE_MS = 820;
+// One controlling window. ALL children normalize their keyframes to this
+// duration; the parent unmounts everything together at the end, so no
+// child can ever outlive the active state.
+const SEQUENCE_MS = 760;
+const HOLD_MS = 40;
 
 const INK = "#f3f1ea"; // rest text, light on dark
 const PAPER = "#f3f1ea"; // badge type on the navy plaque: stays light
 const GOLD = "#c9a227";
 
+// normalized phases inside the 760ms window
+const SNAP = 0.16; // plaque snaps in: 0-122ms
+const RULE = [0.16, 0.34] as const; // gold rule resolves: 122-258ms
+const STROKE_START = 0.21; // trident first stroke: 160ms
+const COLLAPSE = 0.86; // everything still until 654ms, then exits
+
 /**
- * Object: "UC San Diego" briefly becomes a die-struck name badge.
+ * Object: "UC San Diego" briefly becomes a struck name badge.
  *
- * A navy plaque slams in behind the phrase (one-frame stamp overshoot),
- * the type flips to paper, a gold rule draws along the bottom edge
- * with scaleX, a tiny geometric trident rises from the rule in three
- * quick strokes, holds like struck metal, then collapses cleanly back
- * to plain text. The plaque stays flush to the word box: it never
- * touches the period that follows the phrase.
+ * One parent window owns the whole sequence. The navy plaque is stamped
+ * into place (hard 0.985 -> 1, no spring overshoot), type flips to
+ * paper, the gold rule resolves, the trident's three strokes complete
+ * well inside the window, everything holds, then the assembly collapses
+ * and unmounts as one unit.
  */
-function Trident() {
+function Trident({ run }: { run: number }) {
   const track = {
-    duration: 0.78,
-    ease: "linear" as const,
-    times: [0, 0.2, 0.9, 1],
+    duration: 0.12,
+    ease: "easeOut" as const,
+    times: [0, 0.3, 0.8, 1],
   };
+  const strokes = [
+    { d: "M7 13.5V5.5", delay: STROKE_START },
+    { d: "M1.5 6h11", delay: STROKE_START + 0.06 },
+    { d: "M4 6V2M10 6V2", delay: STROKE_START + 0.12 },
+  ];
   return (
     <svg
       viewBox="0 0 14 14"
@@ -33,30 +47,17 @@ function Trident() {
       fill="none"
       aria-hidden="true"
     >
-      <motion.path
-        d="M7 13.5V5.5"
-        stroke={GOLD}
-        strokeWidth={1.4}
-        initial={{ pathLength: 0, opacity: 0 }}
-        animate={{ pathLength: [0, 1, 1, 1], opacity: [0, 1, 1, 0] }}
-        transition={{ ...track, delay: 0.16 }}
-      />
-      <motion.path
-        d="M1.5 6h11"
-        stroke={GOLD}
-        strokeWidth={1.4}
-        initial={{ pathLength: 0, opacity: 0 }}
-        animate={{ pathLength: [0, 1, 1, 1], opacity: [0, 1, 1, 0] }}
-        transition={{ ...track, delay: 0.23 }}
-      />
-      <motion.path
-        d="M4 6V2M10 6V2"
-        stroke={GOLD}
-        strokeWidth={1.4}
-        initial={{ pathLength: 0, opacity: 0 }}
-        animate={{ pathLength: [0, 1, 1, 1], opacity: [0, 1, 1, 0] }}
-        transition={{ ...track, delay: 0.3 }}
-      />
+      {strokes.map((s, i) => (
+        <motion.path
+          key={`${run}-${i}`}
+          d={s.d}
+          stroke={GOLD}
+          strokeWidth={1.4}
+          initial={{ pathLength: 0, opacity: 0 }}
+          animate={{ pathLength: [0, 1, 1, 1], opacity: [0, 1, 1, 0] }}
+          transition={{ ...track, delay: s.delay }}
+        />
+      ))}
     </svg>
   );
 }
@@ -78,10 +79,11 @@ export default function UCSDWord() {
     clearSafety();
     setActive(true);
     setRun((r) => r + 1);
+    // the ONLY unmount signal: every child lives inside this window
     safety.current = setTimeout(() => {
       setActive(false);
       safety.current = null;
-    }, SEQUENCE_MS + 250);
+    }, SEQUENCE_MS + HOLD_MS);
   }, [clearSafety]);
 
   useEffect(() => clearSafety, [clearSafety]);
@@ -89,7 +91,12 @@ export default function UCSDWord() {
   if (reduceMotion) {
     // Static: instant gold treatment with the rule, no assembly motion.
     return (
-      <TactileWord label="UC San Diego" onActivate={activate} className="whitespace-nowrap">
+      <TactileWord
+        label="UC San Diego"
+        onActivate={activate}
+        signature
+        className="whitespace-nowrap"
+      >
         <span className="word-anchor">
           <motion.span
             key={run}
@@ -118,10 +125,11 @@ export default function UCSDWord() {
     <TactileWord
       label="UC San Diego"
       onActivate={activate}
+      signature
       className="whitespace-nowrap"
     >
       <span className="word-anchor">
-        {/* in-flow phrase; color flips to paper on the plaque */}
+        {/* in-flow phrase; color flips to paper while the assembly lives */}
         <motion.span
           className="badge-type"
           animate={
@@ -129,7 +137,11 @@ export default function UCSDWord() {
           }
           transition={
             active
-              ? { times: [0, 0.06, 0.87, 1], duration: 0.78, ease: "easeOut" }
+              ? {
+                  times: [0, SNAP, COLLAPSE, 1],
+                  duration: SEQUENCE_MS / 1000,
+                  ease: "easeOut",
+                }
               : { duration: 0.01 }
           }
         >
@@ -137,45 +149,38 @@ export default function UCSDWord() {
         </motion.span>
 
         {active && (
-          <>
-            {/* navy plaque: die stamp with a one-frame overshoot */}
+          <span key={`assembly-${run}`} className="badge-assembly">
+            {/* navy plaque: stamped in, held, collapsed: hard, no bounce */}
             <motion.span
-              key={`plaque-${run}`}
               className="badge-plaque"
               aria-hidden="true"
-              initial={{ opacity: 0, scale: 0.97 }}
-              animate={{
-                opacity: [0, 1, 1, 1, 1, 0],
-                scale: [0.97, 1.012, 1, 1, 1, 0.988],
-              }}
+              initial={{ opacity: 0, scale: 0.985 }}
+              animate={{ opacity: [0, 1, 1, 0], scale: [0.985, 1, 1, 0.985] }}
               transition={{
-                times: [0, 0.015, 0.04, 0.87, 0.94, 1],
-                duration: 0.78,
+                times: [0, SNAP, COLLAPSE, 1],
+                duration: SEQUENCE_MS / 1000,
                 ease: "easeOut",
               }}
-              onAnimationComplete={() => setActive(false)}
             />
 
-            {/* gold rule draws with scaleX from the left */}
+            {/* gold rule resolves after the stamp, exits with the parent */}
             <motion.span
-              key={`rule-${run}`}
               className="badge-rule"
               aria-hidden="true"
               initial={{ scaleX: 0, opacity: 0 }}
-              animate={{ scaleX: [0, 1, 1, 1], opacity: [0, 1, 1, 0] }}
+              animate={{ scaleX: [0, 0, 1, 1, 0], opacity: [0, 0, 1, 1, 0] }}
               transition={{
-                times: [0, 0.25, 0.87, 1],
-                duration: 0.78,
-                delay: 0.05,
+                times: [0, RULE[0], RULE[1], COLLAPSE, 1],
+                duration: SEQUENCE_MS / 1000,
                 ease: "easeOut",
               }}
             />
 
-            {/* trident rises from the rule in three quick strokes */}
+            {/* trident strokes finish by ~340ms, hold, collapse with parent */}
             <span className="badge-trident-wrap" aria-hidden="true">
-              <Trident />
+              <Trident run={run} />
             </span>
-          </>
+          </span>
         )}
       </span>
     </TactileWord>

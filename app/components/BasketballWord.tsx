@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import TactileWord from "./TactileWord";
 
-const SEQUENCE_MS = 860;
+const SEQUENCE_MS = 1350;
 
 // Gravity: accelerating fall. Rebound: fast rise, soft landing.
 const FALL: [number, number, number, number] = [0.5, 0, 1, 0.7];
@@ -15,9 +15,11 @@ const RISE: [number, number, number, number] = [0.22, 1, 0.22, 1];
  *
  * On release the ball appears just above the baseline at the word's
  * end, drops under gravity, squashes on impact at the line, rebounds
- * once with a decelerating spin, wobbles to rest, and fades cleanly.
- * The whole drop stays inside the word's own line box: it never dips
- * below the baseline, so no neighboring text is ever touched.
+ * once with a decelerating spin, settles, HOLDS at rest for ~600ms,
+ * then fades. The whole drop stays inside the word's own line box: it
+ * never dips below the baseline, so no neighboring text is ever
+ * touched. The word's own press is the shared mechanical click; the
+ * squash lives only on the ball.
  */
 function Ball() {
   return (
@@ -66,7 +68,7 @@ export default function BasketballWord() {
   if (reduceMotion) {
     // Static: the ball simply appears at rest beside the word, then leaves.
     return (
-      <TactileWord label="basketball" onActivate={activate}>
+      <TactileWord label="basketball" onActivate={activate} signature>
         <span className="word-anchor">
           basketball
           {active && (
@@ -90,7 +92,7 @@ export default function BasketballWord() {
   }
 
   return (
-    <TactileWord label="basketball" onActivate={activate}>
+    <TactileWord label="basketball" onActivate={activate} signature>
       <span className="word-anchor">
         basketball
         {active && (
@@ -100,6 +102,8 @@ export default function BasketballWord() {
             className="word-ball"
             initial={{ y: -5, opacity: 0, scaleY: 1, scaleX: 1, rotate: 0 }}
             animate={{
+              // launch, impact, ONE rebound, settle by ~0.42, hold,
+              // fade in the last 0.13
               y: [-5, -5, 0, -8, 0, -1, -1, -1],
               scaleY: [1, 1, 0.61, 1, 0.85, 1, 1, 1],
               scaleX: [1, 1, 1.22, 1, 1.1, 1, 1, 1],
@@ -107,14 +111,15 @@ export default function BasketballWord() {
               opacity: [0, 1, 1, 1, 1, 1, 1, 0],
             }}
             transition={{
-              times: [0, 0.06, 0.3, 0.47, 0.62, 0.76, 0.88, 1],
-              duration: 0.74,
+              times: [0, 0.03, 0.16, 0.25, 0.33, 0.42, 0.87, 1],
+              duration: 1.3,
               ease: [
                 "linear",
                 FALL,
                 RISE,
                 FALL,
                 [0.3, 0, 0.2, 1],
+                "easeInOut",
                 "easeInOut",
                 "easeInOut",
               ],

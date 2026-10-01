@@ -4,12 +4,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import TactileWord from "./TactileWord";
 
-const SEQUENCE_MS = 760;
-
+// Machine phase: chassis + beam + registers (fast, hard).
+const MACHINE_MS = 620;
+// After-state: the resolved notch sits for ~850ms, then everything goes.
+const NOTCH_MS = 850;
 const INK = "#f3f1ea";
-// after the run completes, the word stays slightly brighter for a
-// moment (interaction -> consequence) before returning to rest.
-const BRIGHT = "#ffffff";
 
 // The word is carved into four register cells. The overlay renders the
 // same glyphs line-for-line over the in-flow text, which is fully
@@ -18,42 +17,44 @@ const BRIGHT = "#ffffff";
 const SEGMENTS = ["inf", "er", "en", "ce"];
 
 // Pop times track the reader beam crossing each register center.
-const SEG_DELAYS = [0.07, 0.12, 0.17, 0.22];
+const SEG_DELAYS = [0.05, 0.1, 0.15, 0.2];
 
 /**
  * Object: "inference" briefly becomes a tiny computation carriage.
  *
- * Press -> the word is consumed into the machine (base text hides in
- * two frames), a hairline chassis frames the box from the inside, a
- * hard-edged reader beam sweeps left to right on a linear track, each
- * register chunk resolves to full contrast as the beam's leading edge
- * passes, a square result cell blips at the final edge, then the word
- * is released back to plain text. Zero layout shift, zero ghosting.
+ * Press -> the word is consumed into the machine, a hairline chassis
+ * frames the box, a narrow high-contrast reader beam sweeps left to
+ * right on a linear track, each register chunk SNAPS into registration
+ * (opacity 0->1, scale 0.985->1, no overshoot) as the beam passes, then
+ * a 3px result cell + 1px resolved underline remain for ~850ms as the
+ * output state, and disappear. Interaction -> consequence -> resolution.
  */
 export default function InferenceWord() {
   const reduceMotion = useReducedMotion();
   const [run, setRun] = useState(0);
   const [active, setActive] = useState(false);
-  const [trace, setTrace] = useState(false);
-  const safety = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [notch, setNotch] = useState(false);
+  const safety = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const clearSafety = useCallback(() => {
-    if (safety.current) {
-      clearTimeout(safety.current);
-      safety.current = null;
-    }
+    safety.current.forEach(clearTimeout);
+    safety.current = [];
   }, []);
 
   const activate = useCallback(() => {
     clearSafety();
-    setTrace(false);
+    setNotch(false);
     setActive(true);
     setRun((r) => r + 1);
-    safety.current = setTimeout(() => {
-      setActive(false);
-      setTrace(false);
-      safety.current = null;
-    }, SEQUENCE_MS + 1700);
+    // single controlling timeline: machine phase, then notch, then out
+    safety.current = [
+      setTimeout(() => setNotch(true), MACHINE_MS),
+      setTimeout(() => {
+        setActive(false);
+        setNotch(false);
+        safety.current = [];
+      }, MACHINE_MS + NOTCH_MS),
+    ];
   }, [clearSafety]);
 
   useEffect(() => clearSafety, [clearSafety]);
@@ -61,7 +62,7 @@ export default function InferenceWord() {
   if (reduceMotion) {
     // Static state change: instant bright-blue highlight, no moving parts.
     return (
-      <TactileWord label="inference" onActivate={activate}>
+      <TactileWord label="inference" onActivate={activate} signature>
         <motion.span
           key={run}
           animate={active ? { color: "#4fa3d1" } : { color: INK }}
@@ -74,96 +75,91 @@ export default function InferenceWord() {
   }
 
   return (
-    <TactileWord label="inference" onActivate={activate}>
+    <TactileWord label="inference" onActivate={activate} signature>
       <motion.span
         className="word-machine"
-        animate={active ? { scaleX: 0.991 } : { scaleX: 1 }}
+        animate={active && !notch ? { scaleX: 0.991 } : { scaleX: 1 }}
         transition={
-          active
-            ? { duration: 0.12, ease: "easeOut" }
-            : { duration: 0.18, delay: 0.5, ease: "easeOut" }
+          active && !notch
+            ? { duration: 0.1, ease: "easeOut" }
+            : { duration: 0.15, ease: "easeOut" }
         }
       >
-        {/* in-flow base text: fully hidden while the carriage runs;
-            after completion it holds a slightly brighter trace */}
+        {/* in-flow base text: hidden while the machine runs, visible
+            again for the notch after-state */}
         <motion.span
           className="word-text"
-          animate={{ opacity: active ? 0 : 1, color: trace ? BRIGHT : INK }}
-          transition={{
-            opacity: active
+          animate={{ opacity: active && !notch ? 0 : 1 }}
+          transition={
+            active && !notch
               ? { duration: 0.03, ease: "easeOut" }
-              : { duration: 0.15, ease: "easeOut" },
-            color: { duration: 0.25, ease: "easeOut" },
-          }}
+              : { duration: 0.12, ease: "easeOut" }
+          }
         >
           inference
         </motion.span>
 
-        {active && (
-          <>
+        {active && !notch && (
+          <span key={`machine-${run}`}>
             {/* hairline chassis frames the machine from inside the box */}
             <motion.span
-              key={`chassis-${run}`}
               className="word-chassis"
               aria-hidden="true"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.05 }}
+              transition={{ duration: 0.04 }}
             />
 
             {/* clipped stage: beam below, registers above */}
-            <motion.span
-              key={`stage-${run}`}
-              className="word-stage"
-              aria-hidden="true"
-            >
-              {/* hard-edged reader beam: flat cell, crisp leading edge */}
+            <span className="word-stage" aria-hidden="true">
+              {/* hard-edged reader beam: narrow, linear, crisp */}
               <motion.span
                 className="word-beam"
                 initial={{ x: "-115%" }}
                 animate={{ x: "315%" }}
-                transition={{ duration: 0.3, delay: 0.035, ease: "linear" }}
+                transition={{ duration: 0.28, delay: 0.04, ease: "linear" }}
               />
 
-              {/* register cells resolving left to right */}
-              <motion.span className="word-segs">
+              {/* register cells snap into registration, no overshoot */}
+              <span className="word-segs">
                 {SEGMENTS.map((seg, i) => (
                   <motion.span
                     key={`${seg}-${i}`}
                     className="word-seg"
-                    initial={{ opacity: 0, scale: 0.97 }}
-                    animate={{ opacity: 1, scale: [0.97, 1.02, 1] }}
+                    initial={{ opacity: 0, scale: 0.985 }}
+                    animate={{ opacity: 1, scale: 1 }}
                     transition={{
-                      duration: 0.1,
+                      duration: 0.08,
                       delay: SEG_DELAYS[i],
-                      times: [0, 0.55, 1],
                       ease: "easeOut",
                     }}
                   >
                     {seg}
                   </motion.span>
                 ))}
-              </motion.span>
+              </span>
+            </span>
+          </span>
+        )}
 
-              {/* square result cell blips at the final edge */}
-              <motion.span
-                key={`result-${run}`}
-                className="word-result"
-                initial={{ opacity: 0, scale: 0.4 }}
-                animate={{ opacity: [0, 1, 1, 0], scale: [0.4, 1.2, 1, 0.3] }}
-                transition={{
-                  times: [0, 0.15, 0.7, 1],
-                  duration: 0.22,
-                  delay: 0.4,
-                  ease: "easeOut",
-                }}
-                onAnimationComplete={() => {
-                  setActive(false);
-                  setTrace(true);
-                }}
-              />
-            </motion.span>
-          </>
+        {/* after-state: 3px result cell + 1px resolved underline */}
+        {notch && (
+          <span className="word-notch" aria-hidden="true">
+            <motion.span
+              key={`cell-${run}`}
+              className="word-notch-cell"
+              initial={{ opacity: 0, scale: 0.5 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.08, ease: "easeOut" }}
+            />
+            <motion.span
+              key={`line-${run}`}
+              className="word-notch-line"
+              initial={{ scaleX: 0 }}
+              animate={{ scaleX: 1 }}
+              transition={{ duration: 0.12, ease: "easeOut" }}
+            />
+          </span>
         )}
       </motion.span>
     </TactileWord>

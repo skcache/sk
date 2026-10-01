@@ -4,12 +4,14 @@ import { useEffect } from "react";
 import { useReducedMotion } from "motion/react";
 
 /**
- * One-shot intro tour. After the entrance settles, plays UC San Diego ->
- * inference -> basketball ~250ms apart. Never loops, never autoplays under
- * reduced motion, and never touches GDG / Keywords.
+ * One-shot signature tour. After the page entrance fully resolves, plays
+ * ONLY `inference` (the signature interaction) once. UCSD and
+ * basketball stay discoverable through their physical inline plates and
+ * manual interaction. Never loops, never autoplays under reduced motion,
+ * never touches GDG / Keywords.
  *
- * It drives the same tactile buttons the user would press, so manual
- * replay afterwards works exactly as before.
+ * It drives the real press path (pointerdown/pointerup), so the
+ * autoplay exercises the exact same actuation as a real tap.
  */
 export default function IntroAutoplay() {
   const reduceMotion = useReducedMotion();
@@ -19,19 +21,20 @@ export default function IntroAutoplay() {
 
     const press = (label: string) => {
       const el = document.querySelector<HTMLElement>(`button[aria-label="${label}"]`);
-      el?.click();
+      if (!el) return;
+      el.dispatchEvent(
+        new PointerEvent("pointerdown", { bubbles: true, button: 0, pointerType: "touch" })
+      );
+      el.dispatchEvent(
+        new PointerEvent("pointerup", { bubbles: true, button: 0, pointerType: "touch" })
+      );
     };
 
-    // entrance settles at ~1.4s (intro slot: 100ms delay + 1.1s)
-    const t1 = window.setTimeout(() => press("UC San Diego"), 1500);
-    const t2 = window.setTimeout(() => press("inference"), 1750);
-    const t3 = window.setTimeout(() => press("basketball"), 2000);
+    // entrance: footer slot = 4 x 100ms stagger + 0.8s reveal, done by
+    // ~1.35s post-hydration; give it a short stillness, then inference.
+    const t = window.setTimeout(() => press("inference"), 1700);
 
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-    };
+    return () => clearTimeout(t);
   }, [reduceMotion]);
 
   return null;

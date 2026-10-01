@@ -218,13 +218,50 @@ test("polish pass: reveal, grain, plaque, affordance, autoplay", () => {
   assert.equal(css.includes("rgba(243, 241, 234, 0.72)"), true, "hover affordance alpha wrong");
   // autoplay tour drives the real tactile buttons, never GDG/Keywords
   const autoplay = read("components/IntroAutoplay.tsx");
-  assert.equal(autoplay.includes('press("UC San Diego")'), true);
   assert.equal(autoplay.includes('press("inference")'), true);
-  assert.equal(autoplay.includes('press("basketball")'), true);
+  assert.equal(
+    autoplay.includes('press("UC San Diego")'),
+    false,
+    "autoplay must not press UCSD"
+  );
+  assert.equal(
+    autoplay.includes('press("basketball")'),
+    false,
+    "autoplay must not press basketball"
+  );
   assert.equal(autoplay.includes('press("GDG")'), false, "autoplay must not press GDG");
   // one-shot, no loop
   assert.equal(autoplay.includes("setInterval"), false, "no looping autoplay");
   // five reveal slots on the page
   const page = read("page.tsx");
   assert.equal((page.match(/data-reveal/g) || []).length, 5, "expected 5 reveal slots");
+});
+
+test("mechanical press pass: plate, no squash, no hint, no stale systems", () => {
+  const css = read("globals.css");
+  // rigid-object press: uniform scale only, no per-axis glyph squash
+  assert.equal(css.includes("scaleY: 0.96"), false, "rubbery squash must be gone");
+  assert.equal(css.includes("transform-origin: 50% 100%"), true, "rigid origin missing");
+  // signature plate treatment exists with layout-compensated padding
+  assert.equal(css.includes(".word-signature"), true, "signature plate missing");
+  assert.equal(css.includes("margin: -1px -4px"), true, "plate layout compensation missing");
+  assert.equal(css.includes(".word-signature.is-pressed"), true, "pressed keycap state missing");
+  // FirstLoadHint system fully removed
+  const all = source;
+  assert.equal(all.includes("FirstLoadHint"), false, "FirstLoadHint must be gone");
+  assert.equal(all.includes("hint-draw"), false, "hint-draw CSS must be gone");
+  assert.equal(all.includes("first-hint"), false, ".first-hint must be gone");
+  // no scaleY treatment anywhere in the component sources
+  assert.equal(all.includes("scaleY: 0.96"), false, "no scaleY:0.96 anywhere");
+  // UCSD: single parent window, no child-owned unmount
+  const ucsd = read("components/UCSDWord.tsx");
+  assert.equal(ucsd.includes("onAnimationComplete"), false, "no child unmounts the badge");
+  assert.equal(ucsd.includes("0.985"), true, "stamped plaque scale bound missing");
+  // inference: no overshoot, notch after-state
+  const inf = read("components/InferenceWord.tsx");
+  assert.equal(inf.includes("1.02"), false, "segment overshoot must be gone");
+  assert.equal(inf.includes("word-notch"), true, "notch after-state missing");
+  // basketball: long settle hold
+  const bb = read("components/BasketballWord.tsx");
+  assert.equal(bb.includes("0.87"), true, "ball hold segment missing");
 });
