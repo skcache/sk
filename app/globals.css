@@ -229,6 +229,36 @@ body {
   white-space: nowrap;
 }
 
+/* the gliding box: width is the only thing that animates, so the
+   sentence flows continuously while the phrase is revealed by the clip */
+.gdg-box {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  vertical-align: baseline;
+}
+
+.gdg-short {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.gdg-overlay {
+  position: absolute;
+  left: 0;
+  top: 0;
+  white-space: nowrap;
+}
+
+.gdg-measure {
+  position: absolute;
+  visibility: hidden;
+  white-space: nowrap;
+  pointer-events: none;
+  font: inherit;
+}
+
 /* identity marks: real inline elements at ~1em (visible, aligned,
    one family across Orvia / Google Dev Group / Keywords Studios) */
 .identity-mark {
