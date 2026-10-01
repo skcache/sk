@@ -9,6 +9,7 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://skx.si"),
   title: "siddhant",
   description:
     "Hey, I'm Siddhant. Fourth-year CS student at UC San Diego. Into inference, systems, and building software.",
@@ -17,6 +18,13 @@ export const metadata: Metadata = {
     description:
       "Hey, I'm Siddhant. Fourth-year CS student at UC San Diego. Into inference, systems, and building software.",
     type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary",
+    title: "Siddhant Kuwar",
+    description:
+      "Hey, I'm Siddhant. Fourth-year CS student at UC San Diego. Into inference, systems, and building software.",
   },
 };
 
@@ -28,7 +36,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${geistSans.variable} antialiased`}>
-      <body>{children}</body>
+      <body>
+        <div className="grain" aria-hidden="true" />
+        {children}
+      </body>
     </html>
   );
 }

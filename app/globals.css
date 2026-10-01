@@ -87,14 +87,14 @@ body {
   /* quiet static affordance: an extremely faint dotted underline tells
      touch users these words are tappable without shouting */
   text-decoration: underline dotted;
-  text-decoration-color: rgba(243, 241, 234, 0.16);
+  text-decoration-color: rgba(243, 241, 234, 0.28);
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
 }
 
 .word-button:hover,
 .word-button:focus-visible {
-  text-decoration-color: rgba(243, 241, 234, 0.45);
+  text-decoration-color: rgba(243, 241, 234, 0.72);
 }
 
 /* one-time first-load hint: the dotted affordance briefly draws in */
@@ -215,13 +215,16 @@ body {
   display: inline-block;
 }
 
-/* navy plaque behind the phrase, flush to the word box */
+/* navy plaque behind the phrase, flush to the word box.
+   #22385e reads clearly off the #0d0f12 canvas; a 1px gold border at
+   20% alpha gives the die-struck material separation. */
 .badge-plaque {
   position: absolute;
   inset: -3px 0;
   z-index: 0;
   border-radius: 2px;
-  background: #182b49;
+  background: #22385e;
+  box-shadow: inset 0 0 0 1px rgba(201, 162, 39, 0.2);
 }
 
 /* gold rule, drawn with scaleX from the left edge */
@@ -286,6 +289,55 @@ body {
   letter-spacing: 0.04em;
   line-height: 1.4;
   pointer-events: none;
+}
+
+/* ---------- page reveal (progressive enhancement) ---------- */
+
+/* Hidden/first frame ONLY when JS is running; without JS the slots are
+   plain visible content. The reveal class is removed after each slot's
+   animation end, so no persistent blur filter is left compositing. */
+.js [data-reveal] {
+  animation: reveal-in var(--reveal-dur, 0.8s) cubic-bezier(0.16, 1, 0.3, 1)
+    var(--reveal-delay, 0ms) backwards;
+}
+
+@keyframes reveal-in {
+  from {
+    opacity: 0;
+    filter: blur(20px);
+    transform: scale(1.02);
+  }
+  to {
+    opacity: 1;
+    filter: blur(0);
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .js [data-reveal] {
+    animation: reveal-fade var(--reveal-dur, 0.3s) ease-out backwards;
+  }
+
+  @keyframes reveal-fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+/* ---------- texture: grain ---------- */
+
+.grain {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  pointer-events: none;
+  opacity: 0.04;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /* Respect reduced motion: collapse all transitions and animation */

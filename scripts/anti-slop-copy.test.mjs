@@ -153,6 +153,7 @@ test("no fabricated links: private repo never linked, no invented URLs", () => {
     "https://github.com/skcache",
     "https://x.com/skcache",
     "https://www.linkedin.com/in/skuwar",
+    "https://skx.si",
   ];
   const unexpected = urls.filter((u) => !allowed.includes(u));
   assert.equal(unexpected.length, 0, `unexpected URL(s): ${unexpected.join(", ")}`);
@@ -198,4 +199,32 @@ test("dark mode is committed: no light theme, no scheme switching", () => {
   }
   assert.equal(css.includes("#0d0f12"), true, "dark background token missing");
   assert.equal(css.includes("#f3f1ea"), true, "light text token missing");
+});
+
+test("polish pass: reveal, grain, plaque, affordance, autoplay", () => {
+  const css = read("globals.css");
+  // blur-resolve entrance is JS-gated (no-JS keeps content visible)
+  assert.equal(css.includes("reveal-in"), true, "reveal keyframes missing");
+  assert.equal(css.includes("[data-reveal]"), true, "data-reveal rule missing");
+  assert.equal(css.includes(".js [data-reveal]"), true, "reveal not JS-gated");
+  // grain is SVG feTurbulence fixed overlay
+  assert.equal(css.includes("feTurbulence"), true, "grain turbulence missing");
+  assert.equal(css.includes("pointer-events: none"), true, "overlay must not block clicks");
+  // plaque contrast + gold hairline
+  assert.equal(css.includes("#22385e"), true, "plaque contrast lift missing");
+  assert.equal(css.includes("rgba(201, 162, 39, 0.2)"), true, "plaque gold border missing");
+  // affordance: rest 28%, hover/focus 72%
+  assert.equal(css.includes("rgba(243, 241, 234, 0.28)"), true, "rest affordance alpha wrong");
+  assert.equal(css.includes("rgba(243, 241, 234, 0.72)"), true, "hover affordance alpha wrong");
+  // autoplay tour drives the real tactile buttons, never GDG/Keywords
+  const autoplay = read("components/IntroAutoplay.tsx");
+  assert.equal(autoplay.includes('press("UC San Diego")'), true);
+  assert.equal(autoplay.includes('press("inference")'), true);
+  assert.equal(autoplay.includes('press("basketball")'), true);
+  assert.equal(autoplay.includes('press("GDG")'), false, "autoplay must not press GDG");
+  // one-shot, no loop
+  assert.equal(autoplay.includes("setInterval"), false, "no looping autoplay");
+  // five reveal slots on the page
+  const page = read("page.tsx");
+  assert.equal((page.match(/data-reveal/g) || []).length, 5, "expected 5 reveal slots");
 });

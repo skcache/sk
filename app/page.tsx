@@ -2,6 +2,8 @@ import Intro from "./components/Intro";
 import FirstLoadHint from "./components/FirstLoadHint";
 import GDGWord from "./components/GDGWord";
 import KeywordsWord from "./components/KeywordsWord";
+import PageReveal from "./components/PageReveal";
+import IntroAutoplay from "./components/IntroAutoplay";
 
 const socials = [
   { label: "GitHub", href: "https://github.com/skcache" },
@@ -121,7 +123,10 @@ export default function Home() {
         Skip to content
       </a>
 
-      <header className="mx-auto flex w-full max-w-[44rem] items-center justify-between px-5 py-7 sm:px-6">
+      <header
+        data-reveal
+        className="mx-auto flex w-full max-w-[44rem] items-center justify-between px-5 py-7 sm:px-6"
+      >
         <span className="text-[15px] font-medium tracking-tight">
           Siddhant Kuwar
         </span>
@@ -141,12 +146,19 @@ export default function Home() {
       </header>
 
       <main className="mx-auto w-full max-w-[44rem] px-5 sm:px-6">
-        <section id="intro" aria-label="Intro" className="pt-10 pb-24 sm:pt-14 sm:pb-28">
+        <PageReveal />
+        <section
+          id="intro"
+          data-reveal
+          aria-label="Intro"
+          className="pt-10 pb-24 sm:pt-14 sm:pb-28"
+        >
           <Intro />
           <FirstLoadHint />
+          <IntroAutoplay />
         </section>
 
-        <section aria-labelledby="things-done" className="pb-20 sm:pb-24">
+        <section data-reveal aria-labelledby="things-done" className="pb-20 sm:pb-24">
           <h2
             id="things-done"
             className="border-t border-hairline pt-9 text-[15px] font-medium"
@@ -188,7 +200,7 @@ export default function Home() {
           </ul>
         </section>
 
-        <section aria-labelledby="things-built" className="pb-16 sm:pb-20">
+        <section data-reveal aria-labelledby="things-built" className="pb-16 sm:pb-20">
           <h2
             id="things-built"
             className="border-t border-hairline pt-9 text-[15px] font-medium"
@@ -223,7 +235,10 @@ export default function Home() {
         </section>
       </main>
 
-      <footer className="mx-auto w-full max-w-[44rem] px-5 pb-10 sm:px-6">
+      <footer
+        data-reveal
+        className="mx-auto w-full max-w-[44rem] px-5 pb-10 sm:px-6"
+      >
         <p className="text-sm text-muted">© {year} Siddhant Kuwar</p>
       </footer>
     </>
