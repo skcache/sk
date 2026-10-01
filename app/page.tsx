@@ -129,10 +129,10 @@ export default function Home() {
           <IntroAutoplay />
         </section>
 
-        <section data-reveal aria-labelledby="things-done" className="pb-28 sm:pb-32">
+        <section data-reveal aria-labelledby="things-done" className="pb-24 sm:pb-28">
           <h2
             id="things-done"
-            className="border-t border-hairline pt-10 text-[15px] font-medium"
+            className="border-t border-hairline pt-12 text-[15px] font-medium sm:pt-14"
           >
             some things i&apos;ve done
           </h2>
@@ -174,10 +174,10 @@ export default function Home() {
           </ul>
         </section>
 
-        <section data-reveal aria-labelledby="things-built" className="pb-24 sm:pb-28">
+        <section data-reveal aria-labelledby="things-built" className="pb-20 sm:pb-24">
           <h2
             id="things-built"
-            className="border-t border-hairline pt-10 text-[15px] font-medium"
+            className="border-t border-hairline pt-12 text-[15px] font-medium sm:pt-14"
           >
             things i&apos;ve built
           </h2>
@@ -191,7 +191,7 @@ export default function Home() {
                 <span className="text-[15px] transition-transform duration-200 ease-out group-hover:translate-x-[2px]">
                   {project.name}
                 </span>
-                <span className="flex shrink-0 items-center gap-1">
+                <span className="flex shrink-0 items-center gap-2">
                   {project.links.map((link) => (
                     <a
                       key={link.href}

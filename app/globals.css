@@ -237,21 +237,21 @@ body {
   width: auto;
 }
 
-/* GDG: permanently reserved ~half-space slot after the phrase; the
-   official G stamps inside it, so no sentence shift on toggle */
+/* GDG: zero-width anchor at the phrase's end; the official G stamps
+   raised above it (like a superscript brand mark) so there is never a
+   gap in the sentence and no collision with the comma */
 .gdg-reserve {
-  position: relative;
-  display: inline-block;
-  width: 11px;
-  margin-left: 4px;
-  vertical-align: -0.02em;
+  position: absolute;
+  right: 0;
+  top: -0.62em;
+  width: 0;
+  height: 0;
 }
 
 .gdg-mark-inline {
   position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
+  right: 0;
+  top: 0;
   height: 0.62em;
   width: auto;
   pointer-events: none;

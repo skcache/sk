@@ -23,11 +23,12 @@ export default function OrviaWord() {
           O
         </motion.span>
         rvia
-        {/* canonical Orvia ring mark (as shipped by orviaops.com),
-            inlined so currentColor inherits from the sentence */}
+        {/* canonical Orvia mark: three concentric circles (outer ring,
+            middle ring, center dot) as shipped in orviaops.com's own
+            apple-touch-icon; inlined so currentColor inherits */}
         <motion.svg
           key="orvia-mark"
-          viewBox="0 0 100 124"
+          viewBox="0 0 180 180"
           fill="none"
           className="identity-mark orvia-mark"
           aria-hidden="true"
@@ -35,26 +36,21 @@ export default function OrviaWord() {
           animate={on ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.7 }}
           transition={t}
         >
-          <rect
-            x="14"
-            y="18"
-            width="72"
-            height="88"
-            rx="36"
+          <circle
+            cx="90"
+            cy="90"
+            r="52"
             stroke="currentColor"
-            strokeWidth="7"
-            strokeLinejoin="round"
+            strokeWidth="10"
           />
-          <rect
-            x="26"
-            y="32"
-            width="48"
-            height="60"
-            rx="24"
+          <circle
+            cx="90"
+            cy="90"
+            r="32"
             stroke="currentColor"
-            strokeWidth="7"
-            strokeLinejoin="round"
+            strokeWidth="10"
           />
+          <circle cx="90" cy="90" r="12" fill="currentColor" />
         </motion.svg>
       </span>
     </TactileWord>
