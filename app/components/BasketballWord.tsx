@@ -4,26 +4,35 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import TactileWord from "./TactileWord";
 
-const SEQUENCE_MS = 800;
+const SEQUENCE_MS = 860;
 
-const FALL: [number, number, number, number] = [0.45, 0, 1, 1]; // gravity
-const RISE: [number, number, number, number] = [0.16, 1, 0.3, 1]; // rebound
+// Gravity: accelerating fall. Rebound: fast rise, soft landing.
+const FALL: [number, number, number, number] = [0.5, 0, 1, 0.7];
+const RISE: [number, number, number, number] = [0.22, 1, 0.22, 1];
 
 /**
- * Object: a tiny basketball with mass. On release it drops from just
- * above the baseline at the end of the word, hits an invisible floor,
- * squashes, rebounds once, and cleanly disappears. Local to the word:
- * no travel through the paragraph.
+ * Object: a tiny basketball with mass.
+ *
+ * On release the ball appears just above the baseline at the word's
+ * end, drops under gravity, squashes on impact at the line, rebounds
+ * once with a decelerating spin, wobbles to rest, and fades cleanly.
+ * The whole drop stays inside the word's own line box: it never dips
+ * below the baseline, so no neighboring text is ever touched.
  */
 function Ball() {
   return (
-    <svg viewBox="0 0 24 24" className="h-full w-full" aria-hidden="true">
+    <svg viewBox="0 0 24 24" className="block h-full w-full" aria-hidden="true">
       <circle cx="12" cy="12" r="11" fill="#e8761d" />
+      {/* great-circle seams */}
       <path
-        d="M12 1v22M1 12h22M4.2 4.2l15.6 15.6M19.8 4.2 4.2 19.8"
-        stroke="rgba(120, 46, 4, 0.55)"
-        strokeWidth="1.4"
-        strokeLinecap="round"
+        d="M12 1.5v21M1.5 12h21"
+        stroke="rgba(96, 40, 3, 0.5)"
+        strokeWidth="1.2"
+      />
+      <path
+        d="M4.8 4.8l14.4 14.4M19.2 4.8 4.8 19.2"
+        stroke="rgba(96, 40, 3, 0.28)"
+        strokeWidth="1.2"
       />
     </svg>
   );
@@ -55,10 +64,10 @@ export default function BasketballWord() {
   useEffect(() => clearSafety, [clearSafety]);
 
   if (reduceMotion) {
-    // Static: the ball simply appears at rest, then leaves.
+    // Static: the ball simply appears at rest beside the word, then leaves.
     return (
       <TactileWord label="basketball" onActivate={activate}>
-        <span className="relative inline-block">
+        <span className="word-anchor">
           basketball
           {active && (
             <motion.span
@@ -82,25 +91,32 @@ export default function BasketballWord() {
 
   return (
     <TactileWord label="basketball" onActivate={activate}>
-      <span className="relative inline-block">
+      <span className="word-anchor">
         basketball
         {active && (
           <motion.span
-            key={run}
+            key={`ball-${run}`}
             aria-hidden="true"
             className="word-ball"
-            initial={{ y: -15, opacity: 0, scaleY: 1, scaleX: 1, rotate: 0 }}
+            initial={{ y: -5, opacity: 0, scaleY: 1, scaleX: 1, rotate: 0 }}
             animate={{
-              y: [-15, 0, -8, -2, 0],
-              scaleY: [1, 0.6, 1, 0.84, 1],
-              scaleX: [1, 1.26, 1, 1.08, 1],
-              rotate: [0, -42, -14, -6, 0],
-              opacity: [0, 1, 1, 1, 0],
+              y: [-5, -5, 0, -8, 0, -1, -1],
+              scaleY: [1, 1, 0.61, 1, 0.85, 1, 1],
+              scaleX: [1, 1, 1.22, 1, 1.1, 1, 1],
+              rotate: [-40, -40, -180, -208, -216, -218, -218],
+              opacity: [0, 1, 1, 1, 1, 1, 0],
             }}
             transition={{
-              times: [0, 0.34, 0.54, 0.72, 1],
-              duration: 0.78,
-              ease: [FALL, RISE, FALL, RISE],
+              times: [0, 0.06, 0.3, 0.47, 0.62, 0.76, 1],
+              duration: 0.74,
+              ease: [
+                "linear",
+                FALL,
+                RISE,
+                FALL,
+                [0.3, 0, 0.2, 1],
+                "easeInOut",
+              ],
             }}
             onAnimationComplete={() => setActive(false)}
           >

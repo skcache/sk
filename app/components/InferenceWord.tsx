@@ -4,16 +4,26 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import TactileWord from "./TactileWord";
 
-const SEQUENCE_MS = 850;
+const SEQUENCE_MS = 760;
+
+// The word is carved into four register cells. The overlay renders the
+// same glyphs line-for-line over the in-flow text, which is fully
+// hidden while the carriage runs, so only one crisp text layer exists
+// in any frame. All geometry sits inside the word's own box.
+const SEGMENTS = ["inf", "er", "en", "ce"];
+
+// Pop times track the reader beam crossing each register center.
+const SEG_DELAYS = [0.07, 0.12, 0.17, 0.22];
 
 /**
- * Signature object: "inference" briefly becomes a tiny inference machine.
+ * Object: "inference" briefly becomes a tiny computation carriage.
  *
- * press -> word compresses (TactileWord). On release the word dims and
- * tightens, a narrow high-energy scan crosses left to right, the
- * characters resolve back to sharp full-contrast text behind the scan,
- * a tiny result pulse appears at the final edge, everything snaps back.
- * All of it is bounded to the word's own box: zero layout shift.
+ * Press -> the word is consumed into the machine (base text hides in
+ * two frames), a hairline chassis frames the box from the inside, a
+ * hard-edged reader beam sweeps left to right on a linear track, each
+ * register chunk resolves to full contrast as the beam's leading edge
+ * passes, a square result cell blips at the final edge, then the word
+ * is released back to plain text. Zero layout shift, zero ghosting.
  */
 export default function InferenceWord() {
   const reduceMotion = useReducedMotion();
@@ -41,7 +51,7 @@ export default function InferenceWord() {
   useEffect(() => clearSafety, [clearSafety]);
 
   if (reduceMotion) {
-    // Static state change: instant highlight, no moving geometry.
+    // Static state change: instant strong-blue highlight, no moving parts.
     return (
       <TactileWord label="inference" onActivate={activate}>
         <motion.span
@@ -58,22 +68,22 @@ export default function InferenceWord() {
   return (
     <TactileWord label="inference" onActivate={activate}>
       <motion.span
-        className="word-box"
-        animate={active ? { scaleX: 0.985 } : { scaleX: 1 }}
+        className="word-machine"
+        animate={active ? { scaleX: 0.991 } : { scaleX: 1 }}
         transition={
           active
-            ? { duration: 0.15, ease: "easeOut" }
-            : { duration: 0.2, delay: 0.55, ease: "easeOut" }
+            ? { duration: 0.12, ease: "easeOut" }
+            : { duration: 0.18, delay: 0.5, ease: "easeOut" }
         }
       >
-        {/* base layer: dims while processing */}
+        {/* in-flow base text: fully hidden while the carriage runs */}
         <motion.span
           className="word-text"
-          animate={
-            active ? { color: "rgba(38, 34, 28, 0.45)" } : { color: "#26221c" }
-          }
+          animate={active ? { opacity: 0 } : { opacity: 1 }}
           transition={
-            active ? { duration: 0.12, ease: "easeOut" } : { duration: 0.3 }
+            active
+              ? { duration: 0.03, ease: "easeOut" }
+              : { duration: 0.15, ease: "easeOut" }
           }
         >
           inference
@@ -81,43 +91,65 @@ export default function InferenceWord() {
 
         {active && (
           <>
-            {/* resolve layer: characters return to sharp, left to right */}
+            {/* hairline chassis frames the machine from inside the box */}
             <motion.span
-              key={`resolve-${run}`}
-              className="word-resolve"
+              key={`chassis-${run}`}
+              className="word-chassis"
               aria-hidden="true"
-              initial={{ width: "0%" }}
-              animate={{ width: "100%" }}
-              transition={{ duration: 0.34, delay: 0.16, ease: [0.45, 0, 0.25, 1] }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.05 }}
+            />
+
+            {/* clipped stage: beam below, registers above */}
+            <motion.span
+              key={`stage-${run}`}
+              className="word-stage"
+              aria-hidden="true"
             >
-              inference
+              {/* hard-edged reader beam: flat cell, crisp leading edge */}
+              <motion.span
+                className="word-beam"
+                initial={{ x: "-115%" }}
+                animate={{ x: "315%" }}
+                transition={{ duration: 0.3, delay: 0.035, ease: "linear" }}
+              />
+
+              {/* register cells resolving left to right */}
+              <motion.span className="word-segs">
+                {SEGMENTS.map((seg, i) => (
+                  <motion.span
+                    key={`${seg}-${i}`}
+                    className="word-seg"
+                    initial={{ opacity: 0, scale: 0.97 }}
+                    animate={{ opacity: 1, scale: [0.97, 1.02, 1] }}
+                    transition={{
+                      duration: 0.1,
+                      delay: SEG_DELAYS[i],
+                      times: [0, 0.55, 1],
+                      ease: "easeOut",
+                    }}
+                  >
+                    {seg}
+                  </motion.span>
+                ))}
+              </motion.span>
+
+              {/* square result cell blips at the final edge */}
+              <motion.span
+                key={`result-${run}`}
+                className="word-result"
+                initial={{ opacity: 0, scale: 0.4 }}
+                animate={{ opacity: [0, 1, 1, 0], scale: [0.4, 1.2, 1, 0.3] }}
+                transition={{
+                  times: [0, 0.15, 0.7, 1],
+                  duration: 0.22,
+                  delay: 0.4,
+                  ease: "easeOut",
+                }}
+                onAnimationComplete={() => setActive(false)}
+              />
             </motion.span>
-
-            {/* scan bar: high-energy pass, clipped to the word box */}
-            <motion.span
-              key={`scan-${run}`}
-              className="word-scan"
-              aria-hidden="true"
-              initial={{ x: "-140%" }}
-              animate={{ x: "260%" }}
-              transition={{ duration: 0.42, delay: 0.1, ease: [0.45, 0, 0.25, 1] }}
-            />
-
-            {/* result pulse at the final edge */}
-            <motion.span
-              key={`dot-${run}`}
-              className="word-result-dot"
-              aria-hidden="true"
-              initial={{ opacity: 0, scale: 0.4 }}
-              animate={{ opacity: [0, 1, 1, 0], scale: [0.4, 1, 1, 0.6] }}
-              transition={{
-                times: [0, 0.12, 0.8, 1],
-                duration: 0.3,
-                delay: 0.52,
-                ease: "easeOut",
-              }}
-              onAnimationComplete={() => setActive(false)}
-            />
           </>
         )}
       </motion.span>

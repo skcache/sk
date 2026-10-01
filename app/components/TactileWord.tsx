@@ -8,8 +8,10 @@ import { motion, useReducedMotion } from "motion/react";
  * Owns: semantic button behavior, instant press compression, spring
  * return, keyboard activation, focus, tap-highlight removal, and
  * reduced-motion handling for the PRESS itself (no movement when
- * reduced). Interaction choreography lives in the caller, which also
- * owns its run/retrigger state.
+ * reduced). The press is a pure vertical squash anchored to the
+ * baseline (transform-origin: left bottom, set in CSS): the word
+ * compresses downward like a key press and never floats or shrinks
+ * horizontally. Interaction choreography lives in the caller.
  */
 export default function TactileWord({
   label,
@@ -29,9 +31,8 @@ export default function TactileWord({
       type="button"
       aria-label={label}
       onClick={onActivate}
-      whileTap={reduceMotion ? undefined : { scale: 0.98 }}
-      transition={{ type: "spring", stiffness: 800, damping: 42, mass: 0.45 }}
-      style={{ transformOrigin: "0% 100%" }}
+      whileTap={reduceMotion ? undefined : { scaleY: 0.96 }}
+      transition={{ type: "spring", stiffness: 900, damping: 46, mass: 0.4 }}
       className={`word-button ${className}`}
     >
       {children}

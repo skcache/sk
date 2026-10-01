@@ -170,8 +170,7 @@ export default function Home() {
                 President,{" "}
                 <ColorFlashWord
                   label="Google Developer Groups (GDG)"
-                  colors={GOOGLE_COLORS}
-                  reducedColor={GOOGLE_COLORS[0]}
+                  perLetterColors={GOOGLE_COLORS}
                 />{" "}
                 UC San Diego
               </span>
@@ -190,8 +189,7 @@ export default function Home() {
                 AI Research Intern @{" "}
                 <ColorFlashWord
                   label="Keywords Studios"
-                  colors={[KEYWORDS_BLUE]}
-                  reducedColor={KEYWORDS_BLUE}
+                  solidColor={KEYWORDS_BLUE}
                 />
               </span>
             </li>

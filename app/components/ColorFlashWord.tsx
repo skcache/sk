@@ -1,88 +1,74 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import TactileWord from "./TactileWord";
 
-const INK = "#26221c";
-const HOLD_MS = 900;
-
 /**
- * A quiet list-item easter egg: the text flashes through a brand palette
- * on tap/click, then settles back to ink. Used for exactly two entries
- * (Google colors on GDG, Keywords Studios brand blue). Reduced motion
- * gets a static color state instead of the travel.
+ * One-shot easter egg for list items. Clicking/tapping activates the
+ * state once and it STAYS (persistent until reload):
+ *
+ * - perLetterColors: each letter is painted with the palette, cycling
+ *   per letter index (Google-logo style: "Google Developer Groups" ->
+ *   blue/red/yellow/green per letter).
+ * - solidColor: the whole label is painted one color (Keywords
+ *   Studios -> their brand blue #0042FF).
+ *
+ * Second clicks are inert; after activation the control becomes a plain
+ * span (no longer interactive). Reduced motion: colors apply instantly
+ * without the stagger.
  */
 export default function ColorFlashWord({
   label,
-  colors,
-  reducedColor,
+  perLetterColors,
+  solidColor,
 }: {
   label: string;
-  colors: string[];
-  reducedColor: string;
+  perLetterColors?: string[];
+  solidColor?: string;
 }) {
   const reduceMotion = useReducedMotion();
-  const [run, setRun] = useState(0);
-  const [active, setActive] = useState(false);
-  const safety = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [on, setOn] = useState(false);
 
-  const clearSafety = useCallback(() => {
-    if (safety.current) {
-      clearTimeout(safety.current);
-      safety.current = null;
-    }
-  }, []);
+  if (!on) {
+    return (
+      <TactileWord label={label} onActivate={() => setOn(true)}>
+        {label}
+      </TactileWord>
+    );
+  }
 
-  const activate = useCallback(() => {
-    clearSafety();
-    setActive(true);
-    setRun((r) => r + 1);
-    safety.current = setTimeout(() => {
-      setActive(false);
-      safety.current = null;
-    }, HOLD_MS + 350);
-  }, [clearSafety]);
-
-  useEffect(() => clearSafety, [clearSafety]);
-
-  const cycle = colors.length > 1;
+  // Active: paint and stay.
+  if (perLetterColors && perLetterColors.length > 0) {
+    return (
+      <span aria-label={label}>
+        {[...label].map((ch, i) => (
+          <motion.span
+            key={i}
+            aria-hidden={ch === " "}
+            style={{ color: perLetterColors[i % perLetterColors.length] }}
+            initial={reduceMotion ? { opacity: 1 } : { opacity: 0.35 }}
+            animate={{ opacity: 1 }}
+            transition={
+              reduceMotion
+                ? { duration: 0.01 }
+                : { duration: 0.18, delay: i * 0.012, ease: "easeOut" }
+            }
+          >
+            {ch}
+          </motion.span>
+        ))}
+      </span>
+    );
+  }
 
   return (
-    <TactileWord label={label} onActivate={activate}>
-      <motion.span
-        key={run}
-        animate={
-          !active
-            ? { color: INK }
-            : reduceMotion
-              ? { color: reducedColor }
-              : cycle
-                ? { color: [...colors, INK] }
-                : { color: [INK, colors[0], colors[0], INK] }
-        }
-        transition={
-          reduceMotion
-            ? { duration: 0.01 }
-            : cycle
-              ? {
-                  times: Array.from(
-                    { length: colors.length + 1 },
-                    (_, i) => i / colors.length
-                  ),
-                  duration: HOLD_MS / 1000,
-                  ease: "easeInOut",
-                }
-              : {
-                  times: [0, 0.18, 0.72, 1],
-                  duration: HOLD_MS / 1000,
-                  ease: "easeInOut",
-                }
-        }
-        onAnimationComplete={() => setActive(false)}
-      >
-        {label}
-      </motion.span>
-    </TactileWord>
+    <motion.span
+      aria-label={label}
+      animate={{ color: solidColor ?? "#26221c" }}
+      transition={reduceMotion ? { duration: 0.01 } : { duration: 0.2, ease: "easeOut" }}
+    >
+      {label}
+    </motion.span>
   );
 }

@@ -4,28 +4,59 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import TactileWord from "./TactileWord";
 
-const SEQUENCE_MS = 680;
+const SEQUENCE_MS = 820;
+
+const INK = "#26221c";
+const PAPER = "#f7f5ef";
+const NAVY = "#182b49";
+const GOLD = "#c9a227";
 
 /**
- * Object: "UC San Diego" briefly becomes a miniature, deliberately
- * composed identity treatment - a navy plaque assembles behind the
- * phrase, the type flips to paper, a gold rule enters from the left, a
- * tiny geometric trident pops at the end, then everything collapses
- * exactly back into ordinary text. No rainbow cycling, no logo misuse.
+ * Object: "UC San Diego" briefly becomes a die-struck name badge.
+ *
+ * A navy plaque slams in behind the phrase (one-frame stamp overshoot),
+ * the type flips to paper, a gold rule draws along the bottom edge
+ * with scaleX, a tiny geometric trident rises from the rule in three
+ * quick strokes, holds like struck metal, then collapses cleanly back
+ * to plain text. The plaque stays flush to the word box: it never
+ * touches the period that follows the phrase.
  */
 function Trident() {
+  const track = {
+    duration: 0.78,
+    ease: "linear" as const,
+    times: [0, 0.2, 0.9, 1],
+  };
   return (
     <svg
-      viewBox="0 0 24 24"
-      className="h-3 w-3"
+      viewBox="0 0 14 14"
+      className="block h-[9px] w-[9px]"
       fill="none"
       aria-hidden="true"
     >
-      <path
-        d="M12 21V12M5.5 12h13M7.5 12V6.5M12 12V4.5M16.5 12V6.5"
-        stroke="#ffcd00"
-        strokeWidth="1.9"
-        strokeLinecap="round"
+      <motion.path
+        d="M7 13.5V5.5"
+        stroke={GOLD}
+        strokeWidth={1.4}
+        initial={{ pathLength: 0, opacity: 0 }}
+        animate={{ pathLength: [0, 1, 1, 1], opacity: [0, 1, 1, 0] }}
+        transition={{ ...track, delay: 0.16 }}
+      />
+      <motion.path
+        d="M1.5 6h11"
+        stroke={GOLD}
+        strokeWidth={1.4}
+        initial={{ pathLength: 0, opacity: 0 }}
+        animate={{ pathLength: [0, 1, 1, 1], opacity: [0, 1, 1, 0] }}
+        transition={{ ...track, delay: 0.23 }}
+      />
+      <motion.path
+        d="M4 6V2M10 6V2"
+        stroke={GOLD}
+        strokeWidth={1.4}
+        initial={{ pathLength: 0, opacity: 0 }}
+        animate={{ pathLength: [0, 1, 1, 1], opacity: [0, 1, 1, 0] }}
+        transition={{ ...track, delay: 0.3 }}
       />
     </svg>
   );
@@ -57,14 +88,14 @@ export default function UCSDWord() {
   useEffect(() => clearSafety, [clearSafety]);
 
   if (reduceMotion) {
-    // Static: instant navy type + gold rule, no assembly motion.
+    // Static: instant navy type with a gold rule, no assembly motion.
     return (
       <TactileWord label="UC San Diego" onActivate={activate} className="whitespace-nowrap">
-        <span className="relative inline-block">
+        <span className="word-anchor">
           <motion.span
             key={run}
-            className="relative z-10"
-            animate={active ? { color: "#182b49" } : { color: "#26221c" }}
+            className="badge-type"
+            animate={active ? { color: NAVY } : { color: INK }}
             transition={{ duration: 0.01 }}
           >
             UC San Diego
@@ -73,7 +104,7 @@ export default function UCSDWord() {
             <motion.span
               key={`rule-${run}`}
               aria-hidden="true"
-              className="absolute -bottom-0.5 left-0 h-[2px] w-full bg-[#c69214]"
+              className="badge-rule"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.01 }}
@@ -90,22 +121,16 @@ export default function UCSDWord() {
       onActivate={activate}
       className="whitespace-nowrap"
     >
-      <span className="relative inline-block whitespace-nowrap">
-        {/* ordinary text on top of the plaque layer */}
+      <span className="word-anchor">
+        {/* in-flow phrase; color flips to paper on the plaque */}
         <motion.span
-          className="relative z-10"
+          className="badge-type"
           animate={
-            active
-              ? { color: ["#26221c", "#f7f5ef", "#f7f5ef", "#26221c"] }
-              : { color: "#26221c" }
+            active ? { color: [INK, PAPER, PAPER, INK] } : { color: INK }
           }
           transition={
             active
-              ? {
-                  times: [0, 0.18, 0.72, 1],
-                  duration: 0.62,
-                  ease: "easeOut",
-                }
+              ? { times: [0, 0.06, 0.87, 1], duration: 0.78, ease: "easeOut" }
               : { duration: 0.01 }
           }
         >
@@ -114,52 +139,43 @@ export default function UCSDWord() {
 
         {active && (
           <>
-            {/* navy plaque assembles behind the phrase, hugging the word box */}
+            {/* navy plaque: die stamp with a one-frame overshoot */}
             <motion.span
               key={`plaque-${run}`}
+              className="badge-plaque"
               aria-hidden="true"
-              className="absolute -inset-y-[2px] inset-x-0 z-0 rounded-[3px] bg-[#182b49]"
-              initial={{ scale: 0.94, opacity: 0 }}
+              initial={{ opacity: 0, scale: 0.97 }}
               animate={{
-                scale: [0.94, 1, 1, 0.96],
-                opacity: [0, 1, 1, 0],
+                opacity: [0, 1, 1, 1, 1, 0],
+                scale: [0.97, 1.012, 1, 1, 1, 0.988],
               }}
               transition={{
-                times: [0, 0.18, 0.72, 1],
-                duration: 0.62,
+                times: [0, 0.015, 0.04, 0.87, 0.94, 1],
+                duration: 0.78,
                 ease: "easeOut",
               }}
+              onAnimationComplete={() => setActive(false)}
             />
-            {/* gold rule enters from the left */}
+
+            {/* gold rule draws with scaleX from the left */}
             <motion.span
               key={`rule-${run}`}
+              className="badge-rule"
               aria-hidden="true"
-              className="absolute bottom-[1px] left-0 z-10 h-[2px] w-[70%] rounded-full bg-[#c69214]"
-              initial={{ x: -14, opacity: 0 }}
-              animate={{ x: 0, opacity: [0, 1, 1, 0] }}
+              initial={{ scaleX: 0, opacity: 0 }}
+              animate={{ scaleX: [0, 1, 1, 1], opacity: [0, 1, 1, 0] }}
               transition={{
-                times: [0, 0.2, 0.72, 1],
-                duration: 0.56,
-                delay: 0.08,
+                times: [0, 0.25, 0.87, 1],
+                duration: 0.78,
+                delay: 0.05,
                 ease: "easeOut",
               }}
             />
-            {/* tiny trident pops at the right end */}
-            <motion.span
-              key={`tri-${run}`}
-              aria-hidden="true"
-              className="absolute right-0 top-1/2 z-10 -translate-y-1/2"
-              initial={{ scale: 0.4, opacity: 0 }}
-              animate={{ scale: [0.4, 1, 1, 0.8], opacity: [0, 1, 1, 0] }}
-              transition={{
-                times: [0, 0.22, 0.72, 1],
-                duration: 0.55,
-                delay: 0.12,
-                ease: "easeOut",
-              }}
-            >
+
+            {/* trident rises from the rule in three quick strokes */}
+            <span className="badge-trident-wrap" aria-hidden="true">
               <Trident />
-            </motion.span>
+            </span>
           </>
         )}
       </span>

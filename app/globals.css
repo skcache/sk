@@ -78,32 +78,30 @@ body {
   color: inherit;
   font: inherit;
   cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
+  /* the press squash is anchored to the baseline: never floats */
+  transform-origin: left bottom;
 }
 
-/* desktop-only affordance: a faint underline appears on hover */
-@media (hover: hover) {
-  .word-button:hover {
-    text-decoration: underline;
-    text-decoration-color: color-mix(in oklch, var(--color-ink) 35%, transparent);
-    text-decoration-thickness: 1px;
-    text-underline-offset: 3px;
-  }
-}
+/* no underline decorations on interactive words: the tactile press and
+   pointer are the affordance; focus stays on the global outline */
 
-.word-button:focus-visible {
-  text-decoration: underline;
-  text-decoration-thickness: 1px;
-  text-underline-offset: 3px;
-}
-
-/* ---------- inference object ---------- */
-
-.word-box {
+/* shared anchor box: the word's own box, all decoration sits inside it */
+.word-anchor {
   position: relative;
   display: inline-block;
-  overflow: hidden;
-  border-radius: 2px;
+  white-space: nowrap;
+}
+
+/* ---------- inference: computation carriage ---------- */
+
+.word-machine {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+  transform-origin: left center;
 }
 
 .word-text {
@@ -112,62 +110,121 @@ body {
   font: inherit;
 }
 
-.word-resolve {
+/* hairline chassis frames the machine from inside the word box */
+.word-chassis {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: auto;
+  inset: 0;
+  border-radius: 1px;
+  box-shadow: inset 0 0 0 1px rgba(38, 34, 28, 0.18);
+}
+
+/* the stage clips the beam so it never leaves the word box */
+.word-stage {
+  position: absolute;
+  inset: 0;
   overflow: hidden;
-  white-space: nowrap;
 }
 
-.word-scan {
+/* hard-edged reader beam: flat cell between two crisp rules */
+.word-beam {
   position: absolute;
   top: 0;
   bottom: 0;
   left: 0;
-  width: 28%;
-  border-radius: 9999px;
-  background: linear-gradient(
-    90deg,
-    transparent,
-    rgba(0, 98, 155, 0.1),
-    rgba(255, 255, 255, 0.88),
-    rgba(0, 98, 155, 0.1),
-    transparent
-  );
+  width: 30%;
+  background: rgba(38, 34, 28, 0.05);
 }
 
-/* crisp scanner head: the beam's leading edge */
-.word-scan::after {
+.word-beam::before {
   content: "";
   position: absolute;
   top: 0;
   bottom: 0;
-  right: 2px;
+  right: 0;
   width: 2px;
-  border-radius: 9999px;
-  background: rgba(0, 98, 155, 0.55);
+  background: rgba(38, 34, 28, 0.5);
 }
 
-.word-result-dot {
+.word-beam::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 1px;
+  background: rgba(38, 34, 28, 0.22);
+}
+
+/* register cells: same glyphs as the base text, hairline-apart */
+.word-segs {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: inline-flex;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.word-seg {
+  flex: none;
+  font: inherit;
+}
+
+/* square result cell at the final edge */
+.word-result {
   position: absolute;
   top: 50%;
-  right: 1px;
-  width: 4px;
-  height: 4px;
-  margin-top: -2px;
-  border-radius: 9999px;
+  right: 2px;
+  width: 3px;
+  height: 3px;
+  margin-top: -1.5px;
   background: #00629b;
 }
 
-/* ---------- basketball object ---------- */
+/* ---------- uc san diego: die-struck badge ---------- */
+
+.badge-type {
+  position: relative;
+  z-index: 1;
+  display: inline-block;
+}
+
+/* navy plaque behind the phrase, flush to the word box */
+.badge-plaque {
+  position: absolute;
+  inset: -3px 0;
+  z-index: 0;
+  border-radius: 2px;
+  background: #182b49;
+}
+
+/* gold rule, drawn with scaleX from the left edge */
+.badge-rule {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 1px;
+  z-index: 1;
+  height: 1.5px;
+  transform-origin: left center;
+  background: #c9a227;
+}
+
+/* trident rises from the rule in the plaque's bottom band */
+.badge-trident-wrap {
+  position: absolute;
+  right: 2px;
+  bottom: 3px;
+  z-index: 1;
+  line-height: 0;
+}
+
+/* ---------- basketball: mini physics ---------- */
 
 .word-ball {
   position: absolute;
-  right: -6px;
-  bottom: -2px;
+  right: 3px;
+  bottom: 4px;
   width: 12px;
   height: 12px;
   border-radius: 9999px;
