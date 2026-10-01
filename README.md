@@ -28,9 +28,20 @@ npm run build  # production build (static output)
 ## Structure
 
 - `app/page.tsx` - page shell, content constants (experience, projects)
-- `app/components/Intro.tsx` - the interactive intro sentence (only client
-  component: click/tap/keyboard word interactions, reduced-motion aware)
-- `app/globals.css` - tokens + interaction keyframes
+- `app/components/Intro.tsx` - assembles the intro sentence
+- `app/components/TactileWord.tsx` - shared physical base: semantic button,
+  press compression (spring), focus, reduced-motion
+- `app/components/InferenceWord.tsx` - signature object: word becomes a tiny
+  inference machine (dim + tighten, scan pass, characters resolve, result
+  pulse)
+- `app/components/UCSDWord.tsx` - object: mini identity badge (navy plaque,
+  paper type, gold rule, tiny trident)
+- `app/components/BasketballWord.tsx` - object: ball with mass (drop, squash,
+  rebound, settle)
+- `app/globals.css` - tokens + shared interaction CSS
+
+Only the intro island is client JS (`motion/react`); everything else is
+server/static.
 
 ## Deployment
 

@@ -131,7 +131,7 @@ export default function Home() {
               href={social.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="link-underline text-sm text-muted transition-colors hover:text-ink"
+              className="tactile link-underline text-sm text-muted transition-colors hover:text-ink"
             >
               {social.label}
             </a>
@@ -174,9 +174,9 @@ export default function Home() {
             {projects.map((project) => (
               <li
                 key={project.name}
-                className="flex items-center justify-between gap-4 border-b border-hairline py-3.5"
+                className="group flex items-center justify-between gap-4 border-b border-hairline py-3.5 transition-colors duration-200 hover:border-ink/20"
               >
-                <span className="text-[15px]">{project.name}</span>
+                <span className="text-[15px] transition-transform duration-200 ease-out group-hover:translate-x-[2px]">{project.name}</span>
                 <span className="flex items-center gap-1">
                   {project.links.map((link) => (
                     <a
@@ -186,7 +186,7 @@ export default function Home() {
                       rel="noopener noreferrer"
                       aria-label={link.label}
                       title={link.label}
-                      className="grid size-10 place-items-center rounded-md text-muted transition-colors hover:bg-ink/[0.05] hover:text-ink"
+                      className="tactile grid size-10 place-items-center rounded-md text-muted hover:bg-ink/[0.05] hover:text-ink"
                     >
                       {link.kind === "github" ? <GitHubIcon /> : <ExternalIcon />}
                     </a>

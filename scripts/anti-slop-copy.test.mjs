@@ -71,25 +71,50 @@ test("intro copy preserved verbatim", () => {
   }
   // the sentence must end the school name with a period before "I'm mostly into"
   assert.match(intro, /\.\{" "\}I&apos;m mostly into/, "period missing after UC San Diego");
-  // Oxford comma before the final "and design"
-  assert.match(
-    intro,
-    /,\{" "\}\s*and/,
-    "comma missing before 'and design'"
-  );
+  // markets and design are plain text now, with the Oxford comma intact
+  assert.equal(text.includes(", markets, and design"), true, "comma or plain-text list lost");
 });
 
-test("interactive words are semantic buttons", () => {
+test("interaction architecture: three objects, no generic API", () => {
   const intro = read("components/Intro.tsx");
-  for (const word of ["ucsd", "inference", "basketball", "markets", "design"]) {
-    assert.equal(
-      intro.includes(`trigger("${word}")`),
-      true,
-      `interactive word missing: ${word}`
-    );
+  for (const tag of ["<UCSDWord", "<InferenceWord", "<BasketballWord"]) {
+    assert.equal(intro.includes(tag), true, `missing object: ${tag}`);
   }
-  assert.match(intro, /<button/g);
-  assert.equal(intro.includes("type=\"button\""), true);
+  // markets / design / systems must NOT have their own interaction objects
+  for (const tag of ["<MarketsWord", "<DesignWord", "<SystemsWord"]) {
+    assert.equal(intro.includes(tag), false, `stray object present: ${tag}`);
+  }
+  // old generic API is gone
+  const all = files.map(read).join("\n");
+  assert.equal(all.includes("trigger("), false, "old trigger() API must be gone");
+});
+
+test("interactive words are semantic buttons via TactileWord", () => {
+  const tactile = read("components/TactileWord.tsx");
+  assert.match(tactile, /<motion\.button/);
+  assert.equal(tactile.includes("type=\"button\""), true);
+  assert.equal(tactile.includes("aria-label={label}"), true);
+  for (const f of ["InferenceWord.tsx", "UCSDWord.tsx", "BasketballWord.tsx"]) {
+    const src = read(`components/${f}`);
+    assert.equal(src.includes("<TactileWord"), true, `${f} must use TactileWord`);
+  }
+});
+
+test("no stale effect CSS or old keyframes remain", () => {
+  const css = read("globals.css");
+  for (const stale of [
+    "ucsd-flash",
+    "trident-pop",
+    "shimmer",
+    "ball-hop",
+    "sparkline",
+    "box-pop",
+    "word-design",
+    "word-fallback",
+    "word-ucsd-anim",
+  ]) {
+    assert.equal(css.includes(stale), false, `stale CSS present: ${stale}`);
+  }
 });
 
 test("only verified project links are present", () => {

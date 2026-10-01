@@ -29,7 +29,8 @@ body {
   outline-offset: 3px;
 }
 
-/* underline sweep for quiet links (header, footer) */
+/* ---------- quiet links (header, footer) ---------- */
+
 .link-underline {
   position: relative;
 }
@@ -50,6 +51,19 @@ body {
 .link-underline:hover::after,
 .link-underline:focus-visible::after {
   transform: scaleX(1);
+}
+
+/* instant press response for links/icons: tiny compression, fast settle */
+.tactile {
+  transition:
+    transform 130ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    background-color 150ms ease,
+    color 150ms ease;
+  will-change: transform;
+}
+
+.tactile:active {
+  transform: scale(0.97);
 }
 
 /* ---------- interactive words ---------- */
@@ -83,176 +97,82 @@ body {
   text-underline-offset: 3px;
 }
 
-.word-decoration {
-  position: absolute;
-  pointer-events: none;
+/* ---------- inference object ---------- */
+
+.word-box {
+  position: relative;
+  display: inline-block;
+  overflow: hidden;
+  border-radius: 2px;
 }
 
-/* reduced-motion fallback: a quiet, non-moving state change */
-.word-fallback {
-  background: color-mix(in oklch, var(--color-ink) 9%, transparent);
-  border-radius: 3px;
-  transition: background-color 0.3s ease;
+.word-text {
+  display: inline-block;
+  white-space: nowrap;
+  font: inherit;
 }
 
-/* UC San Diego: flash through the official palette + tiny trident nod */
-@keyframes ucsd-flash {
-  0% {
-    color: var(--color-ink);
-  }
-  20% {
-    color: #182b49;
-  }
-  40% {
-    color: #00629b;
-  }
-  60% {
-    color: #c69214;
-  }
-  80% {
-    color: #ffcd00;
-  }
-  100% {
-    color: var(--color-ink);
-  }
-}
-
-.word-ucsd-anim {
-  animation: ucsd-flash 1s ease-in-out;
-}
-
-@keyframes trident-pop {
-  0% {
-    opacity: 0;
-    transform: translateY(3px);
-  }
-  25% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  72% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-2px);
-  }
-}
-
-.word-trident {
-  animation: trident-pop 1s ease-in-out;
-}
-
-/* inference: a single quiet shimmer pass, left to right */
-@keyframes shimmer-pass {
-  0% {
-    transform: translateX(-140%);
-  }
-  100% {
-    transform: translateX(240%);
-  }
-}
-
-.word-shimmer-bar {
+.word-resolve {
   position: absolute;
   top: 0;
   bottom: 0;
   left: 0;
-  width: 45%;
+  right: auto;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.word-scan {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 28%;
   border-radius: 9999px;
   background: linear-gradient(
     90deg,
     transparent,
-    color-mix(in oklch, #00629b 24%, transparent),
+    rgba(0, 98, 155, 0.1),
+    rgba(255, 255, 255, 0.88),
+    rgba(0, 98, 155, 0.1),
     transparent
   );
-  animation: shimmer-pass 0.7s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-/* basketball: one tiny arc and it is gone */
-@keyframes ball-hop {
-  0% {
-    transform: translate(0, 0);
-    opacity: 0;
-  }
-  15% {
-    opacity: 1;
-  }
-  55% {
-    transform: translate(28px, -18px);
-    opacity: 1;
-  }
-  100% {
-    transform: translate(56px, 3px);
-    opacity: 0;
-  }
+/* crisp scanner head: the beam's leading edge */
+.word-scan::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 2px;
+  width: 2px;
+  border-radius: 9999px;
+  background: rgba(0, 98, 155, 0.55);
 }
+
+.word-result-dot {
+  position: absolute;
+  top: 50%;
+  right: 1px;
+  width: 4px;
+  height: 4px;
+  margin-top: -2px;
+  border-radius: 9999px;
+  background: #00629b;
+}
+
+/* ---------- basketball object ---------- */
 
 .word-ball {
-  width: 9px;
-  height: 9px;
+  position: absolute;
+  right: -6px;
+  bottom: -2px;
+  width: 12px;
+  height: 12px;
   border-radius: 9999px;
-  background: #e8761d;
-  animation: ball-hop 0.75s cubic-bezier(0.33, 0.66, 0.55, 0.9);
-}
-
-/* markets: a tiny sparkline draws itself once */
-@keyframes spark-draw {
-  0% {
-    stroke-dashoffset: 64;
-  }
-  72% {
-    stroke-dashoffset: 0;
-  }
-  100% {
-    stroke-dashoffset: 0;
-  }
-}
-
-@keyframes spark-fade {
-  0% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
-.word-sparkline {
-  animation:
-    spark-draw 0.55s ease-out,
-    spark-fade 0.3s ease 0.55s forwards;
-}
-
-/* design: a tiny selection box, like a Figma frame artifact */
-@keyframes box-pop {
-  0% {
-    opacity: 0;
-  }
-  25% {
-    opacity: 1;
-  }
-  72% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-
-.word-design-box {
-  position: absolute;
-  inset: -3px;
-  border: 1px dashed color-mix(in oklch, #0d99ff 80%, transparent);
-  border-radius: 3px;
-  animation: box-pop 1s ease-in-out;
-}
-
-.word-design-tick {
-  position: absolute;
-  width: 5px;
-  height: 5px;
-  background: color-mix(in oklch, #0d99ff 90%, transparent);
+  overflow: hidden;
+  pointer-events: none;
 }
 
 /* Respect reduced motion: collapse all transitions and animation */
