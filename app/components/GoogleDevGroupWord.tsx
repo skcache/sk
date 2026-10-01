@@ -44,19 +44,16 @@ export default function GoogleDevGroupWord() {
             {c === " " ? "\u00A0" : c}
           </motion.span>
         ))}
-        {/* permanently reserved inline slot: the official G stamps
-            inside it, so the sentence never shifts on toggle */}
-        <span className="gdg-reserve" aria-hidden="true">
-          <motion.img
-            key="gdg-mark"
-            src="/gdg-mark.svg"
-            alt=""
-            className="gdg-mark-inline"
-            initial={{ opacity: 0, scale: 0.6 }}
-            animate={on ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.6 }}
-            transition={t}
-          />
-        </span>
+        {/* official GDG mark, inline at ~1em: visible and aligned */}
+        <motion.img
+          key="gdg-mark"
+          src="/gdg-mark.svg"
+          alt=""
+          className="identity-mark"
+          initial={{ opacity: 0, scale: 0.7 }}
+          animate={on ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.7 }}
+          transition={t}
+        />
       </span>
     </TactileWord>
   );

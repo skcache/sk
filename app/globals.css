@@ -79,6 +79,7 @@ body {
   color: inherit;
   font: inherit;
   cursor: pointer;
+  outline: none; /* no white UA focus box on click; styled ring below */
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
@@ -96,6 +97,12 @@ body {
 .word-button:hover,
 .word-button:focus-visible {
   text-decoration-color: rgba(243, 241, 234, 0.72);
+}
+
+/* keyboard-only focus treatment: subtle ring, never a box after a click */
+.word-button:focus-visible {
+  outline: 1px solid rgba(243, 241, 234, 0.5);
+  outline-offset: 3px;
 }
 
 /* inference scopes the affordance to the word itself; the button's own
@@ -207,14 +214,14 @@ body {
   position: absolute;
   right: 3px;
   bottom: 4px;
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 9999px;
   overflow: hidden;
   pointer-events: none;
 }
 
-/* ---------- experience identity slots ---------- */
+/* ---------- experience identity marks ---------- */
 
 .identity-slot {
   position: relative;
@@ -222,45 +229,23 @@ body {
   white-space: nowrap;
 }
 
-/* shared mark treatment: absolute, never participates in layout */
+/* identity marks: real inline elements at ~1em (visible, aligned,
+   one family across Orvia / Google Dev Group / Keywords Studios) */
 .identity-mark {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
+  display: inline-block;
+  height: 0.95em;
+  width: auto;
+  vertical-align: -0.24em;
+  margin-left: 0.24em;
   pointer-events: none;
-  display: block;
 }
 
 .orvia-mark {
-  left: 0;
-  height: 0.72em;
-  width: auto;
-}
-
-/* GDG: zero-width anchor at the phrase's end; the official G stamps
-   raised above it (like a superscript brand mark) so there is never a
-   gap in the sentence and no collision with the comma */
-.gdg-reserve {
-  position: absolute;
-  right: 0;
-  top: -0.62em;
-  width: 0;
-  height: 0;
-}
-
-.gdg-mark-inline {
-  position: absolute;
-  right: 0;
-  top: 0;
-  height: 0.62em;
-  width: auto;
-  pointer-events: none;
+  height: 0.95em;
 }
 
 .keywords-mark {
-  right: -15px;
-  height: 0.8em;
-  width: auto;
+  height: 0.95em;
 }
 
 /* ---------- page reveal (progressive enhancement) ---------- */

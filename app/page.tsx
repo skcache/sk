@@ -99,7 +99,7 @@ export default function Home() {
         data-reveal
         className="mx-auto flex w-full max-w-[42rem] items-center justify-between px-5 py-8 sm:px-6"
       >
-        <span className="text-[15px] font-medium tracking-tight">
+        <span className="text-[17px] font-medium tracking-tight">
           Siddhant Kuwar
         </span>
         <nav aria-label="Profile links" className="flex items-center gap-5 sm:gap-6">
@@ -109,7 +109,7 @@ export default function Home() {
               href={social.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="tactile link-underline text-sm text-muted transition-colors hover:text-ink"
+              className="tactile link-underline text-[15px] text-muted transition-colors hover:text-ink"
             >
               {social.label}
             </a>
@@ -132,12 +132,12 @@ export default function Home() {
         <section data-reveal aria-labelledby="things-done" className="pb-24 sm:pb-28">
           <h2
             id="things-done"
-            className="border-t border-hairline pt-12 text-[15px] font-medium sm:pt-14"
+            className="border-t border-hairline pt-12 text-base font-medium sm:pt-14"
           >
             some things i&apos;ve done
           </h2>
           <ul className="mt-8 space-y-6">
-            <li className="flex gap-3 text-base leading-snug">
+            <li className="flex gap-3 text-lg leading-[1.6]">
               <span aria-hidden="true" className="select-none text-muted">
                 •
               </span>
@@ -146,7 +146,7 @@ export default function Home() {
                 <OrviaWord />
               </span>
             </li>
-            <li className="flex gap-3 text-base leading-snug">
+            <li className="flex gap-3 text-lg leading-[1.6]">
               <span aria-hidden="true" className="select-none text-muted">
                 •
               </span>
@@ -156,13 +156,13 @@ export default function Home() {
                 , UC San Diego
               </span>
             </li>
-            <li className="flex gap-3 text-base leading-snug">
+            <li className="flex gap-3 text-lg leading-[1.6]">
               <span aria-hidden="true" className="select-none text-muted">
                 •
               </span>
               <span>CV undergrad RA at HECD Lab</span>
             </li>
-            <li className="flex gap-3 text-base leading-snug">
+            <li className="flex gap-3 text-lg leading-[1.6]">
               <span aria-hidden="true" className="select-none text-muted">
                 •
               </span>
@@ -177,7 +177,7 @@ export default function Home() {
         <section data-reveal aria-labelledby="things-built" className="pb-20 sm:pb-24">
           <h2
             id="things-built"
-            className="border-t border-hairline pt-12 text-[15px] font-medium sm:pt-14"
+            className="border-t border-hairline pt-12 text-base font-medium sm:pt-14"
           >
             things i&apos;ve built
           </h2>
@@ -188,7 +188,7 @@ export default function Home() {
                 key={project.name}
                 className="group flex items-center justify-between gap-4 py-2"
               >
-                <span className="text-[15px] transition-transform duration-200 ease-out group-hover:translate-x-[2px]">
+                <span className="text-base transition-transform duration-200 ease-out group-hover:translate-x-[2px]">
                   {project.name}
                 </span>
                 <span className="flex shrink-0 items-center gap-2">
@@ -208,10 +208,10 @@ export default function Home() {
                           alt=""
                           width={560}
                           height={560}
-                          className="h-[15px] w-[15px] opacity-80"
+                          className="h-4 w-4 opacity-80"
                         />
                       ) : (
-                        <ExternalLink className="h-[15px] w-[15px]" strokeWidth={1.8} />
+                        <ExternalLink className="h-4 w-4" strokeWidth={1.8} />
                       )}
                     </a>
                   ))}
@@ -226,7 +226,7 @@ export default function Home() {
         data-reveal
         className="mx-auto w-full max-w-[42rem] px-5 pb-16 sm:px-6"
       >
-        <p className="text-sm text-muted">© {year} Siddhant Kuwar</p>
+        <p className="text-[15px] text-muted">© {year} Siddhant Kuwar</p>
       </footer>
     </>
   );

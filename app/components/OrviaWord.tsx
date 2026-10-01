@@ -5,10 +5,10 @@ import { motion, useReducedMotion } from "motion/react";
 import TactileWord from "./TactileWord";
 
 /**
- * Orvia identity toggle: the O in `Orvia` is visually replaced by the
- * official Orvia ring mark (canonical public asset, straight from
- * orviaops.com). Same typographic footprint, zero layout shift.
- * Click again: logo -> O.
+ * Orvia identity toggle. The word stays fully readable; the canonical
+ * Orvia mark (three concentric circles, from orviaops.com's own
+ * apple-touch-icon) stamps in inline after the name at ~1em. Click
+ * again: the mark retreats cleanly.
  */
 export default function OrviaWord() {
   const [on, setOn] = useState(false);
@@ -18,14 +18,8 @@ export default function OrviaWord() {
   return (
     <TactileWord label="Orvia" onActivate={() => setOn((v) => !v)} ariaPressed={on}>
       <span className="identity-slot">
-        {/* O keeps its box; the mark takes its place */}
-        <motion.span animate={{ opacity: on ? 0 : 1 }} transition={t}>
-          O
-        </motion.span>
-        rvia
-        {/* canonical Orvia mark: three concentric circles (outer ring,
-            middle ring, center dot) as shipped in orviaops.com's own
-            apple-touch-icon; inlined so currentColor inherits */}
+        Orvia
+        {/* canonical mark: outer ring, middle ring, filled center dot */}
         <motion.svg
           key="orvia-mark"
           viewBox="0 0 180 180"
@@ -36,20 +30,8 @@ export default function OrviaWord() {
           animate={on ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.7 }}
           transition={t}
         >
-          <circle
-            cx="90"
-            cy="90"
-            r="52"
-            stroke="currentColor"
-            strokeWidth="10"
-          />
-          <circle
-            cx="90"
-            cy="90"
-            r="32"
-            stroke="currentColor"
-            strokeWidth="10"
-          />
+          <circle cx="90" cy="90" r="52" stroke="currentColor" strokeWidth="10" />
+          <circle cx="90" cy="90" r="32" stroke="currentColor" strokeWidth="10" />
           <circle cx="90" cy="90" r="12" fill="currentColor" />
         </motion.svg>
       </span>

@@ -34,13 +34,14 @@ export default function KeywordsWord() {
         >
           Keywords Studios
         </motion.span>
+        {/* official Keywords mark, inline at ~1em: visible and aligned */}
         <motion.img
           key="kw-mark"
           src="/kw-mark.png"
           alt=""
-          className="identity-mark keywords-mark"
-          initial={{ opacity: 0, scale: 0.6, y: 2 }}
-          animate={on ? { opacity: 1, scale: 1, y: 0 } : { opacity: 0, scale: 0.6, y: 2 }}
+          className="identity-mark"
+          initial={{ opacity: 0, scale: 0.7 }}
+          animate={on ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.7 }}
           transition={t}
         />
       </span>
