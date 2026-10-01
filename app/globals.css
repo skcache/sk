@@ -1,0 +1,90 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-hairline: var(--hairline);
+  --color-accent: var(--accent);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+:root {
+  color-scheme: light dark;
+
+  --background: #faf9f6;
+  --foreground: #1c1b19;
+  --ink: #1c1b19;
+  --muted: #6e6b63;
+  --hairline: #e8e5de;
+  --accent: #7f80bd;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #161512;
+    --foreground: #edebe6;
+    --ink: #edebe6;
+    --muted: #a5a197;
+    --hairline: #2b2924;
+    --accent: #a9abe0;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: color-mix(in oklch, var(--accent) 28%, transparent);
+}
+
+/* Visible, consistent focus state for keyboard users */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* Underline sweep for links (header, footer, project names) */
+.link-underline {
+  position: relative;
+  transition: color 0.2s ease;
+}
+
+.link-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.link-underline:hover::after,
+.link-underline:focus-visible::after,
+.project-row:hover .link-underline::after,
+.project-row:focus-visible .link-underline::after {
+  transform: scaleX(1);
+}
+
+/* Respect reduced motion: collapse all transitions and animation */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
