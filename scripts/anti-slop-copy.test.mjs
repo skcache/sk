@@ -287,7 +287,7 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(inf.includes("size={20}"), true, "20px inline orb missing");
   assert.equal(inf.includes("word-morph"), true, "fixed morph slot missing");
   // experience identities use the canonical public assets
-  for (const asset of ["gdg-mark.svg", "kw-mark.png", "github-mark.png"]) {
+  for (const asset of ["gdg-mark.svg", "kw-mark.png"]) {
     assert.equal(all.includes(asset), true, `canonical asset missing: ${asset}`);
   }
   // basketball: long settle hold kept

@@ -34,16 +34,18 @@ export default function KeywordsWord() {
         >
           Keywords Studios
         </motion.span>
-        {/* official Keywords mark, inline at ~1em: visible and aligned */}
-        <motion.img
-          key="kw-mark"
-          src="/kw-mark.png"
-          alt=""
-          className="identity-mark"
-          initial={{ opacity: 0, scale: 0.7 }}
-          animate={on ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.7 }}
-          transition={t}
-        />
+        {/* official Keywords mark: mounted only while active */}
+        {on && (
+          <motion.img
+            key="kw-mark"
+            src="/kw-mark.png"
+            alt=""
+            className="identity-mark"
+            initial={{ opacity: 0, scale: 0.7 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={t}
+          />
+        )}
       </span>
     </TactileWord>
   );

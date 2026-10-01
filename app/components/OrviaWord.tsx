@@ -19,21 +19,24 @@ export default function OrviaWord() {
     <TactileWord label="Orvia" onActivate={() => setOn((v) => !v)} ariaPressed={on}>
       <span className="identity-slot">
         Orvia
-        {/* canonical mark: outer ring, middle ring, filled center dot */}
-        <motion.svg
-          key="orvia-mark"
-          viewBox="0 0 180 180"
-          fill="none"
-          className="identity-mark orvia-mark"
-          aria-hidden="true"
-          initial={{ opacity: 0, scale: 0.7 }}
-          animate={on ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.7 }}
-          transition={t}
-        >
-          <circle cx="90" cy="90" r="52" stroke="currentColor" strokeWidth="10" />
-          <circle cx="90" cy="90" r="32" stroke="currentColor" strokeWidth="10" />
-          <circle cx="90" cy="90" r="12" fill="currentColor" />
-        </motion.svg>
+        {/* canonical mark: outer ring, middle ring, filled center dot;
+            mounted only while active */}
+        {on && (
+          <motion.svg
+            key="orvia-mark"
+            viewBox="0 0 180 180"
+            fill="none"
+            className="identity-mark orvia-mark"
+            aria-hidden="true"
+            initial={{ opacity: 0, scale: 0.7 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={t}
+          >
+            <circle cx="90" cy="90" r="52" stroke="currentColor" strokeWidth="10" />
+            <circle cx="90" cy="90" r="32" stroke="currentColor" strokeWidth="10" />
+            <circle cx="90" cy="90" r="12" fill="currentColor" />
+          </motion.svg>
+        )}
       </span>
     </TactileWord>
   );

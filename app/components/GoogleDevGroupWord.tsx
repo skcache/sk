@@ -44,16 +44,19 @@ export default function GoogleDevGroupWord() {
             {c === " " ? "\u00A0" : c}
           </motion.span>
         ))}
-        {/* official GDG mark, inline at ~1em: visible and aligned */}
-        <motion.img
-          key="gdg-mark"
-          src="/gdg-mark.svg"
-          alt=""
-          className="identity-mark"
-          initial={{ opacity: 0, scale: 0.7 }}
-          animate={on ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.7 }}
-          transition={t}
-        />
+        {/* official GDG mark: mounted only while active, so rest state
+            has no invisible inline hole */}
+        {on && (
+          <motion.img
+            key="gdg-mark"
+            src="/gdg-mark.svg"
+            alt=""
+            className="identity-mark"
+            initial={{ opacity: 0, scale: 0.7 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={t}
+          />
+        )}
       </span>
     </TactileWord>
   );
