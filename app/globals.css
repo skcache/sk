@@ -1,60 +1,37 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-ink: var(--ink);
-  --color-muted: var(--muted);
-  --color-hairline: var(--hairline);
-  --color-accent: var(--accent);
+  --color-paper: #f7f5ef;
+  --color-ink: #26221c;
+  --color-muted: #6f695e;
+  --color-hairline: #e8e3d8;
   --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
 :root {
-  color-scheme: light dark;
-
-  --background: #faf9f6;
-  --foreground: #1c1b19;
-  --ink: #1c1b19;
-  --muted: #6e6b63;
-  --hairline: #e8e5de;
-  --accent: #7f80bd;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #161512;
-    --foreground: #edebe6;
-    --ink: #edebe6;
-    --muted: #a5a197;
-    --hairline: #2b2924;
-    --accent: #a9abe0;
-  }
+  color-scheme: light;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--color-paper);
+  color: var(--color-ink);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
 ::selection {
-  background: color-mix(in oklch, var(--accent) 28%, transparent);
+  background: color-mix(in oklch, var(--color-ink) 14%, transparent);
 }
 
-/* Visible, consistent focus state for keyboard users */
 :focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--color-ink);
   outline-offset: 3px;
 }
 
-/* Underline sweep for links (header, footer, project names) */
+/* underline sweep for quiet links (header, footer) */
 .link-underline {
   position: relative;
-  transition: color 0.2s ease;
 }
 
 .link-underline::after {
@@ -71,10 +48,211 @@ body {
 }
 
 .link-underline:hover::after,
-.link-underline:focus-visible::after,
-.project-row:hover .link-underline::after,
-.project-row:focus-visible .link-underline::after {
+.link-underline:focus-visible::after {
   transform: scaleX(1);
+}
+
+/* ---------- interactive words ---------- */
+
+.word-button {
+  position: relative;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* desktop-only affordance: a faint underline appears on hover */
+@media (hover: hover) {
+  .word-button:hover {
+    text-decoration: underline;
+    text-decoration-color: color-mix(in oklch, var(--color-ink) 35%, transparent);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+}
+
+.word-button:focus-visible {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+.word-decoration {
+  position: absolute;
+  pointer-events: none;
+}
+
+/* reduced-motion fallback: a quiet, non-moving state change */
+.word-fallback {
+  background: color-mix(in oklch, var(--color-ink) 9%, transparent);
+  border-radius: 3px;
+  transition: background-color 0.3s ease;
+}
+
+/* UC San Diego: flash through the official palette + tiny trident nod */
+@keyframes ucsd-flash {
+  0% {
+    color: var(--color-ink);
+  }
+  20% {
+    color: #182b49;
+  }
+  40% {
+    color: #00629b;
+  }
+  60% {
+    color: #c69214;
+  }
+  80% {
+    color: #ffcd00;
+  }
+  100% {
+    color: var(--color-ink);
+  }
+}
+
+.word-ucsd-anim {
+  animation: ucsd-flash 1s ease-in-out;
+}
+
+@keyframes trident-pop {
+  0% {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  25% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  72% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+}
+
+.word-trident {
+  animation: trident-pop 1s ease-in-out;
+}
+
+/* inference: a single quiet shimmer pass, left to right */
+@keyframes shimmer-pass {
+  0% {
+    transform: translateX(-140%);
+  }
+  100% {
+    transform: translateX(240%);
+  }
+}
+
+.word-shimmer-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 45%;
+  border-radius: 9999px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklch, #00629b 24%, transparent),
+    transparent
+  );
+  animation: shimmer-pass 0.7s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* basketball: one tiny arc and it is gone */
+@keyframes ball-hop {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  55% {
+    transform: translate(28px, -18px);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(56px, 3px);
+    opacity: 0;
+  }
+}
+
+.word-ball {
+  width: 9px;
+  height: 9px;
+  border-radius: 9999px;
+  background: #e8761d;
+  animation: ball-hop 0.75s cubic-bezier(0.33, 0.66, 0.55, 0.9);
+}
+
+/* markets: a tiny sparkline draws itself once */
+@keyframes spark-draw {
+  0% {
+    stroke-dashoffset: 64;
+  }
+  72% {
+    stroke-dashoffset: 0;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes spark-fade {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.word-sparkline {
+  animation:
+    spark-draw 0.55s ease-out,
+    spark-fade 0.3s ease 0.55s forwards;
+}
+
+/* design: a tiny selection box, like a Figma frame artifact */
+@keyframes box-pop {
+  0% {
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  72% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.word-design-box {
+  position: absolute;
+  inset: -3px;
+  border: 1px dashed color-mix(in oklch, #0d99ff 80%, transparent);
+  border-radius: 3px;
+  animation: box-pop 1s ease-in-out;
+}
+
+.word-design-tick {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: color-mix(in oklch, #0d99ff 90%, transparent);
 }
 
 /* Respect reduced motion: collapse all transitions and animation */

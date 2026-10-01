@@ -1,6 +1,6 @@
 # Siddhant Kuwar
 
-Personal website. One page, static, no database, no CMS.
+Personal website. One page, text-first, static, no database, no CMS.
 
 ## Stack
 
@@ -20,18 +20,19 @@ npm run dev
 
 ```bash
 npm run lint   # ESLint
+npm test       # anti-slop copy guard (copy, links, resume-absence)
 npx tsc --noEmit   # typecheck
 npm run build  # production build (static output)
 ```
 
-## Content
+## Structure
 
-All page content lives in `app/page.tsx` (constants at the top of the file).
-
-- `Resume` links to `/resume.pdf`; drop a PDF named `resume.pdf` into `public/`.
-- Project links point to their real GitHub/production URLs.
+- `app/page.tsx` - page shell, content constants (experience, projects)
+- `app/components/Intro.tsx` - the interactive intro sentence (only client
+  component: click/tap/keyboard word interactions, reduced-motion aware)
+- `app/globals.css` - tokens + interaction keyframes
 
 ## Deployment
 
-The `main` branch deploys to Vercel at https://skx.si (and the `vercel.app`
-preview URL). No special config needed; the build is fully static.
+`main` deploys to Vercel; production domain is https://skx.si (DNS lives at
+Hostinger). No special config; the build is fully static.
