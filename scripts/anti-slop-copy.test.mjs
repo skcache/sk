@@ -161,13 +161,13 @@ test("no fabricated links: private repo never linked, no invented URLs", () => {
 
 test("experience list only contains the supplied facts", () => {
   for (const line of [
-    "building",
+    "Building",
     'label="Orvia"',
     "President,",
     'label="GDG"',
     "at UC San Diego",
     "Google Dev Group",
-    "CV undergrad RA at HECD Lab",
+    "Undergraduate Research Assistant at Chiba Lab",
     "AI Research Intern at",
     'label="Keywords Studios"',
   ]) {
@@ -178,6 +178,8 @@ test("experience list only contains the supplied facts", () => {
     "Palantir",
     "Google Developer Groups (GDG)",
     "Undergraduate research, Chiba/HECD Lab, UC San Diego",
+    "CV undergrad RA",
+    "HECD",
     "President at",
     'label="Google Dev Group"',
   ]) {

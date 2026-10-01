@@ -173,7 +173,7 @@ export default function Home() {
                 •
               </span>
               <span>
-                building{" "}
+                Building{" "}
                 <OrviaWord />
               </span>
             </li>
@@ -191,7 +191,7 @@ export default function Home() {
               <span aria-hidden="true" className="select-none text-muted">
                 •
               </span>
-              <span>CV undergrad RA at HECD Lab</span>
+              <span>Undergraduate Research Assistant at Chiba Lab</span>
             </li>
             <li className="flex gap-3 text-lg leading-[1.6]">
               <span aria-hidden="true" className="select-none text-muted">
