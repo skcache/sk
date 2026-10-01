@@ -11,30 +11,49 @@ const KW_BLUE = "#0042ff";
 /**
  * Keywords Studios identity toggle.
  *
- * The K-slot is permanently reserved (fixed width), so nothing shifts.
- * Inactive: the letter K sits in the slot. Active: the official
- * Keywords mark (their own favicon asset, keyed from keywordsstudios.com)
- * fills the same slot at logo scale, and the organization text turns
- * the authentic brand blue. Click again: back to K.
+ * At rest: a completely ordinary K - "Keywords Studios", no box, no
+ * dead space. Active: the official Keywords mark (their own favicon
+ * asset) opens the K slot fluidly - the box springs from letter width
+ * to mark width while the mark fades in, and `eywords Studios`
+ * glides aside. The organization text turns brand blue. Click again:
+ * the space closes back to the K. Give and take.
  */
 export default function KeywordsWord() {
   const [on, setOn] = useState(false);
+  const [closing, setClosing] = useState(false);
   const reduceMotion = useReducedMotion();
   const t = reduceMotion
     ? { duration: 0.01 }
     : { type: "spring" as const, stiffness: 850, damping: 30, mass: 0.4 };
+  const tw = reduceMotion
+    ? { duration: 0.01 }
+    : { type: "spring" as const, stiffness: 320, damping: 32, mass: 0.9 };
 
   return (
     <TactileWord
       label="Keywords Studios"
-      onActivate={() => setOn((v) => !v)}
+      onActivate={() => {
+        if (on) setClosing(true);
+        else setOn(true);
+      }}
       ariaPressed={on}
     >
       <span className="identity-slot">
-        <span className="k-slot" aria-hidden="true">
-          {on ? (
+        {on || closing ? (
+          <motion.span
+            key="k-box"
+            className="k-markbox"
+            initial={{ width: "0.6em" }}
+            animate={{ width: closing ? "0.6em" : "1.15em", opacity: closing ? 0 : 1 }}
+            transition={tw}
+            onAnimationComplete={() => {
+              if (closing) {
+                setClosing(false);
+                setOn(false);
+              }
+            }}
+          >
             <motion.img
-              key="kw-mark"
               src="/kw-mark.png"
               alt=""
               className="k-mark"
@@ -42,10 +61,10 @@ export default function KeywordsWord() {
               animate={{ opacity: 1, scale: 1 }}
               transition={t}
             />
-          ) : (
-            <span className="k-glyph">K</span>
-          )}
-        </span>
+          </motion.span>
+        ) : (
+          <span className="k-letter">K</span>
+        )}
         <motion.span
           animate={{ color: on ? KW_BLUE : INK }}
           transition={reduceMotion ? { duration: 0.01 } : { duration: 0.22, ease: "easeOut" }}

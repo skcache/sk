@@ -282,11 +282,14 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   const ucsd = read("components/UCSDWord.tsx");
   assert.equal(ucsd.includes("onAnimationComplete"), false, "no child unmounts the badge");
   assert.equal(ucsd.includes("badge-plaque"), false, "the plaque box is gone");
-  // shared identity language: fixed reserved slots, zero width animation
-  for (const slot of ["o-slot", "gdg-slot", "k-slot"]) {
-    assert.equal(css.includes(`.${slot}`), true, `slot missing: ${slot}`);
+  // shared identity language: plain letter at rest, live mark box opens
+  for (const cls of ["o-letter", "k-letter", "o-markbox", "gdg-markbox", ".k-markbox", ".o-mark", ".gdg-mark"]) {
+    assert.equal(css.includes(cls), true, `identity class missing: ${cls}`);
   }
-  assert.equal(all.includes("gdg-box"), false, "gdg width animation must be gone");
+  for (const gone of ["o-slot", "gdg-slot", "k-slot"]) {
+    assert.equal(css.includes(gone), false, `empty reserved slot must be gone: ${gone}`);
+  }
+  assert.equal(all.includes(".gdg-box"), false, "gdg width animation must be gone");
   assert.equal(all.includes("orvia-mark-o"), false, "hand-drawn circles must be gone");
   // Orvia: the exact canonical asset from skcache/orvia/public/logo.svg
   assert.equal(all.includes("public/orvia-logo.svg"), true, "canonical orvia asset missing");

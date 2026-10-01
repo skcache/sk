@@ -229,84 +229,80 @@ body {
   white-space: nowrap;
 }
 
-/* ---------------- Orvia O-slot ---------------- */
+/* ---------------- Orvia letter / mark ---------------- */
 
-/* permanently reserved: the O glyph or the logo shares one fixed box,
-   so `rvia` and the rest of the sentence never move. Fixed 1em layout
-   box + visible overflow: the logo paints larger, never layout. */
-.o-slot {
+/* at rest: an ordinary O, zero box, zero gap */
+.o-letter {
+  display: inline;
+}
+
+/* the live box: springs open from letter width to logo width, so
+   `rvia` glides aside. Fixed 1em layout box + visible overflow: the
+   logo paints larger but never grows the line. */
+.o-markbox {
   display: inline-block;
-  width: 0.97em;
   height: 1em;
-  text-align: center;
-  vertical-align: -0.06em;
+  line-height: 1;
   overflow: visible;
-  line-height: 1;
-  margin-right: 0.1em;
+  white-space: nowrap;
+  vertical-align: -0.06em;
 }
 
-.o-glyph {
-  display: inline-block;
-  line-height: 1;
-}
-
-.o-logo {
+.o-mark {
   display: block;
   height: 1.2em;
   width: auto;
-  margin: 0 auto 0 0;
+  margin-top: -0.02em;
+  margin-right: 0.07em;
   pointer-events: none;
 }
 
-/* ---------------- GDG logo slot ---------------- */
+/* ---------------- GDG mark ---------------- */
 
-/* permanently reserved slot before the phrase; the official G stamps
-   inside it. Fixed 1em layout box + visible overflow: the mark paints
-   larger but never contributes to line height. */
-.gdg-slot {
+/* springs open from 0 before the phrase; text glides aside. Fixed 1em
+   layout box + visible overflow: the mark never grows the line. */
+.gdg-markbox {
   display: inline-block;
-  width: 1.2em;
   height: 1em;
-  margin-right: 0.14em;
-  vertical-align: -0.06em;
-  overflow: visible;
   line-height: 1;
+  overflow: visible;
+  white-space: nowrap;
+  vertical-align: -0.06em;
 }
 
-.gdg-mark-slot {
+.gdg-mark {
   display: block;
   height: 0.68em;
   width: auto;
-  margin: 0.14em auto 0 0;
+  margin-top: 0.17em;
+  margin-right: 0.08em;
   pointer-events: none;
 }
 
-/* ---------------- Keywords K-slot ---------------- */
+/* ---------------- Keywords letter / mark ---------------- */
 
-/* permanently reserved: K glyph and official mark share one fixed box.
-   Fixed 1em layout box + visible overflow: the mark is bigger than the
-   box but never changes line height. */
-.k-slot {
-  display: inline-block;
-  width: 1.15em;
-  height: 1em;
-  text-align: center;
-  vertical-align: -0.06em;
-  overflow: visible;
-  line-height: 1;
-  margin-right: 0.1em;
+/* at rest: an ordinary K, zero box, zero gap */
+.k-letter {
+  display: inline;
 }
 
-.k-glyph {
+/* springs open from letter width to mark width. Fixed 1em layout box
+   + visible overflow: the mark never grows the line. */
+.k-markbox {
   display: inline-block;
+  height: 1em;
   line-height: 1;
+  overflow: visible;
+  white-space: nowrap;
+  vertical-align: -0.06em;
 }
 
 .k-mark {
   display: block;
   height: 1.15em;
   width: auto;
-  margin: 0 auto;
+  margin-top: -0.08em;
+  margin-right: 0.08em;
   pointer-events: none;
   border-radius: 3px;
 }
