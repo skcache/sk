@@ -11,15 +11,15 @@ const KW_BLUE = "#0042ff";
 /**
  * Keywords Studios identity toggle.
  *
- * Inactive: neutral text. Active: the name turns the authentic brand
- * blue and the official Keywords mark (their own favicon, first-party
- * asset from keywordsstudios.com) stamps into the small slot at the
- * phrase's end. Click again: clean reverse. No invented chip.
+ * Rest: neutral "Keywords Studios".
+ * Active: the name turns the authentic brand blue and the K is visually
+ * replaced by the official Keywords mark (their own favicon asset,
+ * first-party from keywordsstudios.com). Click again: back to the K.
  */
 export default function KeywordsWord() {
   const [on, setOn] = useState(false);
   const reduceMotion = useReducedMotion();
-  const t = reduceMotion ? { duration: 0.01 } : { duration: 0.2, ease: "easeOut" as const };
+  const t = reduceMotion ? { duration: 0.01 } : { duration: 0.15, ease: "easeOut" as const };
 
   return (
     <TactileWord
@@ -32,20 +32,24 @@ export default function KeywordsWord() {
           animate={{ color: on ? KW_BLUE : INK }}
           transition={reduceMotion ? { duration: 0.01 } : { duration: 0.2, ease: "easeOut" }}
         >
-          Keywords Studios
+          {on ? (
+            /* official mark (white K on brand blue) in the K's slot */
+            <motion.img
+              key="kw-k"
+              src="/kw-mark.png"
+              alt=""
+              className="k-mark"
+              initial={{ opacity: 0, scale: 0.6 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={t}
+            />
+          ) : (
+            <motion.span key="k" initial={false}>
+              K
+            </motion.span>
+          )}
+          eywords Studios
         </motion.span>
-        {/* official Keywords mark: mounted only while active */}
-        {on && (
-          <motion.img
-            key="kw-mark"
-            src="/kw-mark.png"
-            alt=""
-            className="identity-mark"
-            initial={{ opacity: 0, scale: 0.7 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={t}
-          />
-        )}
       </span>
     </TactileWord>
   );

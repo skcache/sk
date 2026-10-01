@@ -244,6 +244,27 @@ body {
   height: 0.95em;
 }
 
+/* O-slot mark: circle at cap height, seated on the baseline */
+.orvia-mark-o {
+  display: inline-block;
+  height: 0.75em;
+  width: auto;
+  vertical-align: -0.12em;
+  margin-right: 0.01em;
+  pointer-events: none;
+}
+
+/* K-slot mark: official K tile at cap height */
+.k-mark {
+  display: inline-block;
+  height: 0.78em;
+  width: auto;
+  vertical-align: -0.14em;
+  margin-right: 0.05em;
+  pointer-events: none;
+  border-radius: 3px;
+}
+
 .keywords-mark {
   height: 0.95em;
 }

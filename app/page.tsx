@@ -182,9 +182,9 @@ export default function Home() {
                 •
               </span>
               <span>
-                President at{" "}
+                President,{" "}
                 <GoogleDevGroupWord />
-                , UC San Diego
+                {" "}at UC San Diego
               </span>
             </li>
             <li className="flex gap-3 text-lg leading-[1.6]">

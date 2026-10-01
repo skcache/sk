@@ -163,9 +163,10 @@ test("experience list only contains the supplied facts", () => {
   for (const line of [
     "building",
     'label="Orvia"',
-    "President at",
-    'label="Google Dev Group"',
-    ", UC San Diego",
+    "President,",
+    'label="GDG"',
+    "at UC San Diego",
+    "Google Dev Group",
     "CV undergrad RA at HECD Lab",
     "AI Research Intern at",
     'label="Keywords Studios"',
@@ -177,8 +178,8 @@ test("experience list only contains the supplied facts", () => {
     "Palantir",
     "Google Developer Groups (GDG)",
     "Undergraduate research, Chiba/HECD Lab, UC San Diego",
-    "President,",
-    'label="GDG"',
+    "President at",
+    'label="Google Dev Group"',
   ]) {
     assert.equal(source.includes(gone), false, `entry should be gone: ${gone}`);
   }
