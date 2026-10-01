@@ -101,7 +101,6 @@ export default function InferenceWord() {
               state="solving"
               size={20}
               theme="dark"
-              speed={1}
               paused={!!reduceMotion}
               style={{ flex: "none", opacity: phase === "resolved" ? 0.65 : 1 }}
             />
