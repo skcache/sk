@@ -17,11 +17,13 @@ export default function TactileWord({
   label,
   onActivate,
   className = "",
+  ariaPressed,
   children,
 }: {
   label: string;
   onActivate: () => void;
   className?: string;
+  ariaPressed?: boolean;
   children?: React.ReactNode;
 }) {
   const reduceMotion = useReducedMotion();
@@ -30,6 +32,7 @@ export default function TactileWord({
     <motion.button
       type="button"
       aria-label={label}
+      aria-pressed={ariaPressed}
       onClick={onActivate}
       whileTap={reduceMotion ? undefined : { scaleY: 0.96 }}
       transition={{ type: "spring", stiffness: 900, damping: 46, mass: 0.4 }}

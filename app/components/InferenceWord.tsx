@@ -6,6 +6,11 @@ import TactileWord from "./TactileWord";
 
 const SEQUENCE_MS = 760;
 
+const INK = "#f3f1ea";
+// after the run completes, the word stays slightly brighter for a
+// moment (interaction -> consequence) before returning to rest.
+const BRIGHT = "#ffffff";
+
 // The word is carved into four register cells. The overlay renders the
 // same glyphs line-for-line over the in-flow text, which is fully
 // hidden while the carriage runs, so only one crisp text layer exists
@@ -29,6 +34,7 @@ export default function InferenceWord() {
   const reduceMotion = useReducedMotion();
   const [run, setRun] = useState(0);
   const [active, setActive] = useState(false);
+  const [trace, setTrace] = useState(false);
   const safety = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const clearSafety = useCallback(() => {
@@ -40,23 +46,25 @@ export default function InferenceWord() {
 
   const activate = useCallback(() => {
     clearSafety();
+    setTrace(false);
     setActive(true);
     setRun((r) => r + 1);
     safety.current = setTimeout(() => {
       setActive(false);
+      setTrace(false);
       safety.current = null;
-    }, SEQUENCE_MS + 250);
+    }, SEQUENCE_MS + 1700);
   }, [clearSafety]);
 
   useEffect(() => clearSafety, [clearSafety]);
 
   if (reduceMotion) {
-    // Static state change: instant strong-blue highlight, no moving parts.
+    // Static state change: instant bright-blue highlight, no moving parts.
     return (
       <TactileWord label="inference" onActivate={activate}>
         <motion.span
           key={run}
-          animate={active ? { color: "#00629b" } : { color: "#26221c" }}
+          animate={active ? { color: "#4fa3d1" } : { color: INK }}
           transition={{ duration: 0.01 }}
         >
           inference
@@ -76,15 +84,17 @@ export default function InferenceWord() {
             : { duration: 0.18, delay: 0.5, ease: "easeOut" }
         }
       >
-        {/* in-flow base text: fully hidden while the carriage runs */}
+        {/* in-flow base text: fully hidden while the carriage runs;
+            after completion it holds a slightly brighter trace */}
         <motion.span
           className="word-text"
-          animate={active ? { opacity: 0 } : { opacity: 1 }}
-          transition={
-            active
+          animate={{ opacity: active ? 0 : 1, color: trace ? BRIGHT : INK }}
+          transition={{
+            opacity: active
               ? { duration: 0.03, ease: "easeOut" }
-              : { duration: 0.15, ease: "easeOut" }
-          }
+              : { duration: 0.15, ease: "easeOut" },
+            color: { duration: 0.25, ease: "easeOut" },
+          }}
         >
           inference
         </motion.span>
@@ -147,7 +157,10 @@ export default function InferenceWord() {
                   delay: 0.4,
                   ease: "easeOut",
                 }}
-                onAnimationComplete={() => setActive(false)}
+                onAnimationComplete={() => {
+                  setActive(false);
+                  setTrace(true);
+                }}
               />
             </motion.span>
           </>

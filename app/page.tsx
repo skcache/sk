@@ -1,10 +1,7 @@
 import Intro from "./components/Intro";
-import ColorFlashWord from "./components/ColorFlashWord";
-
-// Google's official brand palette; Keywords Studios brand blue from
-// their own stylesheet (keywordsstudios.com/assets/styles.css).
-const GOOGLE_COLORS = ["#4285F4", "#EA4335", "#FBBC05", "#34A853"];
-const KEYWORDS_BLUE = "#0042FF";
+import FirstLoadHint from "./components/FirstLoadHint";
+import GDGWord from "./components/GDGWord";
+import KeywordsWord from "./components/KeywordsWord";
 
 const socials = [
   { label: "GitHub", href: "https://github.com/skcache" },
@@ -146,6 +143,7 @@ export default function Home() {
       <main className="mx-auto w-full max-w-[44rem] px-5 sm:px-6">
         <section id="intro" aria-label="Intro" className="pt-10 pb-24 sm:pt-14 sm:pb-28">
           <Intro />
+          <FirstLoadHint />
         </section>
 
         <section aria-labelledby="things-done" className="pb-20 sm:pb-24">
@@ -168,11 +166,8 @@ export default function Home() {
               </span>
               <span>
                 President,{" "}
-                <ColorFlashWord
-                  label="Google Developer Groups (GDG)"
-                  perLetterColors={GOOGLE_COLORS}
-                />{" "}
-                UC San Diego
+                <GDGWord />{" "}
+                at UC San Diego
               </span>
             </li>
             <li className="flex gap-3 text-base leading-snug">
@@ -187,10 +182,7 @@ export default function Home() {
               </span>
               <span>
                 AI Research Intern @{" "}
-                <ColorFlashWord
-                  label="Keywords Studios"
-                  solidColor={KEYWORDS_BLUE}
-                />
+                <KeywordsWord />
               </span>
             </li>
           </ul>
@@ -210,7 +202,7 @@ export default function Home() {
                 className="group flex items-center justify-between gap-4 border-b border-hairline py-3.5 transition-colors duration-200 hover:border-ink/20"
               >
                 <span className="text-[15px] transition-transform duration-200 ease-out group-hover:translate-x-[2px]">{project.name}</span>
-                <span className="flex items-center gap-1">
+                <span className="flex shrink-0 items-center gap-1">
                   {project.links.map((link) => (
                     <a
                       key={link.href}
@@ -219,7 +211,7 @@ export default function Home() {
                       rel="noopener noreferrer"
                       aria-label={link.label}
                       title={link.label}
-                      className="tactile grid size-10 place-items-center rounded-md text-muted hover:bg-ink/[0.05] hover:text-ink"
+                      className="tactile grid size-10 flex-none place-items-center rounded-md text-muted hover:bg-ink/[0.05] hover:text-ink"
                     >
                       {link.kind === "github" ? <GitHubIcon /> : <ExternalIcon />}
                     </a>

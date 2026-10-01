@@ -6,9 +6,8 @@ import TactileWord from "./TactileWord";
 
 const SEQUENCE_MS = 820;
 
-const INK = "#26221c";
-const PAPER = "#f7f5ef";
-const NAVY = "#182b49";
+const INK = "#f3f1ea"; // rest text, light on dark
+const PAPER = "#f3f1ea"; // badge type on the navy plaque: stays light
 const GOLD = "#c9a227";
 
 /**
@@ -88,14 +87,14 @@ export default function UCSDWord() {
   useEffect(() => clearSafety, [clearSafety]);
 
   if (reduceMotion) {
-    // Static: instant navy type with a gold rule, no assembly motion.
+    // Static: instant gold treatment with the rule, no assembly motion.
     return (
       <TactileWord label="UC San Diego" onActivate={activate} className="whitespace-nowrap">
         <span className="word-anchor">
           <motion.span
             key={run}
             className="badge-type"
-            animate={active ? { color: NAVY } : { color: INK }}
+            animate={active ? { color: GOLD } : { color: INK }}
             transition={{ duration: 0.01 }}
           >
             UC San Diego

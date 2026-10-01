@@ -100,14 +100,14 @@ export default function BasketballWord() {
             className="word-ball"
             initial={{ y: -5, opacity: 0, scaleY: 1, scaleX: 1, rotate: 0 }}
             animate={{
-              y: [-5, -5, 0, -8, 0, -1, -1],
-              scaleY: [1, 1, 0.61, 1, 0.85, 1, 1],
-              scaleX: [1, 1, 1.22, 1, 1.1, 1, 1],
-              rotate: [-40, -40, -180, -208, -216, -218, -218],
-              opacity: [0, 1, 1, 1, 1, 1, 0],
+              y: [-5, -5, 0, -8, 0, -1, -1, -1],
+              scaleY: [1, 1, 0.61, 1, 0.85, 1, 1, 1],
+              scaleX: [1, 1, 1.22, 1, 1.1, 1, 1, 1],
+              rotate: [-40, -40, -180, -208, -216, -218, -218, -218],
+              opacity: [0, 1, 1, 1, 1, 1, 1, 0],
             }}
             transition={{
-              times: [0, 0.06, 0.3, 0.47, 0.62, 0.76, 1],
+              times: [0, 0.06, 0.3, 0.47, 0.62, 0.76, 0.88, 1],
               duration: 0.74,
               ease: [
                 "linear",
@@ -115,6 +115,7 @@ export default function BasketballWord() {
                 RISE,
                 FALL,
                 [0.3, 0, 0.2, 1],
+                "easeInOut",
                 "easeInOut",
               ],
             }}

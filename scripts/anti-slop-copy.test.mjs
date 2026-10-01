@@ -161,14 +161,16 @@ test("no fabricated links: private repo never linked, no invented URLs", () => {
 test("experience list only contains the supplied facts", () => {
   for (const line of [
     "building Orvia",
-    'label="Google Developer Groups (GDG)"',
+    "President,",
+    'label="GDG"',
+    "at UC San Diego",
     "Undergraduate research, Chiba/HECD Lab, UC San Diego",
     "AI Research Intern @",
     "Keywords Studios",
   ]) {
     assert.equal(source.includes(line), true, `experience entry missing: ${line}`);
   }
-  for (const gone of ["Oracle REACH", "Palantir"]) {
+  for (const gone of ["Oracle REACH", "Palantir", "Google Developer Groups (GDG)"]) {
     assert.equal(source.includes(gone), false, `entry should be gone: ${gone}`);
   }
 });
@@ -179,7 +181,7 @@ test("easter egg brand colors are pinned", () => {
     "#EA4335",
     "#FBBC05",
     "#34A853",
-    "#0042FF", // Keywords Studios brand blue (their stylesheet)
+    "#0042ff", // Keywords Studios brand blue (their stylesheet)
   ]) {
     assert.equal(
       source.includes(color),
@@ -187,4 +189,13 @@ test("easter egg brand colors are pinned", () => {
       `brand color missing: ${color}`
     );
   }
+});
+
+test("dark mode is committed: no light theme, no scheme switching", () => {
+  const css = read("globals.css");
+  for (const stray of ["#f7f5ef", "#26221c", "#faf9f6", "color-scheme: light"]) {
+    assert.equal(css.includes(stray), false, `light theme leftover: ${stray}`);
+  }
+  assert.equal(css.includes("#0d0f12"), true, "dark background token missing");
+  assert.equal(css.includes("#f3f1ea"), true, "light text token missing");
 });
