@@ -236,12 +236,13 @@ body {
    box + visible overflow: the logo paints larger, never layout. */
 .o-slot {
   display: inline-block;
-  width: 0.95em;
+  width: 0.97em;
   height: 1em;
   text-align: center;
   vertical-align: -0.06em;
   overflow: visible;
   line-height: 1;
+  margin-right: 0.1em;
 }
 
 .o-glyph {
@@ -251,9 +252,9 @@ body {
 
 .o-logo {
   display: block;
-  height: 1.12em;
+  height: 1.2em;
   width: auto;
-  margin: -0.05em auto 0;
+  margin: 0 auto 0 0;
   pointer-events: none;
 }
 
@@ -264,9 +265,9 @@ body {
    larger but never contributes to line height. */
 .gdg-slot {
   display: inline-block;
-  width: 1.92em;
+  width: 1.2em;
   height: 1em;
-  margin-right: 0.13em;
+  margin-right: 0.14em;
   vertical-align: -0.06em;
   overflow: visible;
   line-height: 1;
@@ -274,9 +275,9 @@ body {
 
 .gdg-mark-slot {
   display: block;
-  height: 1.08em;
+  height: 0.68em;
   width: auto;
-  margin: -0.05em auto 0;
+  margin: 0.14em auto 0 0;
   pointer-events: none;
 }
 
@@ -287,12 +288,13 @@ body {
    box but never changes line height. */
 .k-slot {
   display: inline-block;
-  width: 1.1em;
+  width: 1.15em;
   height: 1em;
   text-align: center;
   vertical-align: -0.06em;
   overflow: visible;
   line-height: 1;
+  margin-right: 0.1em;
 }
 
 .k-glyph {
@@ -302,9 +304,9 @@ body {
 
 .k-mark {
   display: block;
-  height: 1.08em;
+  height: 1.15em;
   width: auto;
-  margin: -0.05em auto 0;
+  margin: 0 auto;
   pointer-events: none;
   border-radius: 3px;
 }
