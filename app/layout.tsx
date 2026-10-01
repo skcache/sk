@@ -9,7 +9,7 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Siddhant Kuwar",
+  title: "siddhant",
   description:
     "Hey, I'm Siddhant. Fourth-year CS student at UC San Diego. Into inference, systems, and building software.",
   openGraph: {

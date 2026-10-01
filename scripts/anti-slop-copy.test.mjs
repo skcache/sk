@@ -152,6 +152,7 @@ test("no fabricated links: private repo never linked, no invented URLs", () => {
     "https://plywise-chess.vercel.app",
     "https://github.com/skcache",
     "https://x.com/skcache",
+    "https://www.linkedin.com/in/skuwar",
   ];
   const unexpected = urls.filter((u) => !allowed.includes(u));
   assert.equal(unexpected.length, 0, `unexpected URL(s): ${unexpected.join(", ")}`);

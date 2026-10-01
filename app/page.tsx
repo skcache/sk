@@ -3,6 +3,7 @@ import Intro from "./components/Intro";
 const socials = [
   { label: "GitHub", href: "https://github.com/skcache" },
   { label: "X", href: "https://x.com/skcache" },
+  { label: "LinkedIn", href: "https://www.linkedin.com/in/skuwar" },
 ];
 
 const things = [
