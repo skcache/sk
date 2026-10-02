@@ -245,6 +245,10 @@ test("polish pass: reveal, grain, plaque, affordance, autoplay", () => {
   assert.equal(css.includes("0.4s cubic-bezier"), true, "pass timing missing");
   assert.equal(css.includes(".ucsd-staff"), true, "trident staff build missing");
   assert.equal(css.includes(".ucsd-head"), true, "trident head build missing");
+  assert.equal(css.includes("ucsd-head-part1"), true, "head part 1 missing");
+  assert.equal(css.includes("ucsd-head-part2"), true, "head part 2 missing");
+  assert.equal(css.includes("ucsd-head-part3"), true, "head part 3 missing");
+  assert.equal(css.includes("ucsd-staff-shaft"), true, "staff shaft group missing");
   assert.equal(css.includes("build-staff"), true, "staff build hook missing");
   assert.equal(css.includes("build-head"), true, "head build hook missing");
   assert.equal(css.includes("ucsd-fill-navy"), false, "old fill pass must be gone");

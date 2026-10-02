@@ -300,19 +300,39 @@ body {
   transition-delay: calc(var(--i) * 28ms);
 }
 
-/* the trident BUILD - the staff forms during the NAVY pass, the
-   head during the GOLD pass, each revealed BOTTOM -> UP like the
-   color sweeps (clip rises from the baseline; the part sits hidden
-   below until its pass) */
-.ucsd-trident-fly .ucsd-staff,
-.ucsd-trident-fly .ucsd-head {
+/* the trident BUILD - the STAFF forms during the NAVY pass, the
+   HEAD during the GOLD pass, and each assembles PART BY PART bottom
+   -> up like the color sweeps: the shaft line rises, then the
+   pommel; then the lower blade, the collar+center blade, and the
+   upper blade. Every frame shows a recognizable piece of the
+   weapon, not a clipped smear. */
+.ucsd-trident-fly .ucsd-staff-shaft,
+.ucsd-trident-fly .ucsd-staff-pommel,
+.ucsd-trident-fly .ucsd-head-part1,
+.ucsd-trident-fly .ucsd-head-part2,
+.ucsd-trident-fly .ucsd-head-part3 {
   clip-path: inset(100% 0 0 0); /* hidden below the baseline */
 }
 
-.ucsd-trident-fly.build-staff .ucsd-staff,
-.ucsd-trident-fly.build-head .ucsd-head {
+.ucsd-trident-fly.build-staff .ucsd-staff-shaft,
+.ucsd-trident-fly.build-staff .ucsd-staff-pommel,
+.ucsd-trident-fly.build-head .ucsd-head-part1,
+.ucsd-trident-fly.build-head .ucsd-head-part2,
+.ucsd-trident-fly.build-head .ucsd-head-part3 {
   clip-path: inset(0 0 0 0);
-  transition: clip-path 0.4s cubic-bezier(0.45, 0, 0.55, 1);
+  transition: clip-path 0.3s cubic-bezier(0.45, 0, 0.55, 1);
+}
+
+.ucsd-trident-fly.build-staff .ucsd-staff-pommel {
+  transition-delay: 60ms;
+}
+
+.ucsd-trident-fly.build-head .ucsd-head-part2 {
+  transition-delay: 60ms;
+}
+
+.ucsd-trident-fly.build-head .ucsd-head-part3 {
+  transition-delay: 130ms;
 }
 
 /* the trident throw: built above the word, then shoots right
