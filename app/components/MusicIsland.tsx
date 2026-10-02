@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion } from "motion/react";
 import { ThinkingOrb } from "thinking-orbs";
@@ -114,13 +114,16 @@ export default function MusicIsland({ onDone }: { onDone: () => void }) {
     onDoneRef.current = onDone;
   }, [onDone]);
 
-  const frames = useMemo(buildFrames, []);
-  const [idx, setIdx] = useState(frames.length - 1); // collapsed until the clock runs
+  const frames = useMemo(() => buildFrames(), []);
+  // reduced motion lands on the expanded frame; otherwise start
+  // collapsed and let the clock walk the morph
+  const initialIdx = reduceMotion
+    ? frames.findIndex((f) => f.w === 260)
+    : frames.length - 1;
+  const [idx, setIdx] = useState(initialIdx);
 
   useEffect(() => {
     if (reduceMotion) {
-      // land on the expanded frame instantly, hold, close
-      setIdx(frames.findIndex((f) => f.w === 260));
       const timer = scheduleAnimation(2200, () => onDoneRef.current());
       return () => clearTimeout(timer);
     }
