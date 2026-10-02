@@ -143,6 +143,11 @@ export default function InferenceWord() {
     // edge on every activation
     if (glow) {
       glow.classList.add("sweep-off");
+      // park the killed band at the LEFT edge (the ::after reads
+      // var(--band-pos)) so the restart frame is seamless - the band
+      // appears already entering from the word's start, never parked
+      // mid/off-canvas
+      glow.style.setProperty("--band-pos", "110%");
       void glow.offsetWidth;
       glow.classList.remove("sweep-off");
     }

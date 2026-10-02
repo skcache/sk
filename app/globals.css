@@ -170,7 +170,7 @@ body {
   align-self: center;
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px;
   white-space: nowrap;
   pointer-events: none;
   opacity: 0;
@@ -205,16 +205,19 @@ body {
   );
   background-size: 200% 100%;
   background-repeat: no-repeat;
-  background-position: 170% 0; /* parked off-canvas: reduced-motion
-                                  (animations killed) leaves plain text */
+  /* when the animation is killed (sweep-off restart), park at
+     var(--band-pos) - the component sets it to 110% (left edge) at
+     activation so the band is NEVER stuck mid/off-canvas during the
+     restart frame; reduced-motion leaves it parked off-canvas */
+  background-position: var(--band-pos, 170%) 0;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  /* a short lead-in lets the unit finish its fade-in BEFORE the band
-     arrives, so the glow never appears mid-air; the pause repeats
-     softly between passes (reading as rhythm, not a glitch) */
-  animation: thinking-sweep 1.9s cubic-bezier(0.42, 0, 0.58, 1) infinite;
-  animation-delay: 0.12s;
+  /* the sweep pace matches the orb's working tempo (~1s per pass);
+     no lead-in delay - the band is already moving the frame the
+     unit appears, so the sweep and the crossfade feel like one
+     motion */
+  animation: thinking-sweep 1.0s cubic-bezier(0.42, 0, 0.58, 1) infinite;
   pointer-events: none;
 }
 
@@ -246,7 +249,7 @@ body {
   justify-content: center;
   flex: none;
   overflow: hidden;
-  margin-right: 3px; /* breathing before the following comma */
+  margin-right: 4px; /* breathing before the following comma */
 }
 
 .orb-24 canvas {
@@ -461,24 +464,12 @@ body {
    section. Fixed height at rest (72px mobile / 88px desktop) as
    intentional breathing room - invisible chrome, NEVER resizes for an
    animation. Toys (music island, ball, trident) play inside. */
+/* the idle stage is pure breathing room - NO visible hairline (it
+   reads as a stray underline under the last intro word) */
 .interaction-stage {
   position: relative;
-  height: 26px; /* resting state: a quiet hairline slot, not a bug */
+  height: 26px; /* resting state: invisible breathing room, not a bug */
   transition: height 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-/* resting hairline: the idle stage reads as a designed divider; it
-   fades away while a toy is active */
-.interaction-stage::before {
-  content: "";
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 44px;
-  height: 1px;
-  transform: translate(-50%, -50%);
-  background: rgba(243, 241, 234, 0.14);
-  transition: opacity 0.35s ease;
 }
 
 .interaction-stage.is-active {
