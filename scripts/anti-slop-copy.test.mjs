@@ -295,12 +295,14 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   const orvia = read("components/OrviaWord.tsx");
   assert.equal(orvia.includes("<circle"), false, "no circle approximations");
   assert.equal(orvia.includes('x="14"'), true, "canonical O-ring geometry missing");
-  // inference: thinking-orbs signature interaction
+  // inference: thinking-orbs signature interaction - 5s work, random state
   const inf = read("components/InferenceWord.tsx");
   assert.equal(inf.includes("ThinkingOrb"), true, "thinking orb missing");
-  assert.equal(inf.includes('state="solving"'), true, "solving state missing");
+  assert.equal(inf.includes("state=\"solving\""), true, "solving state missing");
   assert.equal(inf.includes("size={20}"), true, "20px inline orb missing");
   assert.equal(inf.includes("word-morph"), true, "fixed morph slot missing");
+  assert.equal(inf.includes("THINK_MS = 5000"), true, "5s inference hold missing");
+  assert.equal(inf.includes("INFER_ORB_STATES"), true, "randomized orb states missing");
   assert.equal(inf.includes("thinking</span>"), true, "active word is lowercase thinking");
   assert.equal(inf.includes(">Thinking<"), false, "capitalized Thinking must be gone");
   assert.equal(inf.includes('.split("'), false, "per-letter split must be gone");
@@ -331,17 +333,21 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   const music = read("components/MusicIsland.tsx");
   assert.equal(music.includes("setTimeout"), false, "island must not hand-roll its own timer chain");
   assert.equal(music.includes("scheduleAnimation"), true, "island must use the cult UI animation queue");
-  assert.equal(music.includes("useDynamicIslandSize"), true, "island must drive the preset shell");
+  assert.equal(music.includes("morph"), true, "island must drive one continuous morph");
+  assert.equal(music.includes("MUSIC_ORB_STATES"), true, "island must randomize its orb state");
+  assert.equal(music.includes("ThinkingOrb"), true, "island must carry a living orb");
   const stageCode = read("components/InteractionStage.tsx");
   assert.equal(stageCode.includes("active ? 88 : 44"), false, "stage must not expand in space");
   assert.equal(stageCode.includes("AnimatePresence"), true, "stage must keep the swap machinery");
   assert.equal(stageCode.includes("44px"), true, "stage must keep a fixed quiet slot");
   const css = read("globals.css");
   assert.equal(css.includes(".dynamic-island"), true, "island shell CSS missing");
-  assert.equal(css.includes(".dynamic-island-dot"), true, "compact status dot CSS missing");
+  assert.equal(css.includes("backdrop-filter"), true, "liquid glass blur missing");
+  assert.equal(css.includes(".dynamic-island-eq"), true, "equalizer bars CSS missing");
+  assert.equal(css.includes(".dynamic-island-progress"), true, "progress bar CSS missing");
   assert.equal(css.includes(".dynamic-island-title"), true, "island typography CSS missing");
   assert.equal(css.includes("underline dotted"), false, "dotted underline affordance must be gone");
-  for (const stale of [".island-art", ".island-meta", ".island-title", ".island-artist", "word-notch", "word-morph-resolve"]) {
+  for (const stale of [".island-art", ".island-meta", ".island-title", ".island-artist", "word-notch", "word-morph-resolve", "dynamic-island-dot", ".dynamic-island-content", ".dynamic-island-container"]) {
     assert.equal(source.includes(stale), false, `stale class present: ${stale}`);
   }
   const fav = read("config/favorite-song.ts");

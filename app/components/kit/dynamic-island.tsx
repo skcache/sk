@@ -15,7 +15,7 @@ import {
   type ComponentProps,
   type PropsWithChildren,
 } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { motion, useMotionValue } from "motion/react";
 
 export type DynamicIslandSize = {
   width: number;
@@ -40,8 +40,9 @@ const DynamicIslandContext = createContext<DynamicIslandContextValue | null>(nul
 
 export function useDynamicIsland() {
   const ctx = useContext(DynamicIslandContext);
-  if (!ctx) throw new Error("useDynamicIsland must be used within DynamicIslandProvider");
-  return ctx;
+  // a morph-driven shell does not need a provider: default to a zero
+  // size so it renders correctly on its own
+  return ctx ?? { size: DYNAMIC_ISLAND_SIZES.default, setSize: () => {} };
 }
 
 /** The Cult UI animation queue: schedule the next island step. */
@@ -59,24 +60,35 @@ export function DynamicIsland({
   children,
   className = "",
   exit,
+  morphSize = null,
   ...rest
-}: PropsWithChildren<{ className?: string; exit?: ComponentProps<typeof motion.div>["exit"] }> &
+}: PropsWithChildren<{
+  className?: string;
+  exit?: ComponentProps<typeof motion.div>["exit"];
+  /** frame-driven morph: set the shell size exactly per frame (the
+      caller animates the table itself - one clock, fully synced) */
+  morphSize?: DynamicIslandSize | null;
+}> &
   Omit<
     ComponentProps<typeof motion.div>,
-    "children" | "className" | "exit" | "animate" | "initial" | "transition" | "variants"
+    "children" | "className" | "exit" | "animate" | "initial" | "transition" | "variants" | "style"
   >) {
   const { size } = useDynamicIsland();
-  const reduceMotion = useReducedMotion();
+  const mvW = useMotionValue(morphSize?.width ?? size.width);
+  const mvH = useMotionValue(morphSize?.height ?? size.height);
+  const mvR = useMotionValue(morphSize?.borderRadius ?? size.borderRadius);
+
+  useEffect(() => {
+    mvW.set(morphSize?.width ?? size.width);
+    mvH.set(morphSize?.height ?? size.height);
+    mvR.set(morphSize?.borderRadius ?? size.borderRadius);
+  }, [morphSize, mvW, mvH, mvR, size]);
+
   return (
     <motion.div
       className={`dynamic-island ${className}`}
       initial={false}
-      animate={{ width: size.width, height: size.height, borderRadius: size.borderRadius }}
-      transition={
-        reduceMotion
-          ? { duration: 0.01 }
-          : { type: "spring", stiffness: 360, damping: 30, mass: 0.9 }
-      }
+      style={{ width: mvW, height: mvH, borderRadius: mvR }}
       exit={exit}
       {...rest}
     >

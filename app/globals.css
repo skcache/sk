@@ -340,11 +340,12 @@ body {
   height: 44px;
 }
 
-/* music egg: Cult UI Dynamic Island shell. Width/height/border-radius
-   are animated by the kit's preset state machine; the CSS carries the
-   palette, clamps to the viewport, and floats the shell OVER the page
-   (absolute + centered by auto margins, so Motion's width springs
-   never fight a transform). */
+/* music egg: Apple's Dynamic Island playing music, in liquid glass.
+   The shell morphs through keyframed sizes (one continuous animation);
+   this CSS carries the material - translucent gradient surface,
+   backdrop blur + saturation, specular top highlight, soft glow - and
+   floats the shell OVER the page (absolute + centered by auto margins
+   so Motion's width springs never fight a transform). */
 .dynamic-island {
   position: absolute;
   left: 0;
@@ -352,52 +353,113 @@ body {
   top: 0;
   margin: 0 auto;
   z-index: 5;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   overflow: hidden;
   max-width: calc(100vw - 48px);
-  background: var(--color-surface);
-  border: 1px solid var(--color-hairline);
-  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.45);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.1),
+    rgba(255, 255, 255, 0.035) 40%,
+    rgba(14, 17, 22, 0.82)
+  );
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.25),
+    0 18px 40px -12px rgba(0, 0, 0, 0.55),
+    0 0 28px rgba(255, 255, 255, 0.05);
 }
 
-.dynamic-island-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 0 16px;
-  white-space: nowrap;
-  min-width: 0;
-}
-
-/* the compact pill is alive: a quiet status dot */
-.dynamic-island-dot {
-  width: 4px;
-  height: 4px;
-  border-radius: 9999px;
-  background: rgba(243, 241, 234, 0.55);
-  flex: none;
-}
-
-/* content is centered on the shell and fades in during the long state */
-.dynamic-island-content {
+/* specular sheen across the glass */
+.dynamic-island::before {
+  content: "";
   position: absolute;
   inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  min-width: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: radial-gradient(120% 90% at 20% 0%, rgba(255, 255, 255, 0.1), transparent 55%);
 }
 
+/* hoisted artwork: walks between its resting places (centered at
+   compact, left edge at expanded); motion animates left/width/height */
 .dynamic-island-art {
-  width: 34px;
-  height: 34px;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  margin: auto 0;
   border-radius: 8px;
+  overflow: hidden;
   flex: none;
+}
+
+.dynamic-island-art img {
+  display: block;
+  width: 100%;
+  height: 100%;
   object-fit: cover;
+}
+
+/* compactLong layer: equalizer bars + title, sits right of the art */
+.dynamic-island-compact-layer {
+  position: absolute;
+  left: 84px;
+  right: 16px;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  white-space: nowrap;
+}
+
+/* three quiet bars: the 'playing' heartbeat of the compact pill */
+.dynamic-island-eq {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 14px;
+  flex: none;
+}
+
+.dynamic-island-eq i {
+  width: 2px;
+  background: rgba(243, 241, 234, 0.55);
+  border-radius: 1px;
+  animation: eq-bounce 0.9s ease-in-out infinite;
+}
+
+.dynamic-island-eq i:nth-child(2) {
+  animation-delay: 0.18s;
+}
+
+.dynamic-island-eq i:nth-child(3) {
+  animation-delay: 0.36s;
+}
+
+@keyframes eq-bounce {
+  0%,
+  100% {
+    height: 4px;
+  }
+  50% {
+    height: 13px;
+  }
+}
+
+/* expanded layer: orb + title/artist, left of the walking art */
+.dynamic-island-expanded-layer {
+  position: absolute;
+  left: 62px;
+  right: 16px;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  white-space: nowrap;
 }
 
 .dynamic-island-meta {
@@ -423,6 +485,26 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+/* hairline progress: fills across the expanded hold */
+.dynamic-island-progress {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 8px;
+  height: 2px;
+  border-radius: 2px;
+  background: rgba(243, 241, 234, 0.12);
+  overflow: hidden;
+}
+
+.dynamic-island-progress-fill {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  background: rgba(243, 241, 234, 0.55);
+  transform-origin: left;
 }
 
 /* ---------- page reveal (progressive enhancement) ---------- */

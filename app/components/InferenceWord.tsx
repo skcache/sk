@@ -5,7 +5,16 @@ import { motion, useReducedMotion } from "motion/react";
 import { ThinkingOrb } from "thinking-orbs";
 import TactileWord from "./TactileWord";
 
-const THINK_MS = 1100; // the word visibly thinks, then returns
+const THINK_MS = 5000; // the word visibly thinks, then returns
+
+/* reasoning states; one is picked at random per activation so every
+   run feels alive (all render the same 20px preset - measurement
+   stable) */
+const INFER_ORB_STATES = ["solving", "working", "searching", "weaving", "composing", "breathing"] as const;
+type OrbState = (typeof INFER_ORB_STATES)[number];
+
+const pickOrbState = (): OrbState =>
+  INFER_ORB_STATES[Math.floor(Math.random() * INFER_ORB_STATES.length)];
 
 /**
  * Signature interaction: "inference" becomes a tiny thinking process.
@@ -32,6 +41,7 @@ const THINK_MS = 1100; // the word visibly thinks, then returns
 export default function InferenceWord() {
   const reduceMotion = useReducedMotion();
   const [phase, setPhase] = useState<"idle" | "thinking">("idle");
+  const [orbState, setOrbState] = useState<OrbState>("solving");
   const safety = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const [widths, setWidths] = useState<{ idle: number; active: number } | null>(null);
@@ -67,6 +77,7 @@ export default function InferenceWord() {
 
   const activate = useCallback(() => {
     clearSafety();
+    setOrbState(pickOrbState());
     setPhase("thinking");
     safety.current = [
       setTimeout(() => {
@@ -132,8 +143,9 @@ export default function InferenceWord() {
               inference
             </motion.span>
 
-            {/* thinking unit: crossfades in as the cell opens; the orb is
-                progressively revealed by the clip until the unit fits */}
+            {/* thinking unit: crossfades in as the cell opens; the orb
+                is progressively revealed by the clip until the unit fits.
+                its reasoning state is randomized on every activation */}
             <motion.span
               className="word-morph-active"
               initial={false}
@@ -147,7 +159,7 @@ export default function InferenceWord() {
             >
               <span>thinking</span>
               <ThinkingOrb
-                state="solving"
+                state={orbState}
                 size={20}
                 theme="dark"
                 paused={!!reduceMotion}
