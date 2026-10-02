@@ -120,7 +120,7 @@ export default function Home() {
 
       <header
         data-reveal
-        className="mx-auto flex w-full max-w-[42rem] items-center justify-between px-5 py-8 sm:px-6"
+        className="mx-auto flex w-full max-w-[72rem] items-center justify-between px-5 py-8 sm:px-6 lg:px-8"
       >
         <span className="text-[17px] font-medium tracking-tight">
           Siddhant Kuwar
@@ -148,19 +148,19 @@ export default function Home() {
         </nav>
       </header>
 
-      <main className="mx-auto w-full max-w-[42rem] px-5 sm:px-6">
+      <main className="mx-auto w-full max-w-[72rem] px-5 sm:px-6 lg:px-8">
         <PageReveal />
         <section
           id="intro"
           data-reveal
           aria-label="Intro"
-          className="pt-14 pb-32 sm:pt-16 sm:pb-36"
+          className="pt-14 pb-32 sm:pt-16 sm:pb-28 max-w-[48rem]"
         >
           <Intro />
           <IntroAutoplay />
         </section>
 
-        <section data-reveal aria-labelledby="things-done" className="pb-24 sm:pb-28">
+        <section data-reveal aria-labelledby="things-done" className="pb-24 sm:pb-28 max-w-[56rem]">
           <h2
             id="things-done"
             className="border-t border-hairline pt-12 text-base font-medium sm:pt-14"
@@ -205,7 +205,7 @@ export default function Home() {
           </ul>
         </section>
 
-        <section data-reveal aria-labelledby="things-built" className="pb-20 sm:pb-24">
+        <section data-reveal aria-labelledby="things-built" className="pb-20 sm:pb-24 max-w-[56rem]">
           <h2
             id="things-built"
             className="border-t border-hairline pt-12 text-base font-medium sm:pt-14"
@@ -249,7 +249,7 @@ export default function Home() {
 
       <footer
         data-reveal
-        className="mx-auto w-full max-w-[42rem] px-5 pb-16 sm:px-6"
+        className="mx-auto w-full max-w-[72rem] px-5 pb-16 sm:px-6 lg:px-8"
       >
         <p className="text-[15px] text-muted">© {year} Siddhant Kuwar</p>
       </footer>
