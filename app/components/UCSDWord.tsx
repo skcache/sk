@@ -1,26 +1,27 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type AnimationEvent } from "react";
 import { createPortal } from "react-dom";
 import { useReducedMotion } from "motion/react";
 import TactileWord from "./TactileWord";
 
 const WIPE_DELAY = 1100; // after the page reveal settles
-const FLIGHT_MS = 1400; // max throw window (physics exits earlier on small screens)
 
 /**
  * UC San Diego, the V2 way.
  *
- * FIRST LOAD: after the page reveal settles, the phrase gets ONE
- * left-to-right color pass and KEEPS its official coloring: "UC" and
- * "Diego" are UCSD navy blue, "San" is UCSD gold. The pass cascades
- * left-to-right across the three segments (clip reveal). Never
- * repeats. Reduced motion: plain ink.
+ * FIRST LOAD: after the page reveal settles, the phrase gets the
+ * two-pass DOWN->UP color sweep: a NAVY band rises from the baseline
+ * to the top (pass 1), then a GOLD band rises the same way (pass 2)
+ * - the same direction as the trident's own upward throw, so the
+ * click feels like one motion. Then the phrase returns to plain ink.
+ * Never runs under reduced motion.
  *
- * CLICK: a trident SPAWNS at the word, RISES straight up from it,
- * then flies right and OFF THE SCREEN (viewport edge) - it never
- * uses the shared stage. Extra clicks are ignored while one throw
- * is running; every completed throw can fire another.
+ * CLICK: the sweep REPLAYS (reset + rerun) and a trident SPAWNS at
+ * the word, RISES straight up from it, then flies right and OFF THE
+ * SCREEN (viewport edge) - it never uses the shared stage. Extra
+ * clicks are ignored while one throw is running; every completed
+ * throw can fire another.
  */
 function TridentMark({ size = 26 }: { size?: number }) {
   return (
@@ -44,26 +45,23 @@ function TridentMark({ size = 26 }: { size?: number }) {
 
 export default function UCSDWord() {
   const reduceMotion = useReducedMotion();
-  const [painted, setPainted] = useState(false);
+  const [rise, setRise] = useState(false);
   const [flying, setFlying] = useState(false);
   const [flightRun, setFlightRun] = useState(0); // fresh element per throw
   const [origin, setOrigin] = useState<{ x: number; y: number } | null>(null);
   const wordRef = useRef<HTMLSpanElement>(null);
   const doneRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ONE left-to-right color pass; fires reliably on load after the
-  // reveal settles, and EVERY click REPLAYS it (paint reset + rerun)
-  const fadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
+  // The two-pass down->up sweep (navy then gold); fires reliably on
+  // load after the reveal settles, and EVERY click REPLAYS it (reset
+  // class + rerun). The sweep's own end (the gold pass finishing)
+  // clears the class so the phrase returns to plain ink.
   const runPaint = useCallback(() => {
     if (reduceMotion) return;
-    if (fadeTimer.current) clearTimeout(fadeTimer.current);
-    // reset first so the clip/animation restarts even mid-pass
-    setPainted(false);
+    setRise(false); // reset first so the chain restarts even mid-pass
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        setPainted(true);
-        fadeTimer.current = setTimeout(() => setPainted(false), 3050);
+        setRise(true);
       });
     });
   }, [reduceMotion]);
@@ -74,6 +72,12 @@ export default function UCSDWord() {
     return () => clearTimeout(t);
   }, [runPaint]);
 
+  const sweepEnd = useCallback((e: AnimationEvent<HTMLSpanElement>) => {
+    // only the GOLD pass's own end clears the run (the navy pass
+    // ends earlier; ancestor animations bubble animationend too)
+    if (e.animationName === "ucsd-rise-gold") setRise(false);
+  }, []);
+
   const clearFlying = useCallback(() => {
     if (doneRef.current) {
       clearTimeout(doneRef.current);
@@ -83,14 +87,14 @@ export default function UCSDWord() {
   }, []);
 
   const activate = useCallback(() => {
-    runPaint(); // every click replays the color pass
+    runPaint(); // every click replays the two-pass sweep
     if (flying) return; // one throw at a time
     const rect = wordRef.current?.getBoundingClientRect();
     if (!rect) return;
     setOrigin({ x: rect.left + rect.width / 2, y: rect.top - 6 });
     setFlying(true);
     setFlightRun((r) => r + 1);
-    doneRef.current = setTimeout(clearFlying, FLIGHT_MS + 60);
+    doneRef.current = setTimeout(clearFlying, 1460);
   }, [runPaint, flying, clearFlying]);
 
   useEffect(() => clearFlying, [clearFlying]);
@@ -98,15 +102,18 @@ export default function UCSDWord() {
   return (
     <TactileWord label="UC San Diego" onActivate={activate} className="whitespace-nowrap">
       <span className="word-anchor" ref={wordRef}>
-        {/* official coloring during the one-time pass: UC + Diego
-            navy, San gold - segments reveal left->right, hold, then
-            fade back to ink. explicit {" "} gaps keep the words apart
-            (JSX would otherwise eat the spaces between line-break
-            spans) */}
-        <span className={`ucsd-word${painted && !reduceMotion ? " ucsd-painted" : ""}`}>
-          <span className="ucsd-seg ucsd-navy">UC</span>{" "}
-          <span className="ucsd-seg ucsd-gold">San</span>{" "}
-          <span className="ucsd-seg ucsd-navy">Diego</span>
+        {/* two-pass down->up sweep: navy band rises, then gold band
+            rises, then the phrase returns to plain ink. explicit {" "}
+            gaps keep the words apart (JSX would otherwise eat the
+            spaces between line-break spans) */}
+        <span
+          className={`ucsd-word${rise && !reduceMotion ? " ucsd-rise" : ""}`}
+          data-ucsd="UC San Diego"
+          onAnimationEnd={rise ? sweepEnd : undefined}
+        >
+          <span className="ucsd-seg">UC</span>{" "}
+          <span className="ucsd-seg">San</span>{" "}
+          <span className="ucsd-seg">Diego</span>
         </span>
         {flying && origin && (
           <TridentFlight

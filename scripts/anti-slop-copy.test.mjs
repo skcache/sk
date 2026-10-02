@@ -233,13 +233,18 @@ test("polish pass: reveal, grain, plaque, affordance, autoplay", () => {
   assert.equal(css.includes("feTurbulence"), true, "grain turbulence missing");
   assert.equal(css.includes("pointer-events: none"), true, "overlay must not block clicks");
   // UCSD V2: one-time navy->gold paint pass, trident pop + stage throw
-  assert.equal(css.includes(".ucsd-painted"), true, "UCSD paint pass missing");
-  assert.equal(css.includes(".ucsd-navy"), true, "UCSD navy segment missing");
-  assert.equal(css.includes(".ucsd-gold"), true, "UCSD gold segment missing");
+  assert.equal(css.includes(".ucsd-rise"), true, "UCSD two-pass sweep missing");
+  assert.equal(css.includes("ucsd-rise-navy"), true, "navy down->up pass missing");
+  assert.equal(css.includes("ucsd-rise-gold"), true, "gold down->up pass missing");
+  assert.equal(css.includes("#182B49"), true, "UCSD navy missing");
+  assert.equal(css.includes("#C69214"), true, "UCSD gold missing");
+  assert.equal(css.includes(".ucsd-painted"), false, "old painted class must be gone");
+  assert.equal(css.includes(".ucsd-navy"), false, "old navy segment class must be gone");
+  assert.equal(css.includes(".ucsd-gold"), false, "old gold segment class must be gone");
   assert.equal(css.includes("#182B49"), true, "UCSD navy missing");
   assert.equal(css.includes("#C69214"), true, "UCSD gold missing");
   assert.equal(css.includes(".ucsd-trident-fly"), true, "viewport trident flight missing");
-  assert.equal(css.includes("ucsd-seg-fade"), true, "paint must fade back to ink");
+  assert.equal(css.includes("ucsd-seg-fade"), false, "old fade-out animation must be gone");
   assert.equal(css.includes(".stage-ucsd"), false, "stage trident must be gone");
   assert.equal(css.includes(".ucsd-pop"), false, "word pop must be gone");
   assert.equal(css.includes(".identity-slot"), true, "experience identity slots missing");
@@ -293,7 +298,7 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   const ucsd = read("components/UCSDWord.tsx");
   assert.equal(ucsd.includes("onAnimationComplete"), false, "no child unmounts the badge");
   assert.equal(ucsd.includes("badge-plaque"), false, "the plaque box is gone");
-  assert.equal(ucsd.includes("ucsd-painted"), true, "one-time paint pass missing");
+  assert.equal(ucsd.includes("ucsd-rise"), true, "two-pass sweep missing");
   assert.equal(ucsd.includes('{" "}'), true, "explicit word gaps required (UCSanDiego bug)");
   assert.equal(ucsd.includes("ucsd-trident-fly"), true, "trident flight missing");
   assert.equal(ucsd.includes("useStage"), false, "ucsd must NOT use the shared stage anymore");

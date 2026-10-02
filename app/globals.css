@@ -268,53 +268,69 @@ body {
   display: inline-block;
 }
 
-/* one-time left-to-right color pass: segments clip-reveal in
-   sequence into the official coloring (UC + Diego navy, San gold),
-   hold, then fade back to plain ink (ucsd-seg-fade). the SEGMENTS
-   are plain ink at rest - the painted pass ADDS the colors, so when
-   the pass ends the phrase is unambiguously back to white */
-.ucsd-navy {
-  --ucsd-c: #182B49;
+/* the two-pass DOWN->UP sweep (paired with the trident's own
+   upward throw): a clipped-text gradient band overlays the phrase -
+   the NAVY band rises from the bottom edge to the top (pass 1),
+   then the GOLD band rises the same way (pass 2). Base ink at rest,
+   so when the pass ends the phrase is unambiguously back to white. */
+.ucsd-word::after {
+  content: attr(data-ucsd);
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    transparent 30%,
+    #182B49 45%,
+    #182B49 55%,
+    transparent 70%
+  );
+  background-size: 100% 200%;
+  background-repeat: no-repeat;
+  background-position: 0% 170%; /* parked below: reduced motion
+                                   (animations killed) leaves ink */
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  pointer-events: none;
+  white-space: nowrap;
 }
 
-.ucsd-gold {
-  --ucsd-c: #C69214;
-}
-
-.ucsd-painted .ucsd-seg {
-  color: var(--ucsd-c);
-}
-
-.ucsd-painted .ucsd-seg {
+.ucsd-word.ucsd-rise::after {
   animation:
-    ucsd-seg-reveal 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards,
-    ucsd-seg-fade 0.85s linear 2.15s forwards;
+    ucsd-rise-navy 0.85s cubic-bezier(0.45, 0, 0.55, 1) forwards,
+    ucsd-rise-gold 0.85s cubic-bezier(0.45, 0, 0.55, 1) 0.95s forwards;
 }
 
-.ucsd-painted .ucsd-seg:nth-child(2) {
-  animation-delay: 0.35s, 2.15s;
-}
-
-.ucsd-painted .ucsd-seg:nth-child(3) {
-  animation-delay: 0.7s, 2.15s;
-}
-
-@keyframes ucsd-seg-reveal {
-  from {
-    clip-path: inset(0 100% 0 0);
+@keyframes ucsd-rise-navy {
+  0% {
+    background-position: 0% 110%; /* band just below the baseline */
   }
-  to {
-    clip-path: inset(0 0 0 0);
+  100% {
+    background-position: 0% -10%; /* band risen past the top */
   }
 }
 
-/* the one-time pass ends with the phrase fading back to plain ink */
-@keyframes ucsd-seg-fade {
-  from {
-    color: var(--ucsd-c);
+@keyframes ucsd-rise-gold {
+  /* the gold pass: same rise, paint swapped to UCSD gold */
+  0% {
+    background: linear-gradient(
+      180deg,
+      transparent 30%,
+      #C69214 45%,
+      #C69214 55%,
+      transparent 70%
+    );
+    background-position: 0% 110%;
   }
-  to {
-    color: #f3f1ea;
+  100% {
+    background: linear-gradient(
+      180deg,
+      transparent 30%,
+      #C69214 45%,
+      #C69214 55%,
+      transparent 70%
+    );
+    background-position: 0% -10%;
   }
 }
 
