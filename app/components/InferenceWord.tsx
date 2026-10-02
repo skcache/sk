@@ -132,21 +132,37 @@ export default function InferenceWord() {
     if (baseEl) {
       fadeAnims.current.push(
         baseEl.animate([{ opacity: baseFrom }, { opacity: thinking ? 0 : 1 }], {
-          duration: thinking ? 180 : 240,
-          delay: thinking ? 0 : 40,
+          duration: thinking ? 180 : 210,
+          delay: thinking ? 0 : 20,
           easing: "ease-out",
           fill: "both",
         }),
       );
     }
     if (activeEl) {
-      fadeAnims.current.push(
-        activeEl.animate([{ opacity: actFrom }, { opacity: thinking ? 1 : 0 }], {
-          duration: thinking ? 180 : 200,
-          easing: thinking ? "ease-out" : "ease-in",
-          fill: "both",
-        }),
-      );
+      if (thinking) {
+        // OPEN: plain fade in (this reads great - untouched)
+        fadeAnims.current.push(
+          activeEl.animate([{ opacity: actFrom }, { opacity: 1 }], {
+            duration: 180,
+            easing: "ease-out",
+            fill: "both",
+          }),
+        );
+      } else {
+        // CLOSE: the unit SETTLES as it leaves - a slight shrink
+        // (1 -> 0.92) folded into the fade, so the orb doesn't just
+        // flat-dissolve in place while "inference" blends through
+        fadeAnims.current.push(
+          activeEl.animate(
+            [
+              { opacity: actFrom, transform: "scale(1)" },
+              { opacity: 0, transform: "scale(0.92)" },
+            ],
+            { duration: 210, easing: "ease-in", fill: "both" },
+          ),
+        );
+      }
     }
     // NOTE: the wave is NOT touched - the letters carry their own
     // staggered traveling-light animation (native, per-glyph)
