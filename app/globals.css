@@ -240,13 +240,16 @@ body {
   display: inline-block;
 }
 
-/* the DOUBLE PASS, DOWN -> UP, one after another immediately:
+/* the DOUBLE PASS, DOWN -> UP, per letter, back to back with NO gap:
    every letter's glyph fills from its baseline upward with a full
-   NAVY pass (0.45s, 38ms cascade - the living-wave stagger), then
-   the gold pass re-rises from the baseline over the finished navy
-   (the swap happens with the paint parked below the glyphs, so it
-   is invisible - no flash, no two-tone), and each letter ends clean
-   gold. Then the letters melt back to ink, staggered. */
+   NAVY pass (0.4s, 34ms cascade - the living-wave stagger), and the
+   moment that pass completes the GOLD pass starts RIGHT AFTER - the
+   sweep re-arms from the baseline and climbs over the finished navy.
+   The gold pass's own 'ink' above its rising edge is the NAVY color
+   (the letter's current state), so the letter reads navy-then-gold
+   bottom to top with NO white gap and NO stacked layers - one pass,
+   then the next. Each letter ends clean gold, then the paper color
+   washes back over the glyphs (melt). */
 .ucsd-word.ucsd-rise .ucsd-letter {
   color: transparent;
   background-size: 100% 200%;
@@ -259,7 +262,7 @@ body {
     #182B49 58%,
     #182B49 100%
   );
-  background-position: 0% -10%; /* pass parked below the glyphs */
+  background-position: 0% -10%; /* the pass parked below the glyphs */
   transition: background-position 0.4s cubic-bezier(0.45, 0, 0.55, 1);
   transition-delay: calc(var(--i) * 34ms);
 }
@@ -268,14 +271,16 @@ body {
   background-position: 0% 150%; /* NAVY pass risen: full navy */
 }
 
-/* the gold handoff: the gradient swaps to gold with the paint parked
-   below the glyphs and the transition off - an instant, invisible
-   rewind - then ucsd-gold-rise re-arms the transition a frame later
-   and every letter re-rises GOLD from its baseline, staggered */
+/* the gold handoff: the sweep swaps to GOLD with the paint parked
+   below the glyphs and the transition off - the instant rewind is
+   invisible because the letter above the parked edge is the navy it
+   already is (no white flash) - then ucsd-gold-rise re-arms the
+   transition a frame later and the GOLD pass climbs right behind
+   the navy, staggered like it */
 .ucsd-word.ucsd-gold .ucsd-letter {
   background-image: linear-gradient(
     180deg,
-    #f3f1ea 55%,
+    #182B49 55%,
     #C69214 58%,
     #C69214 100%
   );
@@ -290,14 +295,27 @@ body {
 }
 
 .ucsd-word.ucsd-melt .ucsd-letter {
-  /* the gold holds in the glyphs; the paper color washes over it -
-     a gentle fade back to ink, not a snap */
   color: #f3f1ea;
   transition: color 0.32s ease;
   transition-delay: calc(var(--i) * 28ms);
 }
 
-/* the trident throw: materializes above the word, then shoots right
+/* the trident BUILD - the staff forms during the NAVY pass, the
+   head during the GOLD pass, each revealed BOTTOM -> UP like the
+   color sweeps (clip rises from the baseline; the part sits hidden
+   below until its pass) */
+.ucsd-trident-fly .ucsd-staff,
+.ucsd-trident-fly .ucsd-head {
+  clip-path: inset(100% 0 0 0); /* hidden below the baseline */
+}
+
+.ucsd-trident-fly.build-staff .ucsd-staff,
+.ucsd-trident-fly.build-head .ucsd-head {
+  clip-path: inset(0 0 0 0);
+  transition: clip-path 0.4s cubic-bezier(0.45, 0, 0.55, 1);
+}
+
+/* the trident throw: built above the word, then shoots right
    off the VIEWPORT - fixed layer over the page, never the stage */
 .ucsd-trident-wrap {
   position: fixed;
@@ -314,35 +332,6 @@ body {
   color: var(--color-ink);
   will-change: transform;
   pointer-events: none;
-}
-
-/* the creation halo: a brief gold bloom as the trident materializes */
-.ucsd-trident-halo {
-  position: fixed;
-  width: 64px;
-  height: 44px;
-  z-index: 39;
-  pointer-events: none;
-  background: radial-gradient(
-    ellipse at center,
-    rgba(230, 178, 60, 0.28),
-    rgba(230, 178, 60, 0) 70%
-  );
-  animation: trident-bloom 0.45s ease-out forwards;
-}
-
-@keyframes trident-bloom {
-  0% {
-    opacity: 0;
-    transform: scale(0.35);
-  }
-  30% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.35);
-  }
 }
 
 

@@ -6,27 +6,31 @@ import { useReducedMotion } from "motion/react";
 import TactileWord from "./TactileWord";
 import TridentMark from "./TridentMark";
 
+const WIPE_DELAY = 1100; // after the page reveal settles
+
 /**
- * UC San Diego, the V2 way - the whole choreography runs in <= 2s:
+ * UC San Diego - the all-in-one double pass.
  *
- * CLICK-ONLY (NO autoplay): the first load stays clean - the phrase
- * is always ink until the user asks for it. On CLICK: the DOUBLE
- * PASS starts instantly - every letter's glyph fills from its
- * baseline upward with a full NAVY pass, then a GOLD pass
- * immediately rises over it, cascading letter by letter left ->
- * right on a 34ms stagger. As the navy fills, the golden TRIDENT
- * MATERIALIZES above the word (a bold, sharp weapon, lying
- * horizontal pointing right, formed with a pop + halo), and the
- * moment the gold pass completes it SHOOTS left -> right and exits
- * the right edge. Letters melt back to ink while the trident flies.
- * The whole choreography runs in <= 2s.
+ * LOAD: one beat after the reveal settles, the phrase runs the TWO
+ * QUICK UPWARD PASSES - navy bottom -> top, then IMMEDIATELY gold
+ * bottom -> top (no gap - the gold climbs over the navy), each
+ * letter on its own 34ms stagger, like the thinking light. Then it
+ * settles back to ink. That is the whole load experience.
+ *
+ * CLICK: the same double pass, and THIS time the trident is created
+ * in sync - the NAVY pass builds the STAFF (revealed bottom -> up),
+ * the GOLD pass builds the HEAD (revealed bottom -> up), so the
+ * trident materializes from nothing exactly as the colors climb.
+ * The moment the double pass completes, the trident is THROWN left
+ * -> right and exits the right edge with a gentle droop, while the
+ * letters melt back to ink.
  * Reduced motion: instant ink, fast horizontal throw.
  */
 const LETTERS = "UC San Diego".split("");
 
 export default function UCSDWord() {
   const reduceMotion = useReducedMotion();
-  const [phase, setPhase] = useState(0); // 0 idle | 1 rise | 2 fill(navy) | 3 gold-setup | 4 gold-rise | 5 melt
+  const [phase, setPhase] = useState(0); // 0 idle | 1 rise | 2 fill(navy) | 3 gold-handoff | 4 gold-rise | 5 melt
   const [flying, setFlying] = useState(false);
   const [flightRun, setFlightRun] = useState(0); // fresh element per throw
   const [origin, setOrigin] = useState<{ x: number; y: number } | null>(null);
@@ -41,13 +45,12 @@ export default function UCSDWord() {
   // The double pass: setup -> the navy fill target lands a frame
   // later so the CSS transition fires (each letter rises on its 34ms
   // stagger, 0.4s fill - the navy's LAST letter completes at ~756ms),
-  // the gold handoff at 770ms swaps the gradient UNDER the glyphs
-  // (invisible) and a frame later the gold re-rises over the finished
-  // navy, then the melt washes ink back. Whole choreography <= 2s.
-  // Every rAF handoff ALSO gets a short setTimeout twin: if the tab
-  // is backgrounded mid-run, rAF stalls and the phrase would sit
-  // half-painted - the timeout guarantees the machine always
-  // completes to clean ink.
+  // the gold handoff at 750ms re-arms the sweep right as the navy's
+  // cascade ends - NO gap - and the GOLD pass climbs right behind it
+  // (its parked edge is navy-colored, so the rewind is invisible).
+  // Then the melt washes ink back. Whole choreography <= 2s. Every
+  // rAF handoff gets a 64ms setTimeout twin: a backgrounded tab can
+  // never stall the phrase half-painted.
   const runPaint = useCallback(() => {
     if (reduceMotion) return;
     clearTimers();
@@ -70,21 +73,31 @@ export default function UCSDWord() {
     });
     timers.current.push(
       setTimeout(() => {
-        setPhase(3); // gold handoff after the navy completes
-        next(() => setPhase(4)); // GOLD pass re-rises
-      }, 770)
+        setPhase(3); // gold handoff: invisible rewind, navy above
+        next(() => setPhase(4)); // GOLD pass climbs right behind
+      }, 750)
     );
-    timers.current.push(setTimeout(() => setPhase(5), 1600)); // melt
-    timers.current.push(setTimeout(() => setPhase(0), 2250)); // idle
+    timers.current.push(setTimeout(() => setPhase(5), 1560)); // melt
+    timers.current.push(setTimeout(() => setPhase(0), 2150)); // idle
   }, [reduceMotion, clearTimers]);
+
+  // LOAD: the double pass runs once after the reveal settles -
+  // clean, quick, and done. No trident on load: the trident is the
+  // click's reward.
+  useEffect(() => {
+    const t = setTimeout(runPaint, WIPE_DELAY);
+    return () => clearTimeout(t);
+  }, [runPaint]);
 
   const clearFlight = useCallback(() => {
     clearTimers();
     setFlying(false);
   }, [clearTimers]);
 
-  // The trident: MATERIALIZES as the navy pass fills (pop + halo,
-  // in place - no drift), SHOOTS the moment the gold pass completes.
+  // The trident: mounts as the navy pass begins; the STAFF builds
+  // during the navy, the HEAD during the gold (both bottom -> up via
+  // CSS clips on the flight wrapper), then the moment the double pass
+  // completes it SHOOTS left -> right.
   const throwTrident = useCallback(() => {
     const rect = wordRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -99,7 +112,7 @@ export default function UCSDWord() {
     if (reduceMotion) {
       throwTrident();
     } else {
-      // MATERIALIZES as the navy pass fills (in sync with the sweep)
+      // mounts as the navy starts; the clips build it in sync
       timers.current.push(setTimeout(throwTrident, 500));
     }
     timers.current.push(setTimeout(clearFlight, 2400));
@@ -110,10 +123,11 @@ export default function UCSDWord() {
   return (
     <TactileWord label="UC San Diego" onActivate={activate} className="whitespace-nowrap">
       <span className="word-anchor" ref={wordRef}>
-        {/* the double tide lives in every glyph: each letter fills
-            bottom -> up through navy, then gold, cascading left ->
-            right on its own stagger. explicit \u00A0 keeps the word
-            gaps (JSX would eat real spaces) */}
+        {/* the DOUBLE PASS lives in every glyph: each letter fills
+            bottom -> up with navy, then the gold climbs right over
+            it - no white gap - cascading left -> right on its own
+            stagger. explicit \u00A0 keeps the word gaps (JSX would
+            eat real spaces) */}
         <span
           className={`ucsd-word${phase >= 1 ? " ucsd-rise" : ""}${phase >= 2 ? " ucsd-fill" : ""}${phase >= 3 ? " ucsd-gold" : ""}${phase >= 4 ? " ucsd-gold-rise" : ""}${phase >= 5 ? " ucsd-melt" : ""}`}
         >
@@ -132,6 +146,8 @@ export default function UCSDWord() {
             key={`fly-${flightRun}`}
             origin={origin}
             fast={!!reduceMotion}
+            buildStaff={phase >= 2}
+            buildHead={phase >= 4}
             onEnd={() => setFlying(false)}
           />
         )}
@@ -141,19 +157,25 @@ export default function UCSDWord() {
 }
 
 /**
- * The throw: the golden trident MATERIALIZES above the word (pop +
- * halo, staying in place - no drift), hovers with a tiny bob, then
- * the moment the double tide completes it SHOOTS left -> right with
- * a gentle droop and exits the right edge of the viewport. Rendered
- * via portal so the coordinates are viewport-true.
+ * The throw: the golden trident is BUILT above the word while the
+ * double pass runs (the wrapper's build-staff/build-head classes
+ * reveal the staff during the navy and the head during the gold,
+ * bottom -> up, synced with the letters), and the moment the double
+ * pass completes it SHOOTS left -> right with a gentle droop and
+ * exits the right edge of the viewport. Rendered via portal so the
+ * coordinates are viewport-true.
  */
 function TridentFlight({
   origin,
   fast,
+  buildStaff,
+  buildHead,
   onEnd,
 }: {
   origin: { x: number; y: number };
   fast: boolean;
+  buildStaff: boolean;
+  buildHead: boolean;
   onEnd: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -166,8 +188,8 @@ function TridentFlight({
     const el = ref.current;
     if (!el) return;
     const vw = window.innerWidth;
-    const FORM_MS = fast ? 100 : 220; // materialize in place
-    const HOVER_MS = fast ? 160 : 780; // bob, then shoot
+    const FORM_MS = fast ? 100 : 1000; // hold while the staff+head build
+    const HOVER_MS = FORM_MS; // no bob - straight into the throw
     const VX = fast ? 2200 : 980; // px/s left -> right
     const G = fast ? 160 : 260; // gentle droop on the shot
     let raf = 0;
@@ -177,26 +199,14 @@ function TridentFlight({
       const t = now - t0;
       let x: number;
       let y: number;
-      let scale: number;
-      let opacity: number;
 
       if (t < FORM_MS) {
-        // materialize IN PLACE: smooth pop, no drift, no bounce-back
-        const u = t / FORM_MS;
-        scale = 1 - 0.7 * Math.exp(-(t / 60));
-        opacity = Math.min(1, u / 0.6);
+        // the build runs via the CSS clips - hold in place above the
+        // word, fully opaque, no drift, no bounce
         x = origin.x;
         y = origin.y;
-      } else if (t < HOVER_MS) {
-        opacity = 1;
-        scale = 1;
-        const h = t - FORM_MS;
-        x = origin.x;
-        y = origin.y - 3 * Math.sin(h / 120);
       } else {
         // SHOOT: straight right, slight droop, exits the right edge
-        opacity = 1;
-        scale = 1;
         const s = t - HOVER_MS;
         x = origin.x + (VX * s) / 1000;
         y = origin.y + (0.5 * G * (s / 1000) * (s / 1000));
@@ -205,9 +215,8 @@ function TridentFlight({
           return;
         }
       }
-      el.style.opacity = String(opacity);
-      el.style.transform =
-        `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) scale(${scale.toFixed(3)})`;
+      el.style.opacity = "1";
+      el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -217,11 +226,14 @@ function TridentFlight({
   // PORTAL to document.body: the tactile button is a transformed
   // ancestor - fixed positioning resolves against it, double-counting
   // coordinates. At the body root the flight uses true viewport
-  // coordinates: materialize above the word, shoot right, exit right.
+  // coordinates: build above the word, shoot right, exit right.
   return createPortal(
     <div className="ucsd-trident-wrap" aria-hidden="true">
-      <span className="ucsd-trident-halo" style={{ top: origin.y, left: origin.x - 20 }} />
-      <div className="ucsd-trident-fly" ref={ref} style={{ left: 0, top: 0 }}>
+      <div
+        className={`ucsd-trident-fly${buildStaff ? " build-staff" : ""}${buildHead ? " build-head" : ""}`}
+        ref={ref}
+        style={{ left: 0, top: 0 }}
+      >
         <TridentMark height={26} />
       </div>
     </div>,
