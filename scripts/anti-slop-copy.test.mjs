@@ -238,6 +238,7 @@ test("polish pass: reveal, grain, plaque, affordance, autoplay", () => {
   assert.equal(css.includes("#182B49"), true, "UCSD navy missing");
   assert.equal(css.includes("#C69214"), true, "UCSD gold missing");
   assert.equal(css.includes(".ucsd-trident-fly"), true, "viewport trident flight missing");
+  assert.equal(css.includes("ucsd-seg-fade"), true, "paint must fade back to ink");
   assert.equal(css.includes(".stage-ucsd"), false, "stage trident must be gone");
   assert.equal(css.includes(".ucsd-pop"), false, "word pop must be gone");
   assert.equal(css.includes(".identity-slot"), true, "experience identity slots missing");
@@ -287,6 +288,7 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(ucsd.includes("onAnimationComplete"), false, "no child unmounts the badge");
   assert.equal(ucsd.includes("badge-plaque"), false, "the plaque box is gone");
   assert.equal(ucsd.includes("ucsd-painted"), true, "one-time paint pass missing");
+  assert.equal(ucsd.includes('{" "}'), true, "explicit word gaps required (UCSanDiego bug)");
   assert.equal(ucsd.includes("ucsd-trident-fly"), true, "trident flight missing");
   assert.equal(ucsd.includes("useStage"), false, "ucsd must NOT use the shared stage anymore");
   // shared identity language: plain letter at rest, live mark box opens
@@ -307,7 +309,8 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   const inf = read("components/InferenceWord.tsx");
   assert.equal(inf.includes("ThinkingOrb"), true, "thinking orb missing");
   assert.equal(inf.includes("state=\"solving\""), true, "solving state missing");
-  assert.equal(inf.includes("size={20}"), true, "20px inline orb missing");
+  assert.equal(inf.includes("size={32}"), true, "orb renders sharp at package size");
+  assert.equal(inf.includes("orb-22"), true, "22px orb display wrapper missing");
   assert.equal(inf.includes("word-morph"), true, "fixed morph slot missing");
   assert.equal(inf.includes("THINK_MS = 2500"), true, "2.5s inference hold missing");
   assert.equal(inf.includes("INFER_ORB_STATES"), true, "random orb states must exist");

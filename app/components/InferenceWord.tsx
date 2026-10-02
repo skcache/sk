@@ -113,13 +113,14 @@ export default function InferenceWord() {
           aria-hidden="true"
         >
           <span>thinking</span>
-          <ThinkingOrb
-            state="solving"
-            size={20}
-            theme="dark"
-            paused={!!reduceMotion}
-            aria-hidden="true"
-          />
+          <span className="orb-22" aria-hidden="true">
+            <ThinkingOrb
+              state="solving"
+              size={32}
+              theme="dark"
+              paused={!!reduceMotion}
+            />
+          </span>
         </span>
 
         {/* the live cell: width springs between the two measured widths,
@@ -165,13 +166,14 @@ export default function InferenceWord() {
               <span className="thinking-glow" data-text="thinking">
                 thinking
               </span>
-              <ThinkingOrb
-                state={orbState}
-                size={20}
-                theme="dark"
-                paused={!!reduceMotion}
-                style={{ flex: "none" }}
-              />
+              <span className="orb-22">
+                <ThinkingOrb
+                  state={orbState}
+                  size={32}
+                  theme="dark"
+                  paused={!!reduceMotion}
+                />
+              </span>
             </motion.span>
           </motion.span>
         ) : (

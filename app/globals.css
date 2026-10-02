@@ -213,11 +213,28 @@ body {
 
 @keyframes thinking-sweep {
   0% {
-    background-position: -50% 0; /* band at the word's left edge */
+    background-position: 110% 0; /* band enters from beyond the left edge */
   }
   100% {
-    background-position: 150% 0; /* band exits the right edge */
+    background-position: -10% 0; /* band exits past the right edge */
   }
+}
+
+/* the orb renders sharp at the package's 32px and DISPLAYS at 22px
+   (canvas CSS size) - slightly bigger than before, crystal sharp */
+.orb-22 {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  overflow: hidden;
+}
+
+.orb-22 canvas {
+  width: 22px;
+  height: 22px;
 }
 
 /* 1px breathing between the orb and the following comma: the spring
@@ -240,27 +257,35 @@ body {
   display: inline-block;
 }
 
-/* one-time left-to-right color pass, then the phrase KEEPS its
-   official coloring: UC + Diego navy, San gold. each segment
-   clip-reveals left->right in sequence (cascading paint) */
+/* one-time left-to-right color pass: segments clip-reveal in
+   sequence into the official coloring (UC + Diego navy, San gold),
+   hold, then fade back to plain ink (ucsd-seg-fade). the SEGMENTS
+   are plain ink at rest - the painted pass ADDS the colors, so when
+   the pass ends the phrase is unambiguously back to white */
 .ucsd-navy {
-  color: #182B49;
+  --ucsd-c: #182B49;
 }
 
 .ucsd-gold {
-  color: #C69214;
+  --ucsd-c: #C69214;
 }
 
 .ucsd-painted .ucsd-seg {
-  animation: ucsd-seg-reveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  color: var(--ucsd-c);
+}
+
+.ucsd-painted .ucsd-seg {
+  animation:
+    ucsd-seg-reveal 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards,
+    ucsd-seg-fade 0.85s linear 2.15s forwards;
 }
 
 .ucsd-painted .ucsd-seg:nth-child(2) {
-  animation-delay: 0.32s;
+  animation-delay: 0.35s, 2.15s;
 }
 
 .ucsd-painted .ucsd-seg:nth-child(3) {
-  animation-delay: 0.64s;
+  animation-delay: 0.7s, 2.15s;
 }
 
 @keyframes ucsd-seg-reveal {
@@ -269,6 +294,16 @@ body {
   }
   to {
     clip-path: inset(0 0 0 0);
+  }
+}
+
+/* the one-time pass ends with the phrase fading back to plain ink */
+@keyframes ucsd-seg-fade {
+  from {
+    color: var(--ucsd-c);
+  }
+  to {
+    color: #f3f1ea;
   }
 }
 

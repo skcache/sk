@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useReducedMotion } from "motion/react";
 import TactileWord from "./TactileWord";
 
 const WIPE_DELAY = 1100; // after the page reveal settles
-const FLIGHT_MS = 1150; // trident: up, then right off the viewport
-const PICK_UP_MS = 170; // rises above the word before flying
+const FLIGHT_MS = 1400; // max throw window (physics exits earlier on small screens)
 
 /**
  * UC San Diego, the V2 way.
@@ -24,10 +24,20 @@ const PICK_UP_MS = 170; // rises above the word before flying
  */
 function TridentMark({ size = 26 }: { size?: number }) {
   return (
-    <svg viewBox="0 0 14 14" width={size} height={size} fill="none" aria-hidden="true">
-      <path d="M7 13.5V5.5" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" />
-      <path d="M1.5 6h11" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" />
-      <path d="M4 6V2M10 6V2" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" />
+    <svg viewBox="0 0 24 24" width={size} height={size} fill="none" aria-hidden="true">
+      {/* three spear tips (bold enough to read at small sizes) */}
+      <path d="M8.7 5.9 6.6 2.6 4.7 6.2Z" fill="currentColor" stroke="none" />
+      <path d="M12 1 14 4.4 10 4.4Z" fill="currentColor" stroke="none" />
+      <path d="M15.3 5.9 17.4 2.6 19.3 6.2Z" fill="currentColor" stroke="none" />
+      {/* prongs: the side ones curve out like a classic trident */}
+      <path d="M6.6 6.2 7.6 9.6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M12 4.4v5.3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M17.4 6.2 16.4 9.6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      {/* crossbar */}
+      <path d="M4.5 10h15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      {/* shaft with a slight taper + pommel */}
+      <path d="M12 12v6.8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M9.8 20.4h4.4" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" />
     </svg>
   );
 }
@@ -41,13 +51,22 @@ export default function UCSDWord() {
   const wordRef = useRef<HTMLSpanElement>(null);
   const doneRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ONE left-to-right color pass after the reveal settles (stays
-  // painted: UC + Diego navy, San gold)
+  // ONE left-to-right color pass after the reveal settles: the phrase
+  // paints navy/gold (UC + Diego navy, San gold), holds colored a
+  // beat, then fades back to plain ink - one time, never repeats
   useEffect(() => {
     if (reduceMotion) return;
     const t = setTimeout(() => setPainted(true), WIPE_DELAY);
     return () => clearTimeout(t);
   }, [reduceMotion]);
+
+  // remove the painted class once the full pass (reveal + hold +
+  // fade-out) is over, so the phrase is back to plain ink
+  useEffect(() => {
+    if (!painted) return;
+    const t = setTimeout(() => setPainted(false), 3050);
+    return () => clearTimeout(t);
+  }, [painted]);
 
   const clearFlying = useCallback(() => {
     if (doneRef.current) {
@@ -72,11 +91,14 @@ export default function UCSDWord() {
   return (
     <TactileWord label="UC San Diego" onActivate={activate} className="whitespace-nowrap">
       <span className="word-anchor" ref={wordRef}>
-        {/* official coloring after the one-time pass: UC + Diego navy,
-            San gold - the segments clip-reveal left->right in sequence */}
+        {/* official coloring during the one-time pass: UC + Diego
+            navy, San gold - segments reveal left->right, hold, then
+            fade back to ink. explicit {" "} gaps keep the words apart
+            (JSX would otherwise eat the spaces between line-break
+            spans) */}
         <span className={`ucsd-word${painted && !reduceMotion ? " ucsd-painted" : ""}`}>
-          <span className="ucsd-seg ucsd-navy">UC</span>
-          <span className="ucsd-seg ucsd-gold">San</span>
+          <span className="ucsd-seg ucsd-navy">UC</span>{" "}
+          <span className="ucsd-seg ucsd-gold">San</span>{" "}
           <span className="ucsd-seg ucsd-navy">Diego</span>
         </span>
         {flying && origin && (
@@ -93,9 +115,11 @@ export default function UCSDWord() {
 }
 
 /**
- * The throw: spawns at the word, rises straight up (pick-up), then
- * flies right with a light arc + tilt and EXITS THE VIEWPORT. Fixed
- * position so it travels over the page, never in the stage.
+ * The throw: a REAL projectile. The trident spawns at the word, is
+ * launched up-right with gravity pulling it into a natural arc, it
+ * TUMBLES end-over-end like a thrown weapon, and exits the right
+ * edge of the viewport. Fixed position - over the page, never the
+ * stage.
  */
 function TridentFlight({
   origin,
@@ -115,39 +139,48 @@ function TridentFlight({
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
-    const dur = fast ? 420 : FLIGHT_MS;
+    const vw = window.innerWidth;
+    // ballistic launch: up-right, gravity pulls the arc down
+    const vx = fast ? 2100 : 850; // px/s rightward
+    const vy0 = fast ? -300 : -640; // px/s upward
+    const G = fast ? 1200 : 1900; // px/s^2
+    const endX = vw + 70;
+    const dur = ((endX - origin.x) / vx) * 1000; // flight ms to leave the view
+    const tumble = fast ? 360 : 520; // degrees of end-over-end spin
     let raf = 0;
     const t0 = performance.now();
-    const vw = window.innerWidth;
-    const easeIO = (x: number) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
 
     const tick = (now: number) => {
-      const t = now - t0;
+      const t = now - t0; // ms
       if (t >= dur) {
         onEndRef.current();
         return;
       }
-      const u = t / dur;
-      // phase 1: rise above the word; phase 2: fly right off the screen
-      const rise = Math.min(1, u / (PICK_UP_MS / dur));
-      const fly = Math.max(0, (u - PICK_UP_MS / dur) / (1 - PICK_UP_MS / dur));
-      const x = origin.x + (vw + 60 - origin.x) * easeIO(fly);
-      const y = origin.y - 26 * easeIO(rise) - 14 * Math.sin(Math.PI * fly);
-      const tilt = -6 + 26 * fly; // leans forward as it flies
-      const scale = 0.9 + 0.1 * easeIO(rise);
+      const x = origin.x + vx * (t / 1000);
+      const y = origin.y + (vy0 * t) / 1000 + (0.5 * G * (t / 1000) * (t / 1000));
+      const rot = (t / dur) * tumble;
+      const scale = t < 70 ? 0.85 + (0.15 * t) / 70 : 1;
       const opacity =
-        t < 70 ? t / 70 : t > dur - 100 ? Math.max(0, (dur - t) / 100) : 1;
+        t < 70 ? t / 70 : t > dur - 130 ? Math.max(0, (dur - t) / 130) : 1;
       el.style.opacity = String(opacity);
       el.style.transform =
         `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) ` +
-        `rotate(${tilt.toFixed(1)}deg) scale(${scale.toFixed(3)})`;
+        `rotate(${rot.toFixed(1)}deg) scale(${scale.toFixed(3)})`;
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [origin, fast]);
 
-  return <div className="ucsd-trident-fly" ref={ref} aria-hidden="true" style={{ left: 0, top: 0 }}>
-    <TridentMark size={26} />
-  </div>;
+  // PORTAL to document.body: the tactile button is a transformed
+  // ancestor, and position:fixed inside one resolves against THAT
+  // ancestor (double-counted coordinates - the throw never rose on
+  // screen). rendering at the body root makes the flight use true
+  // viewport coordinates: spawn at the word, rise, arc, exit right.
+  return createPortal(
+    <div className="ucsd-trident-fly" ref={ref} aria-hidden="true" style={{ left: 0, top: 0 }}>
+      <TridentMark size={26} />
+    </div>,
+    document.body
+  );
 }
