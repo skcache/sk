@@ -234,8 +234,8 @@ test("polish pass: reveal, grain, plaque, affordance, autoplay", () => {
   assert.equal(css.includes("pointer-events: none"), true, "overlay must not block clicks");
   // UCSD V2: one-time navy->gold paint pass, trident pop + stage throw
   assert.equal(css.includes(".ucsd-rise"), true, "UCSD two-pass sweep missing");
-  assert.equal(css.includes("ucsd-rise-navy"), true, "navy down->up pass missing");
-  assert.equal(css.includes("ucsd-rise-gold"), true, "gold down->up pass missing");
+  assert.equal(css.includes("ucsd-fill-navy"), true, "navy down->up fill missing");
+  assert.equal(css.includes("ucsd-fill-gold"), true, "gold down->up fill missing");
   assert.equal(css.includes("#182B49"), true, "UCSD navy missing");
   assert.equal(css.includes("#C69214"), true, "UCSD gold missing");
   assert.equal(css.includes(".ucsd-painted"), false, "old painted class must be gone");
@@ -329,10 +329,11 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(inf.includes("pickOrbState"), true, "per-run random orb selection missing");
   assert.equal(inf.includes("state={orbState}"), true, "live orb must use the randomized state");
   assert.equal(inf.includes("thinking</span>"), true, "active word is lowercase thinking");
-  assert.equal(inf.includes("thinking-glow"), true, "left-to-right text glow missing");
-  assert.equal(inf.includes('data-text="thinking"'), true, "glow overlay text missing");
+  assert.equal(inf.includes("thinking-word"), true, "native per-letter wave missing");
+  assert.equal(inf.includes("tw-wave"), false, "overlay glow must be gone (native wave only)");
+  assert.equal(inf.includes('data-text="thinking"'), false, "glow overlay attr must be gone");
   assert.equal(inf.includes("if (phase === \"thinking\") return"), true, "activations must be ignored while thinking");
-  assert.equal(inf.includes('.split("'), false, "per-letter split must be gone");
+  assert.equal(inf.includes(".split(\"\""), true, "per-letter wave needs the split");
   assert.equal(inf.includes('thinkin"'), false, "misspelled thinkin token must be gone");
   assert.equal(inf.includes("word-morph-char"), false, "per-char spans must be gone");
   // experience identities use the canonical public assets
@@ -377,9 +378,11 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
     assert.equal(kit.includes(p), true, `kit primitive missing: ${p}`);
   }
   const music = read("components/MusicIsland.tsx");
-  assert.equal(music.includes("setTimeout"), false, "island must not hand-roll its own timer chain");
+  assert.equal(music.includes("buildFrames"), false, "island must not hand-roll a frame table");
+  assert.equal(music.includes("requestAnimationFrame"), false, "island must not hand-roll rAF");
   assert.equal(music.includes("useScheduledAnimations"), true, "island must use the official animation queue");
-  assert.equal(music.includes("NO auto-dismiss"), true, "island must hold until dismissed");
+  assert.equal(music.includes("~3 seconds"), true, "3s lifecycle missing");
+  assert.equal(music.includes("delay: 2650"), true, "contract schedule missing");
   assert.equal(music.includes("DynamicIslandProvider"), true, "island must use the official provider");
   assert.equal(music.includes("SIZE_PRESETS.COMPACT_LONG"), true, "island must use the official preset");
   assert.equal(music.includes("layoutId"), true, "island must share layout with the word");

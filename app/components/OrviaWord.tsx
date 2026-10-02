@@ -29,7 +29,6 @@ export default function OrviaWord() {
   const twClose = reduceMotion
     ? { duration: 0.01 }
     : { duration: 0.26, ease: "easeInOut" as const };
-  const fadeClose = reduceMotion ? { duration: 0.01 } : { duration: 0.22, ease: "easeOut" as const };
 
   return (
     <TactileWord
@@ -49,9 +48,8 @@ export default function OrviaWord() {
             initial={{ width: "0.74em" }}
             animate={{
               width: closing ? "0.74em" : "0.96em",
-              opacity: closing ? 0 : 1,
             }}
-            transition={{ width: closing ? twClose : twOpen, opacity: closing ? fadeClose : t }}
+            transition={{ width: closing ? twClose : twOpen }}
             onAnimationComplete={() => {
               if (closing) {
                 setClosing(false);

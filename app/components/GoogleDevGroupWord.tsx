@@ -37,7 +37,6 @@ export default function GoogleDevGroupWord() {
   const twClose = reduceMotion
     ? { duration: 0.01 }
     : { duration: 0.26, ease: "easeInOut" as const };
-  const fadeClose = reduceMotion ? { duration: 0.01 } : { duration: 0.22, ease: "easeOut" as const };
 
   const colorFor = (i: number) => {
     if (!on) return undefined;
@@ -63,8 +62,8 @@ export default function GoogleDevGroupWord() {
             key="gdg-box"
             className="gdg-markbox"
             initial={{ width: 0 }}
-            animate={{ width: closing ? 0 : "1.76em", opacity: closing ? 0 : 1 }}
-            transition={{ width: closing ? twClose : twOpen, opacity: closing ? fadeClose : t }}
+            animate={{ width: closing ? 0 : "1.76em" }}
+            transition={{ width: closing ? twClose : twOpen }}
             onAnimationComplete={() => {
               if (closing) {
                 setClosing(false);

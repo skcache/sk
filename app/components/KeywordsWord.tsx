@@ -31,7 +31,6 @@ export default function KeywordsWord() {
   const twClose = reduceMotion
     ? { duration: 0.01 }
     : { duration: 0.26, ease: "easeInOut" as const };
-  const fadeClose = reduceMotion ? { duration: 0.01 } : { duration: 0.22, ease: "easeOut" as const };
 
   return (
     <TactileWord
@@ -49,8 +48,8 @@ export default function KeywordsWord() {
             key="k-box"
             className="k-markbox"
             initial={{ width: "0.6em" }}
-            animate={{ width: closing ? "0.6em" : "1.2em", opacity: closing ? 0 : 1 }}
-            transition={{ width: closing ? twClose : twOpen, opacity: closing ? fadeClose : t }}
+            animate={{ width: closing ? "0.6em" : "1.2em" }}
+            transition={{ width: closing ? twClose : twOpen }}
             onAnimationComplete={() => {
               if (closing) {
                 setClosing(false);

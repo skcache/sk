@@ -95,13 +95,16 @@ export default function InferenceWord() {
 
   useEffect(() => clearSafety, [clearSafety]);
 
-  // WAAPI crossfade + sweep restart. The declarative opacity
-  // transitions snap in this motion version (initial={false} drops
-  // plain-value transitions - verified frame-by-frame: zero
-  // intermediate opacities). Drive the swap imperatively: frame-
-  // accurate, and we can ALSO restart the glow sweep per activation
-  // so the band is never caught mid-pass at a random spot.
+  // WAAPI crossfade (frame-accurate swap for base/active). The
+  // declarative opacity transitions snap in this motion version
+  // (initial={false} drops plain-value transitions - verified
+  // frame-by-frame: zero intermediate opacities).
   const cellRef = useRef<HTMLSpanElement>(null);
+  // the crossfade animations WE own - cancel only these on phase
+  // change. NEVER call getAnimations(cancel) over the subtree: it
+  // would kill the letters' traveling wave (the .tw CSS animations)
+  // and the orb - freezing the glow mid-dim forever.
+  const fadeAnims = useRef<Animation[]>([]);
   useEffect(() => {
     const cell = cellRef.current;
     if (!cell) return;
@@ -114,8 +117,8 @@ export default function InferenceWord() {
     const activeEl = cell.querySelector<HTMLElement>(".word-morph-active");
     const baseFrom = baseEl ? parseFloat(getComputedStyle(baseEl).opacity) : 1;
     const actFrom = activeEl ? parseFloat(getComputedStyle(activeEl).opacity) : 0;
-    cell.getAnimations({ subtree: true }).forEach((a) => a.cancel());
-    const glow = cell.querySelector<HTMLElement>(".thinking-glow");
+    fadeAnims.current.forEach((a) => a.cancel());
+    fadeAnims.current = [];
     const thinking = phase === "thinking";
     if (reduceMotion) {
       if (baseEl) baseEl.style.opacity = thinking ? "0" : "1";
@@ -124,33 +127,26 @@ export default function InferenceWord() {
     }
     // symmetric crossfade: both words present mid-swap (no empty window)
     if (baseEl) {
-      baseEl.animate([{ opacity: baseFrom }, { opacity: thinking ? 0 : 1 }], {
-        duration: thinking ? 180 : 240,
-        delay: thinking ? 0 : 60,
-        easing: "ease-out",
-        fill: "forwards",
-      });
+      fadeAnims.current.push(
+        baseEl.animate([{ opacity: baseFrom }, { opacity: thinking ? 0 : 1 }], {
+          duration: thinking ? 180 : 240,
+          delay: thinking ? 0 : 60,
+          easing: "ease-out",
+          fill: "forwards",
+        }),
+      );
     }
     if (activeEl) {
-      activeEl.animate([{ opacity: actFrom }, { opacity: thinking ? 1 : 0 }], {
-        duration: thinking ? 180 : 200,
-        easing: thinking ? "ease-out" : "ease-in",
-        fill: "forwards",
-      });
+      fadeAnims.current.push(
+        activeEl.animate([{ opacity: actFrom }, { opacity: thinking ? 1 : 0 }], {
+          duration: thinking ? 180 : 200,
+          easing: thinking ? "ease-out" : "ease-in",
+          fill: "forwards",
+        }),
+      );
     }
-    // deterministic sweep start: kill the CSS animation, reflow, let
-    // it restart from 0% - the band begins entering from the LEFT
-    // edge on every activation
-    if (glow) {
-      glow.classList.add("sweep-off");
-      // park the killed band at the LEFT edge (the ::after reads
-      // var(--band-pos)) so the restart frame is seamless - the band
-      // appears already entering from the word's start, never parked
-      // mid/off-canvas
-      glow.style.setProperty("--band-pos", "110%");
-      void glow.offsetWidth;
-      glow.classList.remove("sweep-off");
-    }
+    // NOTE: the wave is NOT touched - the letters carry their own
+    // staggered traveling-light animation (native, per-glyph)
   }, [phase, reduceMotion]);
 
   // width spring: deliberate, near-critical, no bounce
@@ -207,8 +203,16 @@ export default function InferenceWord() {
               className="word-morph-active"
               aria-hidden={phase === "thinking" ? undefined : true}
             >
-              <span className="thinking-glow" data-text="thinking">
-                thinking
+              <span className="thinking-word" aria-hidden="true">
+                {"thinking".split("").map((c, i) => (
+                  <span
+                    key={i}
+                    className="tw"
+                    style={{ animationDelay: `${i * 70}ms` }}
+                  >
+                    {c}
+                  </span>
+                ))}
               </span>
               <span className="orb-24">
                 <ThinkingOrb

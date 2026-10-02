@@ -176,64 +176,33 @@ body {
   opacity: 0;
 }
 
-/* the lowercase thinking glow: the base letters DIM while thinking
-   and a bright light band sweeps left -> right across them, lighting
-   each letter up as it passes - a clearly visible LR fade. the band
-   is a clip-to-text gradient overlay; deterministic (pure CSS, same
-   sweep every activation). under reduced motion the global animation
-   kill parks the band off-canvas and leaves plain text */
-.thinking-glow {
-  position: relative;
+/* the lowercase thinking light: NATIVE to the letters - no overlay,
+   no second text render. Each glyph carries a soft brightness pulse;
+   the pulses are staggered 70ms apart so a smooth light wave travels
+   left -> right across the word continuously (never restarts, never
+   parks - it breathes with the orb). Eased sine-like loop: nothing
+   mechanical, no band, no teleport. Reduced motion: static ink. */
+.thinking-word {
   display: inline-block;
-  color: rgba(243, 241, 234, 0.75); /* dimmed until the band lights it -
-                                        never fully dead, so the unit never
-                                        reads as broken while the band is
-                                        between passes */
+  white-space: nowrap;
 }
 
-.thinking-glow::after {
-  content: attr(data-text);
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    100deg,
-    transparent 25%,
-    rgba(255, 255, 255, 0.55) 43%,
-    rgba(255, 255, 255, 1) 50%,
-    rgba(255, 255, 255, 0.55) 57%,
-    transparent 75%
-  );
-  background-size: 200% 100%;
-  background-repeat: no-repeat;
-  /* when the animation is killed (sweep-off restart), park at
-     var(--band-pos) - the component sets it to 110% (left edge) at
-     activation so the band is NEVER stuck mid/off-canvas during the
-     restart frame; reduced-motion leaves it parked off-canvas */
-  background-position: var(--band-pos, 170%) 0;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  /* the sweep pace matches the orb's working tempo (~1s per pass);
-     no lead-in delay - the band is already moving the frame the
-     unit appears, so the sweep and the crossfade feel like one
-     motion */
-  animation: thinking-sweep 1.0s cubic-bezier(0.42, 0, 0.58, 1) infinite;
-  pointer-events: none;
+.tw {
+  display: inline-block;
+  color: rgba(243, 241, 234, 0.86);
+  animation: tw-wave 1.15s ease-in-out infinite;
+  will-change: color, text-shadow;
 }
 
-/* sweep restart: the component toggles this class (add -> reflow ->
-   remove) on every activation so the band ALWAYS starts entering
-   from the left edge of the word - never mid-pass at a random spot */
-.thinking-glow.sweep-off::after {
-  animation: none;
-}
-
-@keyframes thinking-sweep {
-  0% {
-    background-position: 110% 0; /* band enters from beyond the left edge */
-  }
+@keyframes tw-wave {
+  0%,
   100% {
-    background-position: -10% 0; /* band exits past the right edge */
+    color: rgba(243, 241, 234, 0.62);
+    text-shadow: 0 0 0 rgba(255, 255, 255, 0);
+  }
+  50% {
+    color: rgba(255, 255, 255, 1);
+    text-shadow: 0 0 9px rgba(255, 255, 255, 0.35);
   }
 }
 
@@ -268,70 +237,76 @@ body {
   display: inline-block;
 }
 
-/* the two-pass DOWN->UP sweep (paired with the trident's own
-   upward throw): a clipped-text gradient band overlays the phrase -
-   the NAVY band rises from the bottom edge to the top (pass 1),
-   then the GOLD band rises the same way (pass 2). Base ink at rest,
-   so when the pass ends the phrase is unambiguously back to white. */
-.ucsd-word::after {
-  content: attr(data-ucsd);
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    180deg,
-    transparent 30%,
-    #182B49 45%,
-    #182B49 55%,
-    transparent 70%
-  );
+/* the two-pass DOWN->UP fill, NATIVE to the letters: each segment's
+   OWN background is clipped to its glyphs (no overlay text, no
+   second render). The fill rides inside the letterforms - the ink
+   sits above the rising edge, the paint below it, so a NAVY tide
+   fills the letters from the baseline up (pass 1), then a GOLD tide
+   fills them the same way (pass 2) - both going DOWN->UP, matching
+   the trident's own shoot. Base ink at rest. */
+.ucsd-word.ucsd-rise .ucsd-seg {
   background-size: 100% 200%;
   background-repeat: no-repeat;
-  background-position: 0% 170%; /* parked below: reduced motion
-                                   (animations killed) leaves ink */
   -webkit-background-clip: text;
   background-clip: text;
-  color: transparent;
-  pointer-events: none;
-  white-space: nowrap;
-}
-
-.ucsd-word.ucsd-rise::after {
   animation:
-    ucsd-rise-navy 0.85s cubic-bezier(0.45, 0, 0.55, 1) forwards,
-    ucsd-rise-gold 0.85s cubic-bezier(0.45, 0, 0.55, 1) 0.95s forwards;
+    ucsd-fill-navy 0.85s cubic-bezier(0.45, 0, 0.55, 1) forwards,
+    ucsd-fill-gold 0.85s cubic-bezier(0.45, 0, 0.55, 1) 0.95s forwards;
 }
 
-@keyframes ucsd-rise-navy {
+/* the fill: ink above the edge (letters stay readable), paint below
+   it. When the position runs -10% -> 130% the edge RISES from the
+   baseline to the top of the glyphs. background-IMAGE longhand only
+   (a shorthand in keyframes would clobber the animating position). */
+@keyframes ucsd-fill-navy {
   0% {
-    background-position: 0% 110%; /* band just below the baseline */
-  }
-  100% {
-    background-position: 0% -10%; /* band risen past the top */
-  }
-}
-
-@keyframes ucsd-rise-gold {
-  /* the gold pass: same rise, paint swapped to UCSD gold */
-  0% {
-    background: linear-gradient(
+    background-image: linear-gradient(
       180deg,
-      transparent 30%,
-      #C69214 45%,
-      #C69214 55%,
-      transparent 70%
-    );
-    background-position: 0% 110%;
-  }
-  100% {
-    background: linear-gradient(
-      180deg,
-      transparent 30%,
-      #C69214 45%,
-      #C69214 55%,
-      transparent 70%
+      #f3f1ea 55%,
+      #182B49 58%,
+      #182B49 100%
     );
     background-position: 0% -10%;
   }
+  100% {
+    background-image: linear-gradient(
+      180deg,
+      #f3f1ea 55%,
+      #182B49 58%,
+      #182B49 100%
+    );
+    background-position: 0% 130%;
+  }
+}
+
+@keyframes ucsd-fill-gold {
+  0% {
+    background-image: linear-gradient(
+      180deg,
+      #f3f1ea 55%,
+      #C69214 58%,
+      #C69214 100%
+    );
+    background-position: 0% -10%;
+  }
+  100% {
+    background-image: linear-gradient(
+      180deg,
+      #f3f1ea 55%,
+      #C69214 58%,
+      #C69214 100%
+    );
+    background-position: 0% 130%;
+  }
+}
+
+/* after the gold pass the letters dissolve from paint to plain ink
+   (the ink color rising over the clipped paint) - the phrase returns
+   to white, cleanly */
+.ucsd-word.ucsd-melt .ucsd-seg {
+  background-image: none;
+  color: #f3f1ea;
+  transition: color 0.35s ease;
 }
 
 /* the trident throw: spawns at the word, rises, then flies right
@@ -566,6 +541,14 @@ body {
   margin: 0;
 }
 
+/* the row's content enters a beat AFTER the shell expands and leaves
+   BEFORE the shell contracts (Apple's rhythm) - the WAAPI effect in
+   MusicIsland drives the opacity/scale */
+.island-row-content {
+  opacity: 0;
+  display: block;
+}
+
 /* three quiet bars: the 'playing' heartbeat */
 .dynamic-island-eq {
   display: flex;
@@ -583,17 +566,18 @@ body {
 }
 
 .dynamic-island-eq i:nth-child(2) {
-  animation-delay: 0.22s;
+  animation-delay: -0.31s;
+  animation-duration: 1.02s;
 }
 
 .dynamic-island-eq i:nth-child(3) {
-  animation-delay: 0.46s;
-  animation-duration: 1.15s;
+  animation-delay: -0.57s;
+  animation-duration: 1.21s;
 }
 
 .dynamic-island-eq i:nth-child(4) {
-  animation-delay: 0.11s;
-  animation-duration: 0.8s;
+  animation-delay: -0.13s;
+  animation-duration: 0.84s;
 }
 
 @keyframes eq-bounce {
