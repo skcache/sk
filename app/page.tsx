@@ -154,13 +154,13 @@ export default function Home() {
           id="intro"
           data-reveal
           aria-label="Intro"
-          className="pt-14 pb-32 sm:pt-16 sm:pb-28 max-w-[48rem]"
+          className="mx-auto pt-14 pb-32 sm:pt-16 sm:pb-28 max-w-[48rem]"
         >
           <Intro />
           <IntroAutoplay />
         </section>
 
-        <section data-reveal aria-labelledby="things-done" className="pb-24 sm:pb-28 max-w-[56rem]">
+        <section data-reveal aria-labelledby="things-done" className="mx-auto pb-24 sm:pb-28 max-w-[56rem]">
           <h2
             id="things-done"
             className="border-t border-hairline pt-12 text-base font-medium sm:pt-14"
@@ -205,7 +205,7 @@ export default function Home() {
           </ul>
         </section>
 
-        <section data-reveal aria-labelledby="things-built" className="pb-20 sm:pb-24 max-w-[56rem]">
+        <section data-reveal aria-labelledby="things-built" className="mx-auto pb-20 sm:pb-24 max-w-[56rem]">
           <h2
             id="things-built"
             className="border-t border-hairline pt-12 text-base font-medium sm:pt-14"
