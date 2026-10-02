@@ -400,10 +400,12 @@ body {
 }
 
 /* the live box: springs open from letter width to logo width, so
-   `rvia` glides aside. Fixed 1em layout box; horizontal-only clip
-   (clip-path inset negative vertical) so the mark is unveiled by the
-   growing box and cleanly clipped away on close - no ghosting, no
-   overlap, no line growth. */
+   `rvia` glides aside. The box is sized to the mark's PAINTED width
+   (the logo glyph ends ~0.9em into a 0.968em svg at 1.2em height:
+   the extra 0.18em of empty viewBox right-padding must not push
+   `rvia` out - an over-wide box reads as a hole between logo and
+   text). Horizontal-only clip so the mark is unveiled by the growing
+   box and cleanly clipped away on close - no ghosting, no overlap. */
 .o-markbox {
   display: inline-block;
   height: 1em;
@@ -412,7 +414,7 @@ body {
   white-space: nowrap;
   vertical-align: -0.06em;
   clip-path: inset(-100% 0 -100% 0);
-  margin-right: 0.09em;
+  margin-right: 0.07em;
 }
 
 .o-mark {

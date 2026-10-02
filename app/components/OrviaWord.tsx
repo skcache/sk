@@ -47,7 +47,10 @@ export default function OrviaWord() {
             key="o-box"
             className="o-markbox"
             initial={{ width: "0.74em" }}
-            animate={{ width: closing ? "0.74em" : "1.15em", opacity: closing ? 0 : 1 }}
+            animate={{
+              width: closing ? "0.74em" : "0.96em",
+              opacity: closing ? 0 : 1,
+            }}
             transition={{ width: closing ? twClose : twOpen, opacity: closing ? fadeClose : t }}
             onAnimationComplete={() => {
               if (closing) {
