@@ -240,14 +240,13 @@ body {
   display: inline-block;
 }
 
-/* the DOUBLE TIDE, DOWN -> UP: each letter's glyph fills from the
-   baseline upward through a NAVY band, then a GOLD band, in ONE
-   continuous rise (background-position -10% -> 150%), and the rises
-   cascade left -> right via the --i stagger - the same living wave
-   quality as the thinking light, but rising. Ink above the rising
-   edge keeps every letter readable while it fills. The melt class
-   washes the ink color back over the glyphs, staggered the same
-   way. Pure transitions on the letters themselves - native. */
+/* the DOUBLE PASS, DOWN -> UP, one after another immediately:
+   every letter's glyph fills from its baseline upward with a full
+   NAVY pass (0.45s, 38ms cascade - the living-wave stagger), then
+   the gold pass re-rises from the baseline over the finished navy
+   (the swap happens with the paint parked below the glyphs, so it
+   is invisible - no flash, no two-tone), and each letter ends clean
+   gold. Then the letters melt back to ink, staggered. */
 .ucsd-word.ucsd-rise .ucsd-letter {
   color: transparent;
   background-size: 100% 200%;
@@ -256,38 +255,94 @@ body {
   background-clip: text;
   background-image: linear-gradient(
     180deg,
-    #f3f1ea 48%,
-    #182B49 52%,
-    #182B49 72%,
-    #C69214 76%,
-    #C69214 100%
+    #f3f1ea 55%,
+    #182B49 58%,
+    #182B49 100%
   );
-  background-position: 0% -10%; /* tide fully below the glyphs */
-  transition: background-position 1.3s cubic-bezier(0.45, 0, 0.55, 1);
-  transition-delay: calc(var(--i) * 60ms);
+  background-position: 0% -10%; /* pass parked below the glyphs */
+  transition: background-position 0.4s cubic-bezier(0.45, 0, 0.55, 1);
+  transition-delay: calc(var(--i) * 34ms);
 }
 
 .ucsd-word.ucsd-fill .ucsd-letter {
-  background-position: 0% 150%; /* tide risen: full gold */
+  background-position: 0% 150%; /* NAVY pass risen: full navy */
+}
+
+/* the gold handoff: the gradient swaps to gold with the paint parked
+   below the glyphs and the transition off - an instant, invisible
+   rewind - then ucsd-gold-rise re-arms the transition a frame later
+   and every letter re-rises GOLD from its baseline, staggered */
+.ucsd-word.ucsd-gold .ucsd-letter {
+  background-image: linear-gradient(
+    180deg,
+    #f3f1ea 55%,
+    #C69214 58%,
+    #C69214 100%
+  );
+  background-position: 0% -10%;
+  transition: none;
+}
+
+.ucsd-word.ucsd-gold-rise .ucsd-letter {
+  background-position: 0% 150%; /* GOLD pass risen: full gold */
+  transition: background-position 0.4s cubic-bezier(0.45, 0, 0.55, 1);
+  transition-delay: calc(var(--i) * 34ms);
 }
 
 .ucsd-word.ucsd-melt .ucsd-letter {
+  /* the gold holds in the glyphs; the paper color washes over it -
+     a gentle fade back to ink, not a snap */
   color: #f3f1ea;
-  background-image: none;
-  transition: color 0.4s ease;
-  transition-delay: calc(var(--i) * 45ms);
+  transition: color 0.32s ease;
+  transition-delay: calc(var(--i) * 28ms);
 }
 
-/* the trident throw: spawns at the word, rises, then flies right
+/* the trident throw: materializes above the word, then shoots right
    off the VIEWPORT - fixed layer over the page, never the stage */
+.ucsd-trident-wrap {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  pointer-events: none;
+}
+
 .ucsd-trident-fly {
   position: fixed;
   left: 0;
   top: 0;
-  z-index: 40;
+  z-index: 41;
   color: var(--color-ink);
   will-change: transform;
   pointer-events: none;
+}
+
+/* the creation halo: a brief gold bloom as the trident materializes */
+.ucsd-trident-halo {
+  position: fixed;
+  width: 64px;
+  height: 44px;
+  z-index: 39;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(230, 178, 60, 0.28),
+    rgba(230, 178, 60, 0) 70%
+  );
+  animation: trident-bloom 0.45s ease-out forwards;
+}
+
+@keyframes trident-bloom {
+  0% {
+    opacity: 0;
+    transform: scale(0.35);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.35);
+  }
 }
 
 

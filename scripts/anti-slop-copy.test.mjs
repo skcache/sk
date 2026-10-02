@@ -232,19 +232,21 @@ test("polish pass: reveal, grain, plaque, affordance, autoplay", () => {
   // grain is SVG feTurbulence fixed overlay
   assert.equal(css.includes("feTurbulence"), true, "grain turbulence missing");
   assert.equal(css.includes("pointer-events: none"), true, "overlay must not block clicks");
-  // UCSD V2: one-time navy->gold paint pass, trident pop + stage throw
-  assert.equal(css.includes(".ucsd-rise"), true, "UCSD double tide missing");
-  assert.equal(css.includes(".ucsd-letter"), true, "per-letter tide missing");
-  assert.equal(css.includes("calc(var(--i) * 60ms)"), true, "tidal stagger missing");
-  assert.equal(css.includes(".ucsd-fill .ucsd-letter"), true, "fill target missing");
-  assert.equal(css.includes("#182B49 52%"), true, "navy band in the tide missing");
-  assert.equal(css.includes("#C69214 76%"), true, "gold band in the tide missing");
+  // UCSD V2: one-time navy->gold double pass, trident pop + stage throw
+  assert.equal(css.includes(".ucsd-rise"), true, "UCSD double pass missing");
+  assert.equal(css.includes(".ucsd-letter"), true, "per-letter pass missing");
+  assert.equal(css.includes("calc(var(--i) * 34ms)"), true, "cascade stagger missing");
+  assert.equal(css.includes(".ucsd-fill .ucsd-letter"), true, "navy fill target missing");
+  assert.equal(css.includes(".ucsd-gold .ucsd-letter"), true, "gold pass target missing");
+  assert.equal(css.includes("#182B49 58%"), true, "navy pass layer missing");
+  assert.equal(css.includes("#C69214 58%"), true, "gold pass layer missing");
+  assert.equal(css.includes("0.4s cubic-bezier"), true, "pass timing missing");
   assert.equal(css.includes("ucsd-fill-navy"), false, "old fill pass must be gone");
   assert.equal(css.includes("#182B49"), true, "UCSD navy missing");
   assert.equal(css.includes("#C69214"), true, "UCSD gold missing");
   assert.equal(css.includes(".ucsd-painted"), false, "old painted class must be gone");
   assert.equal(css.includes(".ucsd-navy"), false, "old navy segment class must be gone");
-  assert.equal(css.includes(".ucsd-gold .ucsd-letter"), false, "flat gold class must be gone (gold rides the tide)");
+  assert.equal(css.includes(".ucsd-gold .ucsd-letter"), true, "gold must rise over the navy");
   assert.equal(css.includes("#182B49"), true, "UCSD navy missing");
   assert.equal(css.includes("#C69214"), true, "UCSD gold missing");
   assert.equal(css.includes(".ucsd-trident-fly"), true, "viewport trident flight missing");
@@ -302,9 +304,11 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   const ucsd = read("components/UCSDWord.tsx");
   assert.equal(ucsd.includes("TridentMark"), true, "replicated golden trident missing");
   assert.equal(ucsd.includes("LETTERS"), true, "per-letter wave split missing");
-  assert.equal(ucsd.includes("ucsd-fill"), true, "tidal fill phase missing");
-  assert.equal(ucsd.includes("NAVY_END"), true, "melt timing missing");
-  assert.equal(ucsd.includes("1150"), true, "trident must form during the tide");
+  assert.equal(ucsd.includes("ucsd-fill"), true, "navy fill phase missing");
+    assert.equal(ucsd.includes("ucsd-gold"), true, "gold pass phase missing");
+    assert.equal(ucsd.includes("1600"), true, "melt timing missing");
+    assert.equal(ucsd.includes("770"), true, "gold handoff must wait for the navy");
+  assert.equal(ucsd.includes("500"), true, "trident must materialize as the navy fills");
   assert.equal(ucsd.includes("onAnimationComplete"), false, "no child unmounts the badge");
   assert.equal(ucsd.includes("badge-plaque"), false, "the plaque box is gone");
   assert.equal(ucsd.includes("ucsd-rise"), true, "two-pass sweep missing");
