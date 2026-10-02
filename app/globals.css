@@ -249,6 +249,7 @@ body {
   white-space: nowrap;
   vertical-align: -0.06em;
   clip-path: inset(-100% 0 -100% 0);
+  margin-right: 0.09em;
 }
 
 .o-mark {
@@ -256,7 +257,6 @@ body {
   height: 1.2em;
   width: auto;
   margin-top: -0.02em;
-  margin-right: 0.07em;
   pointer-events: none;
 }
 
@@ -272,6 +272,7 @@ body {
   white-space: nowrap;
   vertical-align: -0.06em;
   clip-path: inset(-100% 0 -100% 0);
+  margin-right: 0.12em;
 }
 
 .gdg-mark {
@@ -279,7 +280,6 @@ body {
   height: 1em;
   width: auto;
   margin-top: 0.11em;
-  margin-right: 0.09em;
   pointer-events: none;
 }
 
@@ -300,6 +300,7 @@ body {
   white-space: nowrap;
   vertical-align: -0.06em;
   clip-path: inset(-100% 0 -100% 0);
+  margin-right: 0.14em;
 }
 
 .k-mark {
@@ -307,7 +308,6 @@ body {
   height: 1.2em;
   width: auto;
   margin-top: -0.08em;
-  margin-right: 0.08em;
   pointer-events: none;
   border-radius: 3px;
 }
