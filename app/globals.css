@@ -583,10 +583,10 @@ body {
 @keyframes eq-bounce {
   0%,
   100% {
-    height: 3px;
+    height: 6px; /* base ~8.5px +/- 30% */
   }
   50% {
-    height: 13px;
+    height: 11px;
   }
 }
 
