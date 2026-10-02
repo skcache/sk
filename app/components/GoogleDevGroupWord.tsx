@@ -39,14 +39,16 @@ export default function GoogleDevGroupWord() {
     : { type: "spring" as const, stiffness: 320, damping: 32, mass: 0.9 };
   const twClose = reduceMotion
     ? { duration: 0.01 }
-    : { duration: 0.14, ease: "easeInOut" as const };
-  const fadeClose = reduceMotion ? { duration: 0.01 } : { duration: 0.13, ease: "easeOut" as const };
+    : { duration: 0.26, ease: "easeInOut" as const };
+  const fadeClose = reduceMotion ? { duration: 0.01 } : { duration: 0.22, ease: "easeOut" as const };
 
   const colorFor = (i: number) => {
     if (!on) return undefined;
-    // official wordmark sequence applies to "Google" (chars 0-5) only
+    // "Google" takes the exact official wordmark colors; "Dev Group"
+    // joins in the official GDG blue so the whole phrase reads as ONE
+    // complete brand treatment (no half-applied look)
     if (i < 6) return WORDMARK[i];
-    return undefined;
+    return "#4285F4";
   };
 
   return (
@@ -87,6 +89,7 @@ export default function GoogleDevGroupWord() {
         {"Google Dev Group".split("").map((c, i) => (
           <motion.span
             key={i}
+            className="gdg-char"
             animate={{ color: colorFor(i) }}
             transition={reduceMotion ? { duration: 0.01 } : { duration: 0.22, ease: "easeOut" }}
           >

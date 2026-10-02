@@ -8,23 +8,28 @@ const geistSans = Geist({
   display: "swap",
 });
 
+const TITLE = "Siddhant Kuwar"; // single source: <title> == og:title == twitter:title
+const DESCRIPTION =
+  "Hey, I'm Siddhant. 4th year CS student at UC San Diego. Into inference, systems, and building software.";
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://skx.si"),
-  title: "siddhant",
-  description:
-    "Hey, I'm Siddhant. 4th year CS student at UC San Diego. Into inference, systems, and building software.",
+  title: TITLE,
+  description: DESCRIPTION,
   openGraph: {
-    title: "Siddhant Kuwar",
-    description:
-      "Hey, I'm Siddhant. 4th year CS student at UC San Diego. Into inference, systems, and building software.",
+    title: TITLE,
+    description: DESCRIPTION,
+    url: "https://skx.si",
+    siteName: TITLE,
     type: "website",
     locale: "en_US",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: TITLE }],
   },
   twitter: {
-    card: "summary",
-    title: "Siddhant Kuwar",
-    description:
-      "Hey, I'm Siddhant. 4th year CS student at UC San Diego. Into inference, systems, and building software.",
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
+    images: ["/og.png"],
   },
 };
 

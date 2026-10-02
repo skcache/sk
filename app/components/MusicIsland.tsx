@@ -43,33 +43,21 @@ function MusicBody({ onDone }: { onDone: () => void }) {
   useEffect(() => {
     onDoneRef.current = onDone;
   }, [onDone]);
+  void state.isAnimating;
 
-  // official animation queue - delays are incremental: the island
-  // GLIDES from the word at EMPTY (fast projection, ~260ms), then
-  // expands IN PLACE with the official Apple-like springs: compact
-  // at t=300ms, compactLong at t=920ms, held to t=3320ms (~2.4s of
-  // music state), collapsing back through compact to empty at
-  // t=3550ms. separating the glide from the expansion is what makes
-  // it feel composed instead of warped
+  // official animation queue - the island GLIDES from the word at
+  // EMPTY (fast projection), then expands IN PLACE with the official
+  // Apple-like springs into compactLong (~300x56) and STAYS THERE.
+  // NO auto-dismiss: the audit called the ~2s auto-close a flicker;
+  // the island holds until the user clicks `music` again (toggle) or
+  // opens another toy.
   useScheduledAnimations([
     { size: SIZE_PRESETS.COMPACT, delay: 300 },
     { size: SIZE_PRESETS.COMPACT_LONG, delay: 620 },
-    { size: SIZE_PRESETS.COMPACT, delay: 2400 },
-    { size: SIZE_PRESETS.EMPTY, delay: 230 },
   ]);
 
-  // when the queue has run to completion (shell back at EMPTY), the
-  // stage clears this island and it resolves back into the word. the
-  // official reducer sets isAnimating false on every SET_SIZE, so the
-  // gate is: queue started once AND final size reached.
-  const queueStarted = useRef(false);
-  useEffect(() => {
-    if (state.isAnimating) queueStarted.current = true;
-    if (queueStarted.current && state.size === SIZE_PRESETS.EMPTY && !state.isAnimating) {
-      onDoneRef.current();
-    }
-  }, [state.isAnimating, state.size]);
-
+  // the island PERSISTS (no onDone): it holds until the word is
+  // clicked again or another toy replaces it
   return (
     <motion.span
       className="music-island-anchor"

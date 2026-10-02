@@ -13,11 +13,12 @@ import { useEffect, useRef } from "react";
  * breathes with height. Choreographed on a rAF clock mutating
  * transforms directly - no re-renders.
  */
-const DUR = 2050; // total, ms
+const DUR = 2450; // total, ms - slow, readable crossing
 const GRAVITY = 2600; // px/s^2
 const RESTITUTION = 0.77; // r^2 = 0.59 -> natural apex decay 54/32/16
 const APEX = 54; // first apex, px (desktop)
 const IMPACT_MS = 90; // squash window at each ground contact
+const DROP_IN = 64; // spawn height above the floor at the word (falls in)
 const SPINS = 6.5; // rotations across the whole crossing
 
 function Ball({ size = 26 }: { size?: number }) {
@@ -52,13 +53,27 @@ export default function BasketballStage({ onDone }: { onDone: () => void }) {
     const stage = el.parentElement;
     // stage height caps the apex on short viewports (72px mobile)
     const maxApex = stage && stage.clientHeight < 88 ? 40 : APEX;
-    const travel = stage ? stage.clientWidth + 76 : 440; // enter/exit room
-    const vy0 = Math.sqrt(2 * GRAVITY * maxApex); // px/s launch upward
+    const travel = stage ? stage.clientWidth + 140 : 520; // word -> past right edge
+    // SPAWN AT THE WORD: measure the basketball word button, so the
+    // ball drops from exactly there (visible above the stage, falls
+    // in, first bounce lands at the word)
+    const wordBtn = document.querySelector<HTMLElement>(
+      'button[aria-label="basketball"]',
+    );
+    // STAGE-LOCAL x: the ball's translate lives inside the stage,
+    // while getBoundingClientRect is page-global - subtract the stage
+    // origin or the ball lands a full stage-width right of the word
+    const stageRect = stage ? stage.getBoundingClientRect() : { left: 0 };
+    const wr = wordBtn ? wordBtn.getBoundingClientRect() : null;
+    const wordX = wr ? wr.left + wr.width / 2 - stageRect.left : 60;
+    const vy0 = Math.sqrt(2 * GRAVITY * maxApex); // px/s launch upward (stretch normalization)
     let raf = 0;
     let startT = 0;
     let prev = 0;
-    let y = 0; // height above the floor
-    let vy = vy0; // upward positive
+    let y = 64; // spawns 64px above the floor at the word's x (visible
+    // above the stage top), falls in with gravity, first bounce lands
+    // at the word
+    let vy = 0; // falls in with gravity
     let impactLeft = 0; // squash window countdown, ms
     let impactAmp = 0;
     const ease = (x: number) => (x < 0.12 ? 0 : x > 0.88 ? 1 : (x - 0.12) / 0.76);
@@ -105,10 +120,15 @@ export default function BasketballStage({ onDone }: { onDone: () => void }) {
         const dip = impactAmp * Math.sin(Math.PI * (1 - k));
         scY = 1 - dip;
         scX = 1 + dip * 0.85;
+      } else if (vy < -240) {
+        // airborne STRETCH: elongates while falling fast (whiplash)
+        const stretch = Math.min(0.07, (Math.abs(vy) / vy0) * 0.12);
+        scY = 1 + stretch;
+        scX = 1 - stretch * 0.7;
       }
-      // ----- horizontal + spin -----
+      // ----- horizontal: from the word, crossing right -----
       const u = elapsed / DUR;
-      const x = -38 + travel * ease(u);
+      const x = wordX - 18 + travel * ease(u);
       const rot = u * 360 * SPINS;
       const opacity =
         elapsed < 90 ? elapsed / 90 : elapsed > DUR - 170 ? Math.max(0, (DUR - elapsed) / 170) : 1;

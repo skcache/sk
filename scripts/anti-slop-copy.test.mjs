@@ -225,9 +225,10 @@ test("dark mode is committed: no light theme, no scheme switching", () => {
 test("polish pass: reveal, grain, plaque, affordance, autoplay", () => {
   const css = read("globals.css");
   // blur-resolve entrance is JS-gated (no-JS keeps content visible)
-  assert.equal(css.includes("reveal-in"), true, "reveal keyframes missing");
-  assert.equal(css.includes("[data-reveal]"), true, "data-reveal rule missing");
-  assert.equal(css.includes(".js [data-reveal]"), true, "reveal not JS-gated");
+  assert.equal(css.includes("[data-reveal]"), false, "CSS keyframe reveal must be gone (GSAP owns it)");
+  const pv = read("components/PageReveal.tsx");
+  assert.equal(pv.includes("gsap.timeline"), true, "GSAP timeline missing");
+  assert.equal(pv.includes("i * 0.3"), true, "perceptible 300ms stagger missing");
   // grain is SVG feTurbulence fixed overlay
   assert.equal(css.includes("feTurbulence"), true, "grain turbulence missing");
   assert.equal(css.includes("pointer-events: none"), true, "overlay must not block clicks");
@@ -242,6 +243,8 @@ test("polish pass: reveal, grain, plaque, affordance, autoplay", () => {
   assert.equal(css.includes(".stage-ucsd"), false, "stage trident must be gone");
   assert.equal(css.includes(".ucsd-pop"), false, "word pop must be gone");
   assert.equal(css.includes(".identity-slot"), true, "experience identity slots missing");
+  const gdg = read("components/GoogleDevGroupWord.tsx");
+  assert.equal(gdg.includes('return "#4285F4"'), true, "Dev Group must join the brand blue");
   // affordance: hover contrast only (dotted underlines removed in repair pass)
   assert.equal(css.includes(".word-button:hover"), true, "hover affordance missing");
   assert.equal(css.includes("transition: color 150ms ease"), true, "hover brighten must fade smoothly");
@@ -307,10 +310,10 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(orvia.includes('x="14"'), true, "canonical O-ring geometry missing");
   // inference: thinking-orbs signature interaction - 5s work, random state
   const inf = read("components/InferenceWord.tsx");
-  assert.equal(inf.includes("ThinkingOrb"), true, "thinking orb missing");
-  assert.equal(inf.includes("state=\"solving\""), true, "solving state missing");
-  assert.equal(inf.includes("size={32}"), true, "orb renders sharp at package size");
-  assert.equal(inf.includes("orb-22"), true, "22px orb display wrapper missing");
+  assert.equal(inf.includes("ReasoningOrb"), true, "crisp vector spinner missing");
+  assert.equal(inf.includes("ThinkingOrb"), false, "smeared canvas orb must be gone");
+  assert.equal(inf.includes("state={orbState}"), true, "live orb must use the randomized state");
+  assert.equal(inf.includes('blur(10px)'), true, "blur-through morph missing");
   assert.equal(inf.includes("word-morph"), true, "fixed morph slot missing");
   assert.equal(inf.includes("THINK_MS = 2500"), true, "2.5s inference hold missing");
   assert.equal(inf.includes("INFER_ORB_STATES"), true, "random orb states must exist");
@@ -332,6 +335,9 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(bb.includes("useStage"), true, "basketball must open the stage");
   assert.equal(bb.includes("word-ball"), false, "inline word ball must be gone");
   const bbStage = read("components/BasketballStage.tsx");
+  assert.equal(bbStage.includes("DUR = 2450"), true, "slow readable crossing missing");
+  assert.equal(bbStage.includes("wordX"), true, "ball must spawn at the word");
+  assert.equal(bbStage.includes("DROP_IN"), true, "drop-in above the stage missing");
   assert.equal(bbStage.includes("RESTITUTION"), true, "true restitution physics missing");
   assert.equal(bbStage.includes("GRAVITY"), true, "time-integrated gravity missing");
   assert.equal(bbStage.includes("bb-shadow"), true, "contact shadow missing");
@@ -340,6 +346,7 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(chiba.includes("TactileWord"), true, "chiba must keep the tactile click");
   assert.equal(chiba.includes("chiba-sweep"), true, "one-time sweep missing");
   assert.equal(chiba.includes("onAnimationEnd"), true, "sweep must clear after one pass");
+  assert.equal(chiba.includes("animationName"), true, "sweep must filter its own animationend");
   assert.equal(css.includes("chiba-sweep-once"), true, "sweep keyframes missing");
 });
 
@@ -359,6 +366,7 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   const music = read("components/MusicIsland.tsx");
   assert.equal(music.includes("setTimeout"), false, "island must not hand-roll its own timer chain");
   assert.equal(music.includes("useScheduledAnimations"), true, "island must use the official animation queue");
+  assert.equal(music.includes("NO auto-dismiss"), true, "island must hold until dismissed");
   assert.equal(music.includes("DynamicIslandProvider"), true, "island must use the official provider");
   assert.equal(music.includes("SIZE_PRESETS.COMPACT_LONG"), true, "island must use the official preset");
   assert.equal(music.includes("layoutId"), true, "island must share layout with the word");
@@ -376,6 +384,8 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(stageCode.includes('"ucsd"'), false, "stage must NOT host ucsd (trident flies off the viewport)");
   const css = read("globals.css");
   assert.equal(css.includes(".interaction-stage"), true, "stage CSS missing");
+  assert.equal(css.includes("height: 26px"), true, "stage resting state missing");
+  assert.equal(css.includes(".interaction-stage.is-active"), true, "stage active expansion missing");
   assert.equal(css.includes("height: 72px"), true, "mobile stage height missing");
   assert.equal(css.includes("height: 88px"), true, "desktop stage height missing");
   assert.equal(css.includes(".dynamic-island-row"), true, "island row CSS missing");

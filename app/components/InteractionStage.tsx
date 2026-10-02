@@ -28,7 +28,10 @@ export default function InteractionStage({
   onDone: () => void;
 }) {
   return (
-    <div className="interaction-stage" aria-hidden={!active}>
+    <div
+      className={`interaction-stage${active ? " is-active" : ""}`}
+      aria-hidden={!active}
+    >
       <AnimatePresence mode="wait">
         {active === "music" && <MusicIsland key="music" onDone={onDone} />}
         {active === "basketball" && <BasketballStage key="basketball" onDone={onDone} />}

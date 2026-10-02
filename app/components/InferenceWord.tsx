@@ -2,25 +2,33 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { ThinkingOrb, type OrbState } from "thinking-orbs";
+import ReasoningOrb, { type ReasoningState } from "./ReasoningOrb";
 import TactileWord from "./TactileWord";
 
 const THINK_MS = 2500; // the word visibly thinks, then returns
 
-// randomized reasoning states: a fresh orb picks one per activation
-const INFER_ORB_STATES: OrbState[] = ["solving", "working", "searching", "weaving", "composing", "breathing"];
-const pickOrbState = (): OrbState => INFER_ORB_STATES[Math.floor(Math.random() * INFER_ORB_STATES.length)];
+// randomized reasoning states: a fresh spinner picks one per activation
+const INFER_ORB_STATES: ReasoningState[] = [
+  "solving",
+  "working",
+  "searching",
+  "weaving",
+  "composing",
+  "breathing",
+];
+const pickOrbState = (): ReasoningState =>
+  INFER_ORB_STATES[Math.floor(Math.random() * INFER_ORB_STATES.length)];
 
 /**
  * Signature interaction: "inference" becomes a tiny thinking process.
  *
  * hard press -> the word becomes ONE inline status unit: a single
  * lowercase `thinking` word with a soft light glow sweeping left ->
- * right across the letters, plus a 20px solving ThinkingOrb 3px
- * beside it. The text crossfades in place while the cell springs
- * open, CLIPPING the orb so it is revealed smoothly from behind the
- * word's edge; the orb works for ~2.5s, then the unit retracts (orb
- * clipped away) and the word returns. No trailing marker - the
+ * right across the letters, plus a crisp 22px reasoning spinner 3px
+ * beside it. The text resolves THROUGH a blur into focus while the
+ * cell springs open, CLIPPING the spinner so it is revealed smoothly
+ * from behind the word's edge; the spinner works for ~2.5s, then the
+ * unit retracts (spinner clipped away) and the word returns. No trailing marker - the
  * return is the resolution.
  *
  * Deterministic: the orb state is ALWAYS "solving" and the glow is a
@@ -43,7 +51,7 @@ const pickOrbState = (): OrbState => INFER_ORB_STATES[Math.floor(Math.random() *
 export default function InferenceWord() {
   const reduceMotion = useReducedMotion();
   const [phase, setPhase] = useState<"idle" | "thinking">("idle");
-  const [orbState, setOrbState] = useState<OrbState>("solving");
+  const [orbState, setOrbState] = useState<ReasoningState>("solving");
   const safety = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const [widths, setWidths] = useState<{ idle: number; active: number } | null>(null);
@@ -114,12 +122,7 @@ export default function InferenceWord() {
         >
           <span>thinking</span>
           <span className="orb-22" aria-hidden="true">
-            <ThinkingOrb
-              state="solving"
-              size={32}
-              theme="dark"
-              paused={!!reduceMotion}
-            />
+            <ReasoningOrb state="solving" paused={!!reduceMotion} />
           </span>
         </span>
 
@@ -135,31 +138,38 @@ export default function InferenceWord() {
             }}
             transition={widthT}
           >
-            {/* idle word */}
+            {/* idle word: blurs OUT (a real morph, not a hard cut) */}
             <motion.span
               className="word-morph-base"
               initial={false}
-              animate={{ opacity: phase === "thinking" ? 0 : 1 }}
+              animate={{
+                opacity: phase === "thinking" ? 0 : 1,
+                filter: phase === "thinking" ? "blur(10px)" : "blur(0px)",
+              }}
               transition={
                 phase === "thinking"
-                  ? quick ?? { duration: 0.07, ease: "easeOut" }
-                  : quick ?? { duration: 0.22, ease: "easeOut", delay: 0.05 }
+                  ? quick ?? { duration: 0.28, ease: "easeIn" }
+                  : quick ?? { duration: 0.26, ease: "easeOut", delay: 0.05 }
               }
             >
               inference
             </motion.span>
 
-            {/* thinking unit: crossfades in as the cell opens; the orb
-                is progressively revealed by the clip until the unit
-                fits. deterministic: always the solving state */}
+            {/* thinking unit: resolves THROUGH the blur into focus as
+                the cell opens - the blur-through reads as a morph
+                (~0.5s total); the orb is progressively revealed by
+                the clip. randomized reasoning spinner per run */}
             <motion.span
               className="word-morph-active"
               initial={false}
-              animate={{ opacity: phase === "thinking" ? 1 : 0 }}
+              animate={{
+                opacity: phase === "thinking" ? 1 : 0,
+                filter: phase === "thinking" ? "blur(0px)" : "blur(10px)",
+              }}
               transition={
                 phase === "thinking"
-                  ? quick ?? { duration: 0.16, ease: "easeOut", delay: 0.05 }
-                  : quick ?? { duration: 0.12, ease: "easeIn" }
+                  ? quick ?? { duration: 0.42, ease: "easeOut", delay: 0.12 }
+                  : quick ?? { duration: 0.2, ease: "easeIn" }
               }
               aria-hidden={phase === "thinking" ? undefined : true}
             >
@@ -167,12 +177,7 @@ export default function InferenceWord() {
                 thinking
               </span>
               <span className="orb-22">
-                <ThinkingOrb
-                  state={orbState}
-                  size={32}
-                  theme="dark"
-                  paused={!!reduceMotion}
-                />
+                <ReasoningOrb state={orbState} paused={!!reduceMotion} />
               </span>
             </motion.span>
           </motion.span>

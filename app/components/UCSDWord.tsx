@@ -51,22 +51,28 @@ export default function UCSDWord() {
   const wordRef = useRef<HTMLSpanElement>(null);
   const doneRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ONE left-to-right color pass after the reveal settles: the phrase
-  // paints navy/gold (UC + Diego navy, San gold), holds colored a
-  // beat, then fades back to plain ink - one time, never repeats
-  useEffect(() => {
+  // ONE left-to-right color pass; fires reliably on load after the
+  // reveal settles, and EVERY click REPLAYS it (paint reset + rerun)
+  const fadeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const runPaint = useCallback(() => {
     if (reduceMotion) return;
-    const t = setTimeout(() => setPainted(true), WIPE_DELAY);
-    return () => clearTimeout(t);
+    if (fadeTimer.current) clearTimeout(fadeTimer.current);
+    // reset first so the clip/animation restarts even mid-pass
+    setPainted(false);
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setPainted(true);
+        fadeTimer.current = setTimeout(() => setPainted(false), 3050);
+      });
+    });
   }, [reduceMotion]);
 
-  // remove the painted class once the full pass (reveal + hold +
-  // fade-out) is over, so the phrase is back to plain ink
+  // mount trigger: guaranteed to run once (timer + cleanup guard)
   useEffect(() => {
-    if (!painted) return;
-    const t = setTimeout(() => setPainted(false), 3050);
+    const t = setTimeout(runPaint, WIPE_DELAY);
     return () => clearTimeout(t);
-  }, [painted]);
+  }, [runPaint]);
 
   const clearFlying = useCallback(() => {
     if (doneRef.current) {
@@ -77,6 +83,7 @@ export default function UCSDWord() {
   }, []);
 
   const activate = useCallback(() => {
+    runPaint(); // every click replays the color pass
     if (flying) return; // one throw at a time
     const rect = wordRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -84,7 +91,7 @@ export default function UCSDWord() {
     setFlying(true);
     setFlightRun((r) => r + 1);
     doneRef.current = setTimeout(clearFlying, FLIGHT_MS + 60);
-  }, [flying, clearFlying]);
+  }, [runPaint, flying, clearFlying]);
 
   useEffect(() => clearFlying, [clearFlying]);
 

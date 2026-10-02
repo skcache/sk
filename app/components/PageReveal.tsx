@@ -1,45 +1,58 @@
 "use client";
 
-import { useEffect } from "react";
+import { useLayoutEffect } from "react";
+import gsap from "gsap";
 
 /**
- * Staggered blur-resolve entrance. Progressive enhancement: the hidden
- * first frame (blur 20px, opacity 0, scale 1.02) only exists while the
- * `.js` class is present, so the page is fully readable without JS.
- *
- * Each slot's reveal class is removed after its animation ends, so no
- * persistent blur filter is left compositing over the page.
+ * Page-load reveal, GSAP timeline (per the animation audit: hand-rolled
+ * CSS with fixed 100ms offsets was imperceptible). Every [data-reveal]
+ * slot now enters in a REAL stagger (~300ms between slots, intro the
+ * final anchor), a soft blur->sharp resolve with 18px rise, 0.9-1.0s
+ * per slot, power3.out. The stagger is what reads; no JS = page is
+ * plainly visible (progressive enhancement: the .js-hidden state only
+ * exists while 'js' is on the root).
  */
 export default function PageReveal() {
-  useEffect(() => {
+  useLayoutEffect(() => {
     const root = document.documentElement;
     root.classList.add("js");
 
     const slots = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal]"));
-    const timers: number[] = [];
-    const cleanups: Array<() => void> = [];
+    if (!slots.length) return;
 
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const failsafe = window.setTimeout(() => {
+      gsap.set(slots, { opacity: 1, y: 0, filter: "blur(0px)", clearProps: "all" });
+    }, 6000);
+
+    if (reduce) {
+      gsap.set(slots, { opacity: 1, clearProps: "all" });
+      return () => {
+        clearTimeout(failsafe);
+        root.classList.remove("js");
+      };
+    }
+
+    const tl = gsap.timeline();
     slots.forEach((slot, i) => {
-      // slightly slower drama for the intro sentence, 100ms between slots
-      const dur = slot.dataset.revealDur ?? (slot.id === "intro" ? "1.1s" : "0.8s");
-      slot.style.setProperty("--reveal-dur", dur);
-      slot.style.setProperty("--reveal-delay", `${i * 100}ms`);
-      slot.classList.add("reveal");
-
-      const done = () => slot.classList.remove("reveal");
-      slot.addEventListener("animationend", done, { once: true });
-      cleanups.push(() => slot.removeEventListener("animationend", done));
+      const dramatic = slot.id === "intro";
+      tl.fromTo(
+        slot,
+        { opacity: 0, y: 20, filter: "blur(14px)" },
+        {
+          opacity: 1,
+          y: 0,
+          filter: "blur(0px)",
+          duration: dramatic ? 1.15 : 0.9,
+          ease: "power3.out",
+        },
+        i * 0.3, // ~300ms offset between slots: a human-perceivable cascade
+      );
     });
 
-    // safety: never leave a slot blurred/hidden if an event is missed
-    const failsafe = window.setTimeout(() => {
-      slots.forEach((slot) => slot.classList.remove("reveal"));
-    }, 5000);
-
     return () => {
-      timers.forEach(clearTimeout);
-      cleanups.forEach((fn) => fn());
       clearTimeout(failsafe);
+      tl.kill();
       root.classList.remove("js");
     };
   }, []);

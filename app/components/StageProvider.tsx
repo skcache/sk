@@ -21,7 +21,10 @@ export default function StageProvider({ children }: { children: ReactNode }) {
   return (
     <StageContext.Provider
       value={{
-        open: (a) => setActive((prev) => (prev === a ? prev : a)),
+        open: (a) =>
+          setActive((prev) =>
+            prev === a ? (a === "music" ? null : prev) : a, // music toggles closed; other toys ignore re-open while running
+          ),
         active,
       }}
     >

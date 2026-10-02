@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useState, type AnimationEvent } from "react";
 import TactileWord from "./TactileWord";
 
 /**
@@ -21,7 +21,11 @@ export default function ChibaWord() {
     setRun((r) => (r === 0 ? 1 : r)); // start one sweep cycle
   }, []);
 
-  const done = useCallback(() => setRun(0), []);
+  const done = useCallback((e: AnimationEvent<HTMLSpanElement>) => {
+    // only the sweep's own animation counts (ancestor animations
+    // bubble animationend too and would cut the sweep short)
+    if (e.animationName === "chiba-sweep-once") setRun(0);
+  }, []);
 
   return (
     <TactileWord label="Chiba Lab" onActivate={activate}>

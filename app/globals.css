@@ -86,9 +86,33 @@ body {
   touch-action: manipulation;
   /* uniform rigid-object press, anchored at the baseline edge */
   transform-origin: 50% 100%;
-  /* affordance: quiet hover contrast (no dotted underline; the press
-     itself and the tactile response teach interactivity) */
+  /* affordance: on hover/keyboard focus a quiet hairline slides in
+     under the word (never permanent - the surface stays calm) */
   transition: color 150ms ease;
+}
+
+.word-button::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  bottom: -3px;
+  height: 1.5px;
+  border-radius: 1px;
+  background: currentColor;
+  opacity: 0;
+  transform: scaleX(0.35);
+  transform-origin: left center;
+  transition:
+    opacity 0.18s ease,
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+.word-button:hover::after,
+.word-button:focus-visible::after {
+  opacity: 0.45;
+  transform: scaleX(1);
 }
 
 /* identity rows carry real logos: no dotted underline ever (it paints
@@ -232,9 +256,136 @@ body {
   overflow: hidden;
 }
 
-.orb-22 canvas {
-  width: 22px;
-  height: 22px;
+/* crisp vector reasoning spinner (replaces the smeared canvas orb):
+   one keyframed motion per state, restrained, deterministic */
+.reasoning-orb {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  color: rgba(243, 241, 234, 0.92);
+  will-change: transform;
+}
+
+.reasoning-orb svg {
+  display: block;
+}
+
+.ro-arc {
+  transform-origin: 12px 12px;
+  animation: ro-spin 1.15s linear infinite;
+}
+
+.ro-dot-a {
+  animation: ro-orbit 1.35s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+}
+
+.ro-dot-b {
+  animation: ro-orbit 1.35s cubic-bezier(0.45, 0, 0.55, 1) infinite reverse;
+}
+
+.ro-ring-pulse {
+  animation: ro-revolve 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  transform-origin: 12px 12px;
+}
+
+.ro-weave-a {
+  animation: ro-weave-a 1.4s ease-in-out infinite;
+  transform-origin: 12px 12px;
+}
+
+.ro-weave-b {
+  animation: ro-weave-b 1.4s ease-in-out infinite;
+  transform-origin: 12px 12px;
+}
+
+.ro-bar {
+  animation: ro-compose 1.1s ease-in-out infinite;
+}
+
+.ro-bar-b {
+  animation-delay: 0.1s;
+}
+
+.ro-bar-c {
+  animation-delay: 0.2s;
+}
+
+.ro-breathe {
+  animation: ro-breathe 1.8s ease-in-out infinite;
+  transform-origin: 12px 12px;
+}
+
+@keyframes ro-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ro-orbit {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(6.4px, -6.4px);
+  }
+  50% {
+    transform: translate(0, -9px);
+  }
+  75% {
+    transform: translate(-6.4px, -6.4px);
+  }
+}
+
+@keyframes ro-revolve {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ro-weave-a {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(22deg);
+  }
+}
+
+@keyframes ro-weave-b {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(-22deg);
+  }
+}
+
+@keyframes ro-compose {
+  0%,
+  100% {
+    transform: translateY(3.2px);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes ro-breathe {
+  0%,
+  100% {
+    transform: scale(0.82);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
 }
 
 /* 1px breathing between the orb and the following comma: the spring
@@ -478,11 +629,34 @@ body {
    animation. Toys (music island, ball, trident) play inside. */
 .interaction-stage {
   position: relative;
+  height: 26px; /* resting state: a quiet hairline slot, not a bug */
+  transition: height 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* resting hairline: the idle stage reads as a designed divider; it
+   fades away while a toy is active */
+.interaction-stage::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 44px;
+  height: 1px;
+  transform: translate(-50%, -50%);
+  background: rgba(243, 241, 234, 0.14);
+  transition: opacity 0.35s ease;
+}
+
+.interaction-stage.is-active {
   height: 72px;
 }
 
+.interaction-stage.is-active::before {
+  opacity: 0;
+}
+
 @media (min-width: 640px) {
-  .interaction-stage {
+  .interaction-stage.is-active {
     height: 88px;
   }
 }
@@ -644,41 +818,10 @@ body {
 
 /* ---------- page reveal (progressive enhancement) ---------- */
 
-/* Hidden/first frame ONLY when JS is running; without JS the slots are
-   plain visible content. The reveal class is removed after each slot's
-   animation end, so no persistent blur filter is left compositing. */
-.js [data-reveal] {
-  animation: reveal-in var(--reveal-dur, 0.8s) cubic-bezier(0.16, 1, 0.3, 1)
-    var(--reveal-delay, 0ms) backwards;
-}
-
-@keyframes reveal-in {
-  from {
-    opacity: 0;
-    filter: blur(20px);
-    transform: scale(1.02);
-  }
-  to {
-    opacity: 1;
-    filter: blur(0);
-    transform: scale(1);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .js [data-reveal] {
-    animation: reveal-fade var(--reveal-dur, 0.3s) ease-out backwards;
-  }
-
-  @keyframes reveal-fade {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-}
+/* The GSAP timeline (PageReveal) owns the entrance animation. The
+   hidden first frame only exists while the `.js` class is present;
+   without JS everything is plainly visible. Reduced motion: the
+   timeline sets everything visible instantly. */
 
 /* ---------- texture: grain ---------- */
 

@@ -28,8 +28,8 @@ export default function OrviaWord() {
     : { type: "spring" as const, stiffness: 320, damping: 32, mass: 0.9 };
   const twClose = reduceMotion
     ? { duration: 0.01 }
-    : { duration: 0.14, ease: "easeInOut" as const };
-  const fadeClose = reduceMotion ? { duration: 0.01 } : { duration: 0.13, ease: "easeOut" as const };
+    : { duration: 0.26, ease: "easeInOut" as const };
+  const fadeClose = reduceMotion ? { duration: 0.01 } : { duration: 0.22, ease: "easeOut" as const };
 
   return (
     <TactileWord
@@ -47,7 +47,7 @@ export default function OrviaWord() {
             key="o-box"
             className="o-markbox"
             initial={{ width: "0.74em" }}
-            animate={{ width: closing ? "0.74em" : "0.97em", opacity: closing ? 0 : 1 }}
+            animate={{ width: closing ? "0.74em" : "1.15em", opacity: closing ? 0 : 1 }}
             transition={{ width: closing ? twClose : twOpen, opacity: closing ? fadeClose : t }}
             onAnimationComplete={() => {
               if (closing) {
