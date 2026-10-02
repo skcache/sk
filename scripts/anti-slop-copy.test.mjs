@@ -315,6 +315,8 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(ucsd.includes('"UC San Diego".split("")'), true, "letter wave with real word gaps required (UCSanDiego bug)");
   assert.equal(ucsd.includes("ucsd-trident-fly"), true, "trident flight missing");
   assert.equal(ucsd.includes("useStage"), false, "ucsd must NOT use the shared stage anymore");
+  assert.equal(ucsd.includes("WIPE_DELAY"), false, "UCSD must NOT autoplay on load - the first load stays clean ink");
+  assert.equal(ucsd.includes("setTimeout(runPaint"), false, "no mount autoplay timer for the UCSD paint");
   // shared identity language: plain letter at rest, live mark box opens
   for (const cls of ["o-letter", "k-letter", "o-markbox", "gdg-markbox", ".k-markbox", ".o-mark", ".gdg-mark"]) {
     assert.equal(css.includes(cls), true, `identity class missing: ${cls}`);

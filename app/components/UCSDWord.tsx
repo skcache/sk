@@ -6,21 +6,20 @@ import { useReducedMotion } from "motion/react";
 import TactileWord from "./TactileWord";
 import TridentMark from "./TridentMark";
 
-const WIPE_DELAY = 1100; // after the page reveal settles
-
 /**
  * UC San Diego, the V2 way - the whole choreography runs in <= 2s:
  *
- * CLICK: the DOUBLE PASS starts instantly - every letter's glyph
- * fills from its baseline upward with a full NAVY pass (0.45s),
- * then a GOLD pass immediately rises over it (0.45s), cascading
- * letter by letter left -> right on a 38ms stagger. As the navy
- * fills, the golden TRIDENT MATERIALIZES above the word (a bold,
- * sharp weapon, lying horizontal pointing right, formed with a pop
- * + halo), and the moment the gold pass completes it SHOOTS left ->
- * right and exits the right edge. Letters melt back to ink while
- * the trident flies. The whole choreography runs in <= 2s.
- * Fires on load once + replays on every click.
+ * CLICK-ONLY (NO autoplay): the first load stays clean - the phrase
+ * is always ink until the user asks for it. On CLICK: the DOUBLE
+ * PASS starts instantly - every letter's glyph fills from its
+ * baseline upward with a full NAVY pass, then a GOLD pass
+ * immediately rises over it, cascading letter by letter left ->
+ * right on a 34ms stagger. As the navy fills, the golden TRIDENT
+ * MATERIALIZES above the word (a bold, sharp weapon, lying
+ * horizontal pointing right, formed with a pop + halo), and the
+ * moment the gold pass completes it SHOOTS left -> right and exits
+ * the right edge. Letters melt back to ink while the trident flies.
+ * The whole choreography runs in <= 2s.
  * Reduced motion: instant ink, fast horizontal throw.
  */
 const LETTERS = "UC San Diego".split("");
@@ -45,31 +44,39 @@ export default function UCSDWord() {
   // the gold handoff at 770ms swaps the gradient UNDER the glyphs
   // (invisible) and a frame later the gold re-rises over the finished
   // navy, then the melt washes ink back. Whole choreography <= 2s.
+  // Every rAF handoff ALSO gets a short setTimeout twin: if the tab
+  // is backgrounded mid-run, rAF stalls and the phrase would sit
+  // half-painted - the timeout guarantees the machine always
+  // completes to clean ink.
   const runPaint = useCallback(() => {
     if (reduceMotion) return;
     clearTimers();
     setPhase(0);
-    requestAnimationFrame(() => {
+    const next = (fn: () => void) => {
+      let done = false;
+      const run = () => {
+        if (done) return;
+        done = true;
+        fn();
+      };
+      requestAnimationFrame(run);
+      timers.current.push(setTimeout(run, 64)); // rAF stall fallback
+    };
+    next(() => {
       setPhase(1); // rise setup: pass parked below, transitions armed
-      requestAnimationFrame(() => {
+      next(() => {
         setPhase(2); // NAVY pass: every letter fills up (full cascade)
       });
     });
     timers.current.push(
       setTimeout(() => {
         setPhase(3); // gold handoff after the navy completes
-        requestAnimationFrame(() => setPhase(4)); // GOLD pass re-rises
+        next(() => setPhase(4)); // GOLD pass re-rises
       }, 770)
     );
     timers.current.push(setTimeout(() => setPhase(5), 1600)); // melt
     timers.current.push(setTimeout(() => setPhase(0), 2250)); // idle
   }, [reduceMotion, clearTimers]);
-
-  // mount trigger: guaranteed to run once (timer + cleanup guard)
-  useEffect(() => {
-    const t = setTimeout(runPaint, WIPE_DELAY);
-    return () => clearTimeout(t);
-  }, [runPaint]);
 
   const clearFlight = useCallback(() => {
     clearTimers();
@@ -95,7 +102,7 @@ export default function UCSDWord() {
       // MATERIALIZES as the navy pass fills (in sync with the sweep)
       timers.current.push(setTimeout(throwTrident, 500));
     }
-    timers.current.push(setTimeout(clearFlight, 2050));
+    timers.current.push(setTimeout(clearFlight, 2400));
   }, [runPaint, flying, throwTrident, clearFlight, reduceMotion]);
 
   useEffect(() => clearFlight, [clearFlight]);
