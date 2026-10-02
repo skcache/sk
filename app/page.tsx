@@ -2,6 +2,7 @@ import Intro from "./components/Intro";
 import OrviaWord from "./components/OrviaWord";
 import GoogleDevGroupWord from "./components/GoogleDevGroupWord";
 import KeywordsWord from "./components/KeywordsWord";
+import ChibaWord from "./components/ChibaWord";
 import PageReveal from "./components/PageReveal";
 import StageProvider from "./components/StageProvider";
 import { ExternalLink } from "lucide-react";
@@ -195,7 +196,10 @@ export default function Home() {
               <span aria-hidden="true" className="select-none text-muted">
                 •
               </span>
-              <span>Undergraduate Research Assistant at Chiba Lab</span>
+              <span>
+                Undergraduate Research Assistant at{" "}
+                <ChibaWord />
+              </span>
             </li>
             <li className="flex gap-3 text-lg leading-[1.6]">
               <span aria-hidden="true" className="select-none text-muted">

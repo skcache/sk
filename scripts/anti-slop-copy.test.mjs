@@ -177,7 +177,7 @@ test("experience list only contains the supplied facts", () => {
     "President at",
     'label="Google Dev Group"',
     ", UC San Diego",
-    "Undergraduate Research Assistant at Chiba Lab",
+    "Undergraduate Research Assistant at",
     "AI Research Intern at",
     'label="Keywords Studios"',
   ]) {
@@ -335,6 +335,12 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(bbStage.includes("RESTITUTION"), true, "true restitution physics missing");
   assert.equal(bbStage.includes("GRAVITY"), true, "time-integrated gravity missing");
   assert.equal(bbStage.includes("bb-shadow"), true, "contact shadow missing");
+  // chiba lab: the one-time sweep mini easter egg
+  const chiba = read("components/ChibaWord.tsx");
+  assert.equal(chiba.includes("TactileWord"), true, "chiba must keep the tactile click");
+  assert.equal(chiba.includes("chiba-sweep"), true, "one-time sweep missing");
+  assert.equal(chiba.includes("onAnimationEnd"), true, "sweep must clear after one pass");
+  assert.equal(css.includes("chiba-sweep-once"), true, "sweep keyframes missing");
 });
 
 test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => {

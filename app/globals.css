@@ -320,6 +320,62 @@ body {
 }
 
 
+/* ---------- chiba lab: the one-time sweep mini ---------- */
+
+.chiba-word {
+  position: relative;
+  display: inline-block;
+}
+
+/* one-time light sweep: a bright band passes left -> right across
+   the letters, exactly ONCE (forwards), then the word is plain ink.
+   same clipped-text recipe as the thinking glow; reduced motion
+   (animations killed) leaves the band parked off-canvas */
+.chiba-sweep {
+  position: relative;
+  display: inline-block;
+}
+
+.chiba-sweep::after {
+  content: attr(data-chiba);
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 24%,
+    rgba(255, 255, 255, 0.5) 44%,
+    rgba(255, 255, 255, 1) 50%,
+    rgba(255, 255, 255, 0.5) 56%,
+    transparent 76%
+  );
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
+  background-position: 120% 0; /* parked off right, invisible */
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  pointer-events: none;
+}
+
+.chiba-sweep.run::after {
+  animation: chiba-sweep-once 0.85s cubic-bezier(0.45, 0, 0.55, 1) forwards;
+}
+
+/* while the sweep runs the letters DIM so the bright band clearly
+   lights them as it passes (same trick as the thinking glow) */
+.chiba-sweep.run {
+  color: rgba(243, 241, 234, 0.45);
+}
+
+@keyframes chiba-sweep-once {
+  0% {
+    background-position: 120% 0; /* enters from beyond the left edge */
+  }
+  100% {
+    background-position: -20% 0; /* exits past the right edge */
+  }
+}
+
 /* ---------- experience identity marks ---------- */
 
 .identity-slot {
