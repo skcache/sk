@@ -240,26 +240,41 @@ body {
   display: inline-block;
 }
 
-/* the TRAVELING COLOR WAVE - the thinking light's pattern, in color:
-   each letter transitions ink -> NAVY one after another (--i * 45ms
-   stagger), so a navy wave sweeps left -> right across the phrase;
-   the gold class then re-targets every letter so a GOLD wave chases
-   through the same way; the melt class returns them to ink with the
-   same stagger. Transitions run on the letters THEMSELVES - native,
-   no overlay, no second render. */
+/* the DOUBLE TIDE, DOWN -> UP: each letter's glyph fills from the
+   baseline upward through a NAVY band, then a GOLD band, in ONE
+   continuous rise (background-position -10% -> 150%), and the rises
+   cascade left -> right via the --i stagger - the same living wave
+   quality as the thinking light, but rising. Ink above the rising
+   edge keeps every letter readable while it fills. The melt class
+   washes the ink color back over the glyphs, staggered the same
+   way. Pure transitions on the letters themselves - native. */
 .ucsd-word.ucsd-rise .ucsd-letter {
-  color: #182B49;
-  transition: color 0.32s ease;
-  transition-delay: calc(var(--i) * 45ms);
+  color: transparent;
+  background-size: 100% 200%;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  background-image: linear-gradient(
+    180deg,
+    #f3f1ea 48%,
+    #182B49 52%,
+    #182B49 72%,
+    #C69214 76%,
+    #C69214 100%
+  );
+  background-position: 0% -10%; /* tide fully below the glyphs */
+  transition: background-position 1.3s cubic-bezier(0.45, 0, 0.55, 1);
+  transition-delay: calc(var(--i) * 60ms);
 }
 
-.ucsd-word.ucsd-gold .ucsd-letter {
-  color: #C69214;
+.ucsd-word.ucsd-fill .ucsd-letter {
+  background-position: 0% 150%; /* tide risen: full gold */
 }
 
 .ucsd-word.ucsd-melt .ucsd-letter {
   color: #f3f1ea;
-  transition: color 0.35s ease;
+  background-image: none;
+  transition: color 0.4s ease;
   transition-delay: calc(var(--i) * 45ms);
 }
 

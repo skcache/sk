@@ -7,28 +7,29 @@ import TactileWord from "./TactileWord";
 import TridentMark from "./TridentMark";
 
 const WIPE_DELAY = 1100; // after the page reveal settles
-const STEP = 45; // ms per letter in the traveling color wave
 
 /**
  * UC San Diego, the V2 way.
  *
- * CLICK: the phrase runs a TRAVELING COLOR WAVE, one letter at a
- * time left -> right - the same living wave as the thinking light,
- * but in color: the letters turn UCSD NAVY (45ms stagger), then,
- * immediately after, a GOLD wave chases through the same way, then
- * the letters melt back to ink. At the same time the gold wave
- * starts, the TRIDENT forms above the word (a golden low-poly
- * sprite, LAYING HORIZONTAL, pointing right) and once the double
- * sweep completes it SHOOTS left -> right across the page and exits
- * the right edge with a gentle droop. The sweep is the trident's
+ * CLICK: the phrase runs a DOUBLE TIDE, DOWN -> UP: every letter's
+ * glyph fills from its baseline upward - a NAVY band rises first,
+ * then a GOLD band chases right behind it in the same single rise -
+ * and the rises cascade one letter at a time left -> right (the same
+ * living-wave stagger as the thinking light). Then the letters melt
+ * back to ink. While the tide runs, the golden TRIDENT forms above
+ * the word (laying horizontal, pointing right) and once the double
+ * tide completes it SHOOTS left -> right across the page and exits
+ * the right edge with a gentle droop. The tide is the trident's
  * wake. Fires on load once + replays on every click.
  * Reduced motion: instant ink, fast horizontal throw.
  */
 const LETTERS = "UC San Diego".split("");
+const NAVY_END = 2150; // melt begins after the last letter's navy+gold rise
+const IDLE_AT = 2850;
 
 export default function UCSDWord() {
   const reduceMotion = useReducedMotion();
-  const [phase, setPhase] = useState(0); // 0 idle | 1 navy | 2 gold | 3 melt
+  const [phase, setPhase] = useState(0); // 0 idle | 1 rise | 2 fill | 3 melt
   const [flying, setFlying] = useState(false);
   const [flightRun, setFlightRun] = useState(0); // fresh element per throw
   const [origin, setOrigin] = useState<{ x: number; y: number } | null>(null);
@@ -40,16 +41,22 @@ export default function UCSDWord() {
     timers.current = [];
   }, []);
 
-  // The double color wave: navy (staggered LTR), then gold chases
-  // immediately, then the letters melt back to ink. Fires reliably
-  // on load after the reveal settles and replays on EVERY click.
+  // The double tide: setup (tide hidden below every glyph) -> the
+  // fill target lands a frame later so the CSS transition fires
+  // (each letter rises navy-then-gold on its 60ms stagger), then the
+  // melt washes ink back, staggered the same way.
   const runPaint = useCallback(() => {
     if (reduceMotion) return;
     clearTimers();
-    setPhase(1); // navy wave
-    timers.current.push(setTimeout(() => setPhase(2), 560)); // gold wave
-    timers.current.push(setTimeout(() => setPhase(3), 1500)); // melt wave
-    timers.current.push(setTimeout(() => setPhase(0), 2150)); // idle
+    setPhase(0);
+    requestAnimationFrame(() => {
+      setPhase(1); // rise setup: tide parked below, transitions armed
+      requestAnimationFrame(() => {
+        setPhase(2); // fill target: every letter rises
+      });
+    });
+    timers.current.push(setTimeout(() => setPhase(3), NAVY_END)); // melt
+    timers.current.push(setTimeout(() => setPhase(0), IDLE_AT));
   }, [reduceMotion, clearTimers]);
 
   // mount trigger: guaranteed to run once (timer + cleanup guard)
@@ -63,9 +70,8 @@ export default function UCSDWord() {
     setFlying(false);
   }, [clearTimers]);
 
-  // The full choreography: click -> navy wave; ~560ms the gold wave
-  // starts and the trident FORMS above the word; once the double
-  // sweep completes it SHOOTS left -> right.
+  // The trident: FORMS above the word while the gold tide runs, and
+  // once the double tide completes it SHOOTS left -> right.
   const throwTrident = useCallback(() => {
     const rect = wordRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -75,15 +81,15 @@ export default function UCSDWord() {
   }, []);
 
   const activate = useCallback(() => {
-    runPaint(); // every click replays the double color wave
+    runPaint(); // every click replays the double tide
     if (flying) return; // one throw at a time
     if (reduceMotion) {
       throwTrident();
     } else {
-      // forms during the gold wave, above the word
-      timers.current.push(setTimeout(throwTrident, 560));
+      // forms during the tide, above the word
+      timers.current.push(setTimeout(throwTrident, 1150));
     }
-    timers.current.push(setTimeout(clearFlight, 3000));
+    timers.current.push(setTimeout(clearFlight, 3100));
   }, [runPaint, flying, throwTrident, clearFlight, reduceMotion]);
 
   useEffect(() => clearFlight, [clearFlight]);
@@ -91,12 +97,12 @@ export default function UCSDWord() {
   return (
     <TactileWord label="UC San Diego" onActivate={activate} className="whitespace-nowrap">
       <span className="word-anchor" ref={wordRef}>
-        {/* traveling color wave: one letter at a time, left -> right,
-            like the thinking light. navy pass, then the gold pass
-            chases, then melt back to ink. explicit \u00A0 keeps the
-            word gaps (JSX would eat real spaces) */}
+        {/* the double tide lives in every glyph: each letter fills
+            bottom -> up through navy, then gold, cascading left ->
+            right on its own stagger. explicit \u00A0 keeps the word
+            gaps (JSX would eat real spaces) */}
         <span
-          className={`ucsd-word${phase >= 1 ? " ucsd-rise" : ""}${phase >= 2 ? " ucsd-gold" : ""}${phase >= 3 ? " ucsd-melt" : ""}`}
+          className={`ucsd-word${phase >= 1 ? " ucsd-rise" : ""}${phase >= 2 ? " ucsd-fill" : ""}${phase >= 3 ? " ucsd-melt" : ""}`}
         >
           {LETTERS.map((c, i) => (
             <span
@@ -149,7 +155,7 @@ function TridentFlight({
     if (!el) return;
     const vw = window.innerWidth;
     const FORM_MS = fast ? 120 : 280; // springy scale-pop, horizontal
-    const HOVER_MS = fast ? 200 : 700; // bob above the word
+    const HOVER_MS = fast ? 200 : 830; // bob above the word, then shoot
     const VX = fast ? 2200 : 980; // px/s left -> right
     const G = fast ? 200 : 380; // gentle droop on the shot
     let raf = 0;
