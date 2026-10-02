@@ -12,11 +12,11 @@ export const metadata: Metadata = {
   metadataBase: new URL("https://skx.si"),
   title: "siddhant",
   description:
-    "Hey, I'm Siddhant. Fourth-year CS student at UC San Diego. Into inference, systems, and building software.",
+    "Hey, I'm Siddhant. 4th year CS student at UC San Diego. Into inference, systems, and building software.",
   openGraph: {
     title: "Siddhant Kuwar",
     description:
-      "Hey, I'm Siddhant. Fourth-year CS student at UC San Diego. Into inference, systems, and building software.",
+      "Hey, I'm Siddhant. 4th year CS student at UC San Diego. Into inference, systems, and building software.",
     type: "website",
     locale: "en_US",
   },
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     card: "summary",
     title: "Siddhant Kuwar",
     description:
-      "Hey, I'm Siddhant. Fourth-year CS student at UC San Diego. Into inference, systems, and building software.",
+      "Hey, I'm Siddhant. 4th year CS student at UC San Diego. Into inference, systems, and building software.",
   },
 };
 

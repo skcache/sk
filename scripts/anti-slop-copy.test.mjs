@@ -58,7 +58,7 @@ test("no corporate or AI-brand copy", () => {
 test("intro copy preserved verbatim", () => {
   const intro = read("components/Intro.tsx");
   for (const line of [
-    "Hey, I'm Siddhant. I'm a fourth-year CS student at",
+    "Hey, I'm Siddhant. I'm a 4th year CS student at",
     "UC San Diego",
     "I'm mostly into",
     "inference",
