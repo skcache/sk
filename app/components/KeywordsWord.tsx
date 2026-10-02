@@ -30,7 +30,7 @@ export default function KeywordsWord() {
     : { type: "spring" as const, stiffness: 320, damping: 32, mass: 0.9 };
   const twClose = reduceMotion
     ? { duration: 0.01 }
-    : { type: "spring" as const, stiffness: 520, damping: 38, mass: 0.9 };
+    : { duration: 0.14, ease: "easeInOut" as const };
   const fadeClose = reduceMotion ? { duration: 0.01 } : { duration: 0.13, ease: "easeOut" as const };
 
   return (
@@ -48,7 +48,7 @@ export default function KeywordsWord() {
             key="k-box"
             className="k-markbox"
             initial={{ width: "0.6em" }}
-            animate={{ width: closing ? "0.6em" : "1.15em", opacity: closing ? 0 : 1 }}
+            animate={{ width: closing ? "0.6em" : "1.2em", opacity: closing ? 0 : 1 }}
             transition={{ width: closing ? twClose : twOpen, opacity: closing ? fadeClose : t }}
             onAnimationComplete={() => {
               if (closing) {
@@ -58,7 +58,7 @@ export default function KeywordsWord() {
             }}
           >
             <motion.img
-              src="/kw-mark.png"
+              src="/kw-mark.svg"
               alt=""
               className="k-mark"
               initial={{ opacity: 0, scale: 0.85 }}

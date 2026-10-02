@@ -39,7 +39,7 @@ export default function GoogleDevGroupWord() {
     : { type: "spring" as const, stiffness: 320, damping: 32, mass: 0.9 };
   const twClose = reduceMotion
     ? { duration: 0.01 }
-    : { type: "spring" as const, stiffness: 520, damping: 38, mass: 0.9 };
+    : { duration: 0.14, ease: "easeInOut" as const };
   const fadeClose = reduceMotion ? { duration: 0.01 } : { duration: 0.13, ease: "easeOut" as const };
 
   const colorFor = (i: number) => {
