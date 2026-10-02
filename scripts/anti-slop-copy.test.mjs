@@ -247,6 +247,7 @@ test("polish pass: reveal, grain, plaque, affordance, autoplay", () => {
   assert.equal(gdg.includes('return "#4285F4"'), true, "Dev Group must join the brand blue");
   // affordance: hover contrast only (dotted underlines removed in repair pass)
   assert.equal(css.includes(".word-button:hover"), true, "hover affordance missing");
+  assert.equal(css.includes(".word-button::after"), false, "underline affordance must be gone");
   assert.equal(css.includes("transition: color 150ms ease"), true, "hover brighten must fade smoothly");
   // V1/V2 boundary: inference NEVER autoplays - no IntroAutoplay file,
   // no render, nothing presses anything on load
@@ -310,10 +311,11 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(orvia.includes('x="14"'), true, "canonical O-ring geometry missing");
   // inference: thinking-orbs signature interaction - 5s work, random state
   const inf = read("components/InferenceWord.tsx");
-  assert.equal(inf.includes("ReasoningOrb"), true, "crisp vector spinner missing");
-  assert.equal(inf.includes("ThinkingOrb"), false, "smeared canvas orb must be gone");
+  assert.equal(inf.includes("ThinkingOrb"), true, "libraries.dev thinking orbs required");
+  assert.equal(inf.includes("paused={!!reduceMotion}"), true, "reduced-motion pause missing");
   assert.equal(inf.includes("state={orbState}"), true, "live orb must use the randomized state");
-  assert.equal(inf.includes('blur(10px)'), true, "blur-through morph missing");
+  assert.equal(inf.includes('size={32}'), true, "orb renders sharp at package size");
+  assert.equal(inf.includes("orb-22"), true, "22px orb display wrapper missing");
   assert.equal(inf.includes("word-morph"), true, "fixed morph slot missing");
   assert.equal(inf.includes("THINK_MS = 2500"), true, "2.5s inference hold missing");
   assert.equal(inf.includes("INFER_ORB_STATES"), true, "random orb states must exist");
