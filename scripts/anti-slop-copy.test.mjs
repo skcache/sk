@@ -237,7 +237,7 @@ test("polish pass: reveal, grain, plaque, affordance, autoplay", () => {
   assert.equal(css.includes(".ucsd-letter"), true, "per-letter tide missing");
   assert.equal(css.includes("calc(var(--i) * 60ms)"), true, "tidal stagger missing");
   assert.equal(css.includes(".ucsd-fill .ucsd-letter"), true, "fill target missing");
-  assert.equal(css.includes("#182B49 58%"), true, "navy band in the tide missing");
+  assert.equal(css.includes("#182B49 52%"), true, "navy band in the tide missing");
   assert.equal(css.includes("#C69214 76%"), true, "gold band in the tide missing");
   assert.equal(css.includes("ucsd-fill-navy"), false, "old fill pass must be gone");
   assert.equal(css.includes("#182B49"), true, "UCSD navy missing");
