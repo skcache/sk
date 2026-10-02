@@ -23,7 +23,7 @@ export default function MusicWord() {
             layoutId="music-island"
             className="music-seed"
             aria-hidden="true"
-            transition={{ layout: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } }}
+            transition={{ layout: { duration: 0.26, ease: [0.16, 1, 0.3, 1] } }}
           />
         )}
       </span>

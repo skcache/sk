@@ -176,14 +176,16 @@ body {
   pointer-events: none;
 }
 
-/* the lowercase thinking glow: a soft light band sweeping left ->
-   right across the letters, clipped to the text. deterministic (pure
-   CSS, same sweep every activation); under reduced motion the global
-   animation kill leaves the band parked off-canvas, so the word is
-   plain text */
+/* the lowercase thinking glow: the base letters DIM while thinking
+   and a bright light band sweeps left -> right across them, lighting
+   each letter up as it passes - a clearly visible LR fade. the band
+   is a clip-to-text gradient overlay; deterministic (pure CSS, same
+   sweep every activation). under reduced motion the global animation
+   kill parks the band off-canvas and leaves plain text */
 .thinking-glow {
   position: relative;
   display: inline-block;
+  color: rgba(243, 241, 234, 0.4); /* dimmed until the band lights it */
 }
 
 .thinking-glow::after {
@@ -192,29 +194,29 @@ body {
   inset: 0;
   background: linear-gradient(
     100deg,
-    transparent 22%,
-    rgba(255, 255, 255, 0) 41%,
-    rgba(255, 255, 255, 0.9) 50%,
-    rgba(255, 255, 255, 0) 59%,
-    transparent 78%
+    transparent 25%,
+    rgba(255, 255, 255, 0.45) 43%,
+    rgba(255, 255, 255, 1) 50%,
+    rgba(255, 255, 255, 0.45) 57%,
+    transparent 75%
   );
-  background-size: 220% 100%;
+  background-size: 200% 100%;
   background-repeat: no-repeat;
-  background-position: 135% 0; /* parked off-canvas: reduced-motion
+  background-position: 170% 0; /* parked off-canvas: reduced-motion
                                   (animations killed) leaves plain text */
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  animation: thinking-sweep 1.5s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  animation: thinking-sweep 1.9s cubic-bezier(0.42, 0, 0.58, 1) infinite;
   pointer-events: none;
 }
 
 @keyframes thinking-sweep {
   0% {
-    background-position: 135% 0;
+    background-position: -50% 0; /* band at the word's left edge */
   }
   100% {
-    background-position: -135% 0;
+    background-position: 150% 0; /* band exits the right edge */
   }
 }
 
@@ -234,40 +236,52 @@ body {
   display: inline-block;
 }
 
-/* one-time left-to-right paint pass (UCSD navy -> gold) via a
-   clipped overlay revealed across the phrase; .run is added once
-   after the page reveal settles and removed on animation end */
-.ucsd-paint::after {
-  content: "UC San Diego";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg, #182B49 0%, #1D3560 38%, #B98A13 74%, #E3B23C 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  clip-path: inset(0 100% 0 0);
-  pointer-events: none;
+.ucsd-seg {
+  display: inline-block;
 }
 
-.ucsd-paint.run::after {
-  animation: ucsd-reveal 1.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+/* one-time left-to-right color pass, then the phrase KEEPS its
+   official coloring: UC + Diego navy, San gold. each segment
+   clip-reveals left->right in sequence (cascading paint) */
+.ucsd-navy {
+  color: #182B49;
 }
 
-@keyframes ucsd-reveal {
+.ucsd-gold {
+  color: #C69214;
+}
+
+.ucsd-painted .ucsd-seg {
+  animation: ucsd-seg-reveal 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.ucsd-painted .ucsd-seg:nth-child(2) {
+  animation-delay: 0.32s;
+}
+
+.ucsd-painted .ucsd-seg:nth-child(3) {
+  animation-delay: 0.64s;
+}
+
+@keyframes ucsd-seg-reveal {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
   to {
     clip-path: inset(0 0 0 0);
   }
 }
 
-/* word-side trident pop: rises and tilts above the phrase */
-.ucsd-pop {
-  position: absolute;
-  left: 50%;
-  top: -26px;
-  margin-left: -9px;
-  z-index: 2;
-  pointer-events: none;
+/* the trident throw: spawns at the word, rises, then flies right
+   off the VIEWPORT - fixed layer over the page, never the stage */
+.ucsd-trident-fly {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 40;
   color: var(--color-ink);
+  will-change: transform;
+  pointer-events: none;
 }
 
 
@@ -486,10 +500,26 @@ body {
   }
 }
 
-/* subtle glass on the official shell (the island is the object, not
-   the material) */
+/* liquid glass on the official shell (Apple-like): translucent
+   white-alpha gradient, real backdrop blur + saturation, specular
+   top hairline and a soft floating shadow - the island reads as
+   glass, not a flat card */
 .dynamic-island-shell {
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+  box-shadow:
+    0 10px 32px rgba(0, 0, 0, 0.5),
+    0 2px 10px rgba(0, 0, 0, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.05);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.16) 0%,
+      rgba(255, 255, 255, 0.07) 40%,
+      rgba(255, 255, 255, 0.04) 100%
+    ),
+    rgba(18, 21, 26, 0.55);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
 }
 
 /* stage projectiles */
@@ -519,15 +549,6 @@ body {
   transform-origin: center;
   filter: blur(0.5px);
   pointer-events: none;
-}
-
-.stage-ucsd {
-  position: absolute;
-  left: 0;
-  top: 50%;
-  margin-top: -13px;
-  color: var(--color-ink);
-  will-change: transform;
 }
 
 /* ---------- page reveal (progressive enhancement) ---------- */

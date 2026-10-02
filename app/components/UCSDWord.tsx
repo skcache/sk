@@ -1,26 +1,28 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { motion, useReducedMotion } from "motion/react";
+import { useReducedMotion } from "motion/react";
 import TactileWord from "./TactileWord";
-import { useStage } from "./StageProvider";
 
 const WIPE_DELAY = 1100; // after the page reveal settles
-const POP_MS = 620; // word-side pop window
+const FLIGHT_MS = 1150; // trident: up, then right off the viewport
+const PICK_UP_MS = 170; // rises above the word before flying
 
 /**
  * UC San Diego, the V2 way.
  *
- * FIRST LOAD: once, after the page reveal settles, the phrase gets one
- * left-to-right color pass - UCSD navy -> gold painted across the text
- * (clip-path reveal via .ucsd-paint), then returns to plain ink. No
- * trident autoplay, never repeats. Reduced motion: no pass.
+ * FIRST LOAD: after the page reveal settles, the phrase gets ONE
+ * left-to-right color pass and KEEPS its official coloring: "UC" and
+ * "Diego" are UCSD navy blue, "San" is UCSD gold. The pass cascades
+ * left-to-right across the three segments (clip reveal). Never
+ * repeats. Reduced motion: plain ink.
  *
- * CLICK: a small trident pops above the word (rise + tilt, ~0.5s),
- * then the stage runs a larger trident projectile left->right. Extra
- * clicks are ignored while one throw is running.
+ * CLICK: a trident SPAWNS at the word, RISES straight up from it,
+ * then flies right and OFF THE SCREEN (viewport edge) - it never
+ * uses the shared stage. Extra clicks are ignored while one throw
+ * is running; every completed throw can fire another.
  */
-function TridentMark({ size = 16 }: { size?: number }) {
+function TridentMark({ size = 26 }: { size?: number }) {
   return (
     <svg viewBox="0 0 14 14" width={size} height={size} fill="none" aria-hidden="true">
       <path d="M7 13.5V5.5" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" />
@@ -32,75 +34,120 @@ function TridentMark({ size = 16 }: { size?: number }) {
 
 export default function UCSDWord() {
   const reduceMotion = useReducedMotion();
-  const { open, active } = useStage();
-  const [wipe, setWipe] = useState(false);
-  const [pop, setPop] = useState(0);
-  const wipeRef = useRef<HTMLSpanElement>(null);
-  const popTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [painted, setPainted] = useState(false);
+  const [flying, setFlying] = useState(false);
+  const [flightRun, setFlightRun] = useState(0); // fresh element per throw
+  const [origin, setOrigin] = useState<{ x: number; y: number } | null>(null);
+  const wordRef = useRef<HTMLSpanElement>(null);
+  const doneRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ONE left-to-right color pass after the reveal settles
+  // ONE left-to-right color pass after the reveal settles (stays
+  // painted: UC + Diego navy, San gold)
   useEffect(() => {
     if (reduceMotion) return;
-    const t = setTimeout(() => setWipe(true), WIPE_DELAY);
+    const t = setTimeout(() => setPainted(true), WIPE_DELAY);
     return () => clearTimeout(t);
   }, [reduceMotion]);
 
-  // after the pass completes, return the phrase to plain ink
-  useEffect(() => {
-    if (!wipe || !wipeRef.current) return;
-    const el = wipeRef.current;
-    const done = () => setWipe(false);
-    el.addEventListener("animationend", done, { once: true });
-    return () => el.removeEventListener("animationend", done);
-  }, [wipe]);
-
-  const clearPop = useCallback(() => {
-    if (popTimer.current) {
-      clearTimeout(popTimer.current);
-      popTimer.current = null;
+  const clearFlying = useCallback(() => {
+    if (doneRef.current) {
+      clearTimeout(doneRef.current);
+      doneRef.current = null;
     }
+    setFlying(false);
   }, []);
 
   const activate = useCallback(() => {
-    if (active === "ucsd") return; // one throw at a time
-    clearPop();
-    setPop((p) => p + 1);
-    popTimer.current = setTimeout(() => {
-      setPop(0);
-      popTimer.current = null;
-    }, POP_MS);
-    open("ucsd");
-  }, [active, open, clearPop]);
+    if (flying) return; // one throw at a time
+    const rect = wordRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    setOrigin({ x: rect.left + rect.width / 2, y: rect.top - 6 });
+    setFlying(true);
+    setFlightRun((r) => r + 1);
+    doneRef.current = setTimeout(clearFlying, FLIGHT_MS + 60);
+  }, [flying, clearFlying]);
 
-  useEffect(() => clearPop, [clearPop]);
+  useEffect(() => clearFlying, [clearFlying]);
 
   return (
     <TactileWord label="UC San Diego" onActivate={activate} className="whitespace-nowrap">
-      <span className="word-anchor">
-        <span
-          ref={wipeRef}
-          className={`ucsd-word${wipe && !reduceMotion ? " ucsd-paint run" : ""}`}
-        >
-          UC San Diego
+      <span className="word-anchor" ref={wordRef}>
+        {/* official coloring after the one-time pass: UC + Diego navy,
+            San gold - the segments clip-reveal left->right in sequence */}
+        <span className={`ucsd-word${painted && !reduceMotion ? " ucsd-painted" : ""}`}>
+          <span className="ucsd-seg ucsd-navy">UC</span>
+          <span className="ucsd-seg ucsd-gold">San</span>
+          <span className="ucsd-seg ucsd-navy">Diego</span>
         </span>
-        {pop > 0 && (
-          <motion.span
-            key={`pop-${pop}`}
-            className="ucsd-pop"
-            aria-hidden="true"
-            initial={{ opacity: 0, y: 12, rotate: -10, scale: 0.85 }}
-            animate={{ opacity: [0, 1, 1, 0], y: -15, rotate: 6, scale: 1 }}
-            transition={{
-              opacity: { duration: 0.5, times: [0, 0.18, 0.72, 1], ease: "easeOut" },
-              y: { type: "spring", stiffness: 460, damping: 22, mass: 0.7 },
-              rotate: { type: "spring", stiffness: 380, damping: 20 },
-              scale: { type: "spring", stiffness: 520, damping: 24 },
-            }}
-          >
-            <TridentMark size={18} />
-          </motion.span>
+        {flying && origin && (
+          <TridentFlight
+            key={`fly-${flightRun}`}
+            origin={origin}
+            fast={!!reduceMotion}
+            onEnd={() => setFlying(false)}
+          />
         )}
       </span>
     </TactileWord>
   );
+}
+
+/**
+ * The throw: spawns at the word, rises straight up (pick-up), then
+ * flies right with a light arc + tilt and EXITS THE VIEWPORT. Fixed
+ * position so it travels over the page, never in the stage.
+ */
+function TridentFlight({
+  origin,
+  fast,
+  onEnd,
+}: {
+  origin: { x: number; y: number };
+  fast: boolean;
+  onEnd: () => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const onEndRef = useRef(onEnd);
+  useEffect(() => {
+    onEndRef.current = onEnd;
+  }, [onEnd]);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const dur = fast ? 420 : FLIGHT_MS;
+    let raf = 0;
+    const t0 = performance.now();
+    const vw = window.innerWidth;
+    const easeIO = (x: number) => (x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2);
+
+    const tick = (now: number) => {
+      const t = now - t0;
+      if (t >= dur) {
+        onEndRef.current();
+        return;
+      }
+      const u = t / dur;
+      // phase 1: rise above the word; phase 2: fly right off the screen
+      const rise = Math.min(1, u / (PICK_UP_MS / dur));
+      const fly = Math.max(0, (u - PICK_UP_MS / dur) / (1 - PICK_UP_MS / dur));
+      const x = origin.x + (vw + 60 - origin.x) * easeIO(fly);
+      const y = origin.y - 26 * easeIO(rise) - 14 * Math.sin(Math.PI * fly);
+      const tilt = -6 + 26 * fly; // leans forward as it flies
+      const scale = 0.9 + 0.1 * easeIO(rise);
+      const opacity =
+        t < 70 ? t / 70 : t > dur - 100 ? Math.max(0, (dur - t) / 100) : 1;
+      el.style.opacity = String(opacity);
+      el.style.transform =
+        `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) ` +
+        `rotate(${tilt.toFixed(1)}deg) scale(${scale.toFixed(3)})`;
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [origin, fast]);
+
+  return <div className="ucsd-trident-fly" ref={ref} aria-hidden="true" style={{ left: 0, top: 0 }}>
+    <TridentMark size={26} />
+  </div>;
 }

@@ -388,7 +388,7 @@ const DynamicIslandContent = ({
   return (
     <motion.div
       id={id}
-      className="dynamic-island-shell mx-auto h-0 w-0 items-center justify-center border border-white/10 bg-surface text-center text-ink"
+      className="dynamic-island-shell mx-auto h-0 w-0 items-center justify-center border border-white/10 bg-transparent text-center text-ink backdrop-blur-[18px] saturate-[1.4]"
       animate={{
         width: dimensions.width,
         height: dimensions.height,

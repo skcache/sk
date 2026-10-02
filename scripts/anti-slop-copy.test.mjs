@@ -232,11 +232,14 @@ test("polish pass: reveal, grain, plaque, affordance, autoplay", () => {
   assert.equal(css.includes("feTurbulence"), true, "grain turbulence missing");
   assert.equal(css.includes("pointer-events: none"), true, "overlay must not block clicks");
   // UCSD V2: one-time navy->gold paint pass, trident pop + stage throw
-  assert.equal(css.includes(".ucsd-paint"), true, "UCSD paint wipe missing");
+  assert.equal(css.includes(".ucsd-painted"), true, "UCSD paint pass missing");
+  assert.equal(css.includes(".ucsd-navy"), true, "UCSD navy segment missing");
+  assert.equal(css.includes(".ucsd-gold"), true, "UCSD gold segment missing");
   assert.equal(css.includes("#182B49"), true, "UCSD navy missing");
-  assert.equal(css.includes("#B98A13"), true, "UCSD gold missing");
-  assert.equal(css.includes("#E3B23C"), true, "UCSD bright gold missing");
-  assert.equal(css.includes(".ucsd-pop"), true, "word-side trident pop missing");
+  assert.equal(css.includes("#C69214"), true, "UCSD gold missing");
+  assert.equal(css.includes(".ucsd-trident-fly"), true, "viewport trident flight missing");
+  assert.equal(css.includes(".stage-ucsd"), false, "stage trident must be gone");
+  assert.equal(css.includes(".ucsd-pop"), false, "word pop must be gone");
   assert.equal(css.includes(".identity-slot"), true, "experience identity slots missing");
   // affordance: hover contrast only (dotted underlines removed in repair pass)
   assert.equal(css.includes(".word-button:hover"), true, "hover affordance missing");
@@ -283,8 +286,9 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   const ucsd = read("components/UCSDWord.tsx");
   assert.equal(ucsd.includes("onAnimationComplete"), false, "no child unmounts the badge");
   assert.equal(ucsd.includes("badge-plaque"), false, "the plaque box is gone");
-  assert.equal(ucsd.includes("ucsd-paint"), true, "one-time paint wipe missing");
-  assert.equal(ucsd.includes('type: "spring"'), true, "pop must feel spring-loaded");
+  assert.equal(ucsd.includes("ucsd-painted"), true, "one-time paint pass missing");
+  assert.equal(ucsd.includes("ucsd-trident-fly"), true, "trident flight missing");
+  assert.equal(ucsd.includes("useStage"), false, "ucsd must NOT use the shared stage anymore");
   // shared identity language: plain letter at rest, live mark box opens
   for (const cls of ["o-letter", "k-letter", "o-markbox", "gdg-markbox", ".k-markbox", ".o-mark", ".gdg-mark"]) {
     assert.equal(css.includes(cls), true, `identity class missing: ${cls}`);
@@ -306,8 +310,9 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(inf.includes("size={20}"), true, "20px inline orb missing");
   assert.equal(inf.includes("word-morph"), true, "fixed morph slot missing");
   assert.equal(inf.includes("THINK_MS = 2500"), true, "2.5s inference hold missing");
-  assert.equal(inf.includes("INFER_ORB_STATES"), false, "randomized orb states must be gone");
-  assert.equal(inf.includes("pickOrbState"), false, "random orb selection must be gone");
+  assert.equal(inf.includes("INFER_ORB_STATES"), true, "random orb states must exist");
+  assert.equal(inf.includes("pickOrbState"), true, "per-run random orb selection missing");
+  assert.equal(inf.includes("state={orbState}"), true, "live orb must use the randomized state");
   assert.equal(inf.includes("thinking</span>"), true, "active word is lowercase thinking");
   assert.equal(inf.includes("thinking-glow"), true, "left-to-right text glow missing");
   assert.equal(inf.includes('data-text="thinking"'), true, "glow overlay text missing");
@@ -324,7 +329,8 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(bb.includes("useStage"), true, "basketball must open the stage");
   assert.equal(bb.includes("word-ball"), false, "inline word ball must be gone");
   const bbStage = read("components/BasketballStage.tsx");
-  assert.equal(bbStage.includes("BOUNCE_H"), true, "gravity bounce heights missing");
+  assert.equal(bbStage.includes("RESTITUTION"), true, "true restitution physics missing");
+  assert.equal(bbStage.includes("GRAVITY"), true, "time-integrated gravity missing");
   assert.equal(bbStage.includes("bb-shadow"), true, "contact shadow missing");
 });
 
@@ -358,7 +364,7 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(stageCode.includes("AnimatePresence"), true, "stage must keep the swap machinery");
   assert.equal(stageCode.includes('mode="wait"'), true, "stage must swap with mode=wait");
   assert.equal(stageCode.includes('"basketball"'), true, "stage must host basketball");
-  assert.equal(stageCode.includes('"ucsd"'), true, "stage must host ucsd");
+  assert.equal(stageCode.includes('"ucsd"'), false, "stage must NOT host ucsd (trident flies off the viewport)");
   const css = read("globals.css");
   assert.equal(css.includes(".interaction-stage"), true, "stage CSS missing");
   assert.equal(css.includes("height: 72px"), true, "mobile stage height missing");
@@ -368,7 +374,7 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(css.includes(".dynamic-island-eq"), true, "equalizer bars CSS missing");
   assert.equal(css.includes(".dynamic-island-title"), true, "island typography CSS missing");
   assert.equal(css.includes("underline dotted"), false, "dotted underline affordance must be gone");
-  for (const stale of ["word-ball", "badge-rule", "badge-trident-wrap", "badge-type", "badge-identity", "dynamic-island-progress", "word-notch", "word-morph-resolve", "dynamic-island-dot", ".dynamic-island-content", ".dynamic-island-container", "buildFrames", "STEP_MS", "INFER_ORB_STATES", "MUSIC_ORB_STATES"]) {
+  for (const stale of ["word-ball", "badge-rule", "badge-trident-wrap", "badge-type", "badge-identity", "dynamic-island-progress", "word-notch", "word-morph-resolve", "dynamic-island-dot", ".dynamic-island-content", ".dynamic-island-container", "buildFrames", "STEP_MS", "MUSIC_ORB_STATES"]) {
     assert.equal(source.includes(stale), false, `stale class present: ${stale}`);
   }
   const fav = read("config/favorite-song.ts");

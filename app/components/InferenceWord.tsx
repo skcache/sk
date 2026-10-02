@@ -2,10 +2,14 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
-import { ThinkingOrb } from "thinking-orbs";
+import { ThinkingOrb, type OrbState } from "thinking-orbs";
 import TactileWord from "./TactileWord";
 
 const THINK_MS = 2500; // the word visibly thinks, then returns
+
+// randomized reasoning states: a fresh orb picks one per activation
+const INFER_ORB_STATES: OrbState[] = ["solving", "working", "searching", "weaving", "composing", "breathing"];
+const pickOrbState = (): OrbState => INFER_ORB_STATES[Math.floor(Math.random() * INFER_ORB_STATES.length)];
 
 /**
  * Signature interaction: "inference" becomes a tiny thinking process.
@@ -39,6 +43,7 @@ const THINK_MS = 2500; // the word visibly thinks, then returns
 export default function InferenceWord() {
   const reduceMotion = useReducedMotion();
   const [phase, setPhase] = useState<"idle" | "thinking">("idle");
+  const [orbState, setOrbState] = useState<OrbState>("solving");
   const safety = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const [widths, setWidths] = useState<{ idle: number; active: number } | null>(null);
@@ -73,10 +78,11 @@ export default function InferenceWord() {
   }, []);
 
   const activate = useCallback(() => {
-    // deterministic: ignore activations while already thinking - no
-    // timeout reset, no partial restart
+    // ignore activations while already thinking - no timeout reset,
+    // no partial restart; the next click replays the full run
     if (phase === "thinking") return;
     clearSafety();
+    setOrbState(pickOrbState()); // randomized reasoning state per run
     setPhase("thinking");
     safety.current = [
       setTimeout(() => {
@@ -160,7 +166,7 @@ export default function InferenceWord() {
                 thinking
               </span>
               <ThinkingOrb
-                state="solving"
+                state={orbState}
                 size={20}
                 theme="dark"
                 paused={!!reduceMotion}

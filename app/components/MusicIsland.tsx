@@ -44,13 +44,16 @@ function MusicBody({ onDone }: { onDone: () => void }) {
     onDoneRef.current = onDone;
   }, [onDone]);
 
-  // official animation queue - delays are incremental (each step
-  // waits its delay after the previous one): compact at t=180ms,
-  // compactLong at t=700ms, held until t=3100ms = ~2.4s of music
-  // state, then collapsing back through compact to empty at t=3330ms
+  // official animation queue - delays are incremental: the island
+  // GLIDES from the word at EMPTY (fast projection, ~260ms), then
+  // expands IN PLACE with the official Apple-like springs: compact
+  // at t=300ms, compactLong at t=920ms, held to t=3320ms (~2.4s of
+  // music state), collapsing back through compact to empty at
+  // t=3550ms. separating the glide from the expansion is what makes
+  // it feel composed instead of warped
   useScheduledAnimations([
-    { size: SIZE_PRESETS.COMPACT, delay: 180 },
-    { size: SIZE_PRESETS.COMPACT_LONG, delay: 520 },
+    { size: SIZE_PRESETS.COMPACT, delay: 300 },
+    { size: SIZE_PRESETS.COMPACT_LONG, delay: 620 },
     { size: SIZE_PRESETS.COMPACT, delay: 2400 },
     { size: SIZE_PRESETS.EMPTY, delay: 230 },
   ]);
@@ -71,7 +74,7 @@ function MusicBody({ onDone }: { onDone: () => void }) {
     <motion.span
       className="music-island-anchor"
       layoutId="music-island"
-      transition={{ layout: { duration: 0.7, ease: [0.22, 1, 0.36, 1] } }}
+      transition={{ layout: { duration: 0.26, ease: [0.16, 1, 0.3, 1] } }}
     >
       <DynamicIsland id="music-stage-island">
         <DynamicContainer className="dynamic-island-row">

@@ -3,10 +3,9 @@
 import { AnimatePresence } from "motion/react";
 import MusicIsland from "./MusicIsland";
 import BasketballStage from "./BasketballStage";
-import UcsdStage from "./UcsdStage";
 
 /** Which Easter egg is occupying the shared stage right now. */
-export type StageAction = "music" | "basketball" | "markets" | "ucsd";
+export type StageAction = "music" | "basketball" | "markets";
 
 /**
  * The shared stage: a real, bounded playground between the intro and
@@ -33,7 +32,6 @@ export default function InteractionStage({
       <AnimatePresence mode="wait">
         {active === "music" && <MusicIsland key="music" onDone={onDone} />}
         {active === "basketball" && <BasketballStage key="basketball" onDone={onDone} />}
-        {active === "ucsd" && <UcsdStage key="ucsd" onDone={onDone} />}
         {/* {active === "markets" && <MarketsStage key="markets" onDone={onDone} />} */}
       </AnimatePresence>
     </div>
