@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import TactileWord from "./TactileWord";
 
@@ -28,6 +28,26 @@ export default function GoogleDevGroupWord() {
   const [on, setOn] = useState(false);
   const [closing, setClosing] = useState(false);
   const reduceMotion = useReducedMotion();
+  const markRef = useRef<HTMLImageElement>(null);
+
+  // the close fade, WAAPI-driven: the mark collapses with the box
+  // (same 0.26s easeInOut) - declarative target-changes snap in this
+  // motion version, which left the clipped mark riding against the
+  // text mid-shrink
+  useEffect(() => {
+    if (markRef.current) markRef.current.getAnimations().forEach((a) => a.cancel());
+    if (!closing || !markRef.current) return;
+    const el = markRef.current;
+    const anim = el.animate(
+      [
+        { opacity: 1, transform: "scale(1)" },
+        { opacity: 0, transform: "scale(0.8)" },
+      ],
+      { duration: 260, easing: "ease-in-out", fill: "forwards" },
+    );
+    return () => anim.cancel();
+  }, [closing]);
+
   const t = reduceMotion
     ? { duration: 0.01 }
     : { type: "spring" as const, stiffness: 850, damping: 30, mass: 0.4 };
@@ -72,6 +92,7 @@ export default function GoogleDevGroupWord() {
             }}
           >
             <motion.img
+              ref={markRef}
               src="/gdg-mark.svg"
               alt=""
               className="gdg-mark"

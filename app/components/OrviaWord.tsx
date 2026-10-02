@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import TactileWord from "./TactileWord";
 
@@ -30,6 +30,27 @@ export default function OrviaWord() {
     ? { duration: 0.01 }
     : { duration: 0.26, ease: "easeInOut" as const };
 
+  const markRef = useRef<SVGSVGElement>(null);
+
+  // the close fade, WAAPI-driven: the mark collapses (opacity +
+  // scale) on the SAME 0.26s easeInOut as the box retract - the
+  // declarative target-change snaps in this motion version, which
+  // made the mark vanish instantly (asymmetric close) or ride flush
+  // against "rvia" (the touch)
+  useEffect(() => {
+    if (markRef.current) markRef.current.getAnimations().forEach((a) => a.cancel());
+    if (!closing || !markRef.current) return;
+    const el = markRef.current;
+    const anim = el.animate(
+      [
+        { opacity: 1, transform: "scale(1)" },
+        { opacity: 0, transform: "scale(0.8)" },
+      ],
+      { duration: 260, easing: "ease-in-out", fill: "forwards" },
+    );
+    return () => anim.cancel();
+  }, [closing]);
+
   return (
     <TactileWord
       label="Orvia"
@@ -57,8 +78,13 @@ export default function OrviaWord() {
               }
             }}
           >
-            {/* exact canonical asset, inlined so currentColor inherits */}
+            {/* exact canonical asset, inlined so currentColor inherits.
+                On close the mark COLLAPSES with the box via WAAPI
+                (the declarative target-change snaps in this motion
+                version - measured) so it never rides flush against
+                "rvia" mid-shrink, and never vanishes before the box */}
             <motion.svg
+              ref={markRef}
               viewBox="0 0 100 124"
               fill="none"
               className="o-mark"
