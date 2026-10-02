@@ -236,84 +236,31 @@ body {
   display: inline-block;
 }
 
-.ucsd-seg {
+.ucsd-letter {
   display: inline-block;
 }
 
-/* the two-pass DOWN->UP fill, NATIVE to the letters: each segment's
-   OWN background is clipped to its glyphs (no overlay text, no
-   second render). The fill rides inside the letterforms - the ink
-   sits above the rising edge, the paint below it, so a NAVY tide
-   fills the letters from the baseline up (pass 1), then a GOLD tide
-   fills them the same way (pass 2) - both going DOWN->UP, matching
-   the trident's own shoot. Base ink at rest. */
-.ucsd-word.ucsd-rise .ucsd-seg {
-  /* the glyph fill must be TRANSPARENT so the clipped gradient shows
-     through the letterforms - without this, the opaque ink text
-     paints OVER the whole fill and the pass is invisible */
-  color: transparent;
-  background-size: 100% 200%;
-  background-repeat: no-repeat;
-  -webkit-background-clip: text;
-  background-clip: text;
-  animation:
-    ucsd-fill-navy 0.85s cubic-bezier(0.45, 0, 0.55, 1) forwards,
-    ucsd-fill-gold 0.85s cubic-bezier(0.45, 0, 0.55, 1) 0.95s forwards;
+/* the TRAVELING COLOR WAVE - the thinking light's pattern, in color:
+   each letter transitions ink -> NAVY one after another (--i * 45ms
+   stagger), so a navy wave sweeps left -> right across the phrase;
+   the gold class then re-targets every letter so a GOLD wave chases
+   through the same way; the melt class returns them to ink with the
+   same stagger. Transitions run on the letters THEMSELVES - native,
+   no overlay, no second render. */
+.ucsd-word.ucsd-rise .ucsd-letter {
+  color: #182B49;
+  transition: color 0.32s ease;
+  transition-delay: calc(var(--i) * 45ms);
 }
 
-/* the fill: ink above the edge (letters stay readable), paint below
-   it. When the position runs -10% -> 130% the edge RISES from the
-   baseline to the top of the glyphs. background-IMAGE longhand only
-   (a shorthand in keyframes would clobber the animating position). */
-@keyframes ucsd-fill-navy {
-  0% {
-    background-image: linear-gradient(
-      180deg,
-      #f3f1ea 55%,
-      #182B49 58%,
-      #182B49 100%
-    );
-    background-position: 0% -10%;
-  }
-  100% {
-    background-image: linear-gradient(
-      180deg,
-      #f3f1ea 55%,
-      #182B49 58%,
-      #182B49 100%
-    );
-    background-position: 0% 130%;
-  }
+.ucsd-word.ucsd-gold .ucsd-letter {
+  color: #C69214;
 }
 
-@keyframes ucsd-fill-gold {
-  0% {
-    background-image: linear-gradient(
-      180deg,
-      #f3f1ea 55%,
-      #C69214 58%,
-      #C69214 100%
-    );
-    background-position: 0% -10%;
-  }
-  100% {
-    background-image: linear-gradient(
-      180deg,
-      #f3f1ea 55%,
-      #C69214 58%,
-      #C69214 100%
-    );
-    background-position: 0% 130%;
-  }
-}
-
-/* after the gold pass the letters dissolve from paint to plain ink
-   (the ink color rising over the clipped paint) - the phrase returns
-   to white, cleanly */
-.ucsd-word.ucsd-melt .ucsd-seg {
-  background-image: none;
+.ucsd-word.ucsd-melt .ucsd-letter {
   color: #f3f1ea;
   transition: color 0.35s ease;
+  transition-delay: calc(var(--i) * 45ms);
 }
 
 /* the trident throw: spawns at the word, rises, then flies right
