@@ -5,7 +5,7 @@ import { motion, useReducedMotion } from "motion/react";
 import { ThinkingOrb } from "thinking-orbs";
 import TactileWord from "./TactileWord";
 
-const THINK_MS = 5000; // the word visibly thinks, then returns
+const THINK_MS = 3000; // the word visibly thinks, then returns
 
 /* reasoning states; one is picked at random per activation so every
    run feels alive (all render the same 20px preset - measurement
@@ -23,9 +23,9 @@ const pickOrbState = (): OrbState =>
  * `thinking` word + a 20px ThinkingOrb (state="solving") sitting 3px
  * beside it. The text crossfades in place while the cell springs open,
  * CLIPPING the orb so it is revealed smoothly from behind the word's
- * edge; the orb works for ~1.1s, then the unit retracts (orb clipped
- * away) and the word returns. No trailing marker - the return is the
- * resolution.
+ * edge; the orb works for ~3s (state randomized per run), then the
+ * unit retracts (orb clipped away) and the word returns. No trailing
+ * marker - the return is the resolution.
  *
  * Layout: no permanent reservation. Two invisible probes measure the
  * real widths of "inference" and "thinking + orb"; a Motion spring

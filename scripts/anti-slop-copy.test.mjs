@@ -301,7 +301,7 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(inf.includes("state=\"solving\""), true, "solving state missing");
   assert.equal(inf.includes("size={20}"), true, "20px inline orb missing");
   assert.equal(inf.includes("word-morph"), true, "fixed morph slot missing");
-  assert.equal(inf.includes("THINK_MS = 5000"), true, "5s inference hold missing");
+  assert.equal(inf.includes("THINK_MS = 3000"), true, "3s inference hold missing");
   assert.equal(inf.includes("INFER_ORB_STATES"), true, "randomized orb states missing");
   assert.equal(inf.includes("thinking</span>"), true, "active word is lowercase thinking");
   assert.equal(inf.includes(">Thinking<"), false, "capitalized Thinking must be gone");
