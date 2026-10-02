@@ -19,21 +19,66 @@ const RESTITUTION = 0.77; // r^2 = 0.59 -> natural apex decay 54/32/16
 const APEX = 54; // first apex, px (desktop)
 const IMPACT_MS = 90; // squash window at each ground contact
 const DROP_IN = 64; // spawn height above the floor at the word (falls in)
-const SPINS = 6.5; // rotations across the whole crossing
 
-function Ball({ size = 26 }: { size?: number }) {
+/* ---- 8-bit basketball: a 13x13 pixel sprite, classic four-seam
+   pattern (vertical/horizontal + the two diagonals), light
+   top-left / dark bottom-right shading, hard-edged pixels. Rendered
+   at 2px per cell (26px) with crispEdges so it reads like an NES
+   sprite, not a vector. Sprites don't rotate in 8-bit games (and
+   the four-panel symmetry hides spin anyway) - the motion is pure
+   vertical + squash, which is how the old games did it. ---- */
+const PX = 13;
+const PIXEL_CENTER = (PX - 1) / 2;
+const INK = "#3b1a00"; // seam / outline ink
+const RIM = "#8a3d05";
+const SHADE = "#c25e10";
+const BASE = "#e8761d";
+const LIGHT = "#ff9a3c";
+const GLINT = "#ffb059";
+
+function pixelCells() {
+  const cells: { x: number; y: number; fill: string }[] = [];
+  for (let y = 0; y < PX; y++) {
+    for (let x = 0; x < PX; x++) {
+      const dx = x - PIXEL_CENTER;
+      const dy = y - PIXEL_CENTER;
+      const d2 = dx * dx + dy * dy;
+      if (d2 > 42) continue; // circle silhouette (r ~ 6.5)
+      let fill = BASE;
+      const seam = dx === 0 || dy === 0 || Math.abs(dx) === Math.abs(dy);
+      if (seam) {
+        fill = INK;
+      } else if (d2 > 36) {
+        fill = RIM;
+      } else if (d2 > 27) {
+        fill = SHADE;
+      } else if (dx < 0 && dy < 0 && d2 < 20) {
+        fill = d2 < 6 ? GLINT : LIGHT; // top-left glint
+      } else if (dx > 1 && dy > 1) {
+        fill = SHADE;
+      } else if (dx < -2 || dy < -2) {
+        fill = LIGHT;
+      }
+      cells.push({ x, y, fill });
+    }
+  }
+  return cells;
+}
+
+const PIXEL_CELLS = pixelCells();
+
+function PixelBall({ size = 26 }: { size?: number }) {
   return (
-    <svg viewBox="0 0 24 24" width={size} height={size} aria-hidden="true">
-      <defs>
-        <radialGradient id="bbGrad" cx="38%" cy="30%" r="80%">
-          <stop offset="0%" stopColor="#ffb059" />
-          <stop offset="55%" stopColor="#e8761d" />
-          <stop offset="100%" stopColor="#a54808" />
-        </radialGradient>
-      </defs>
-      <circle cx="12" cy="12" r="11" fill="url(#bbGrad)" />
-      <path d="M12 1.5v21M1.5 12h21" stroke="rgba(60,20,0,0.55)" strokeWidth="1.1" />
-      <path d="M4.9 5.2l14.2 13.6M19.1 5.2 4.9 18.8" stroke="rgba(60,20,0,0.3)" strokeWidth="1.1" />
+    <svg
+      viewBox={`0 0 ${PX} ${PX}`}
+      width={size}
+      height={size}
+      shapeRendering="crispEdges"
+      aria-hidden="true"
+    >
+      {PIXEL_CELLS.map((c, i) => (
+        <rect key={i} x={c.x} y={c.y} width={1} height={1} fill={c.fill} />
+      ))}
     </svg>
   );
 }
@@ -129,13 +174,13 @@ export default function BasketballStage({ onDone }: { onDone: () => void }) {
       // ----- horizontal: from the word, crossing right -----
       const u = elapsed / DUR;
       const x = wordX - 18 + travel * ease(u);
-      const rot = u * 360 * SPINS;
+      // NOTE: no rotation - pixel sprites don't spin (and the 8-bit
+      // ball's four-panel seams are 90-deg symmetric anyway)
       const opacity =
         elapsed < 90 ? elapsed / 90 : elapsed > DUR - 170 ? Math.max(0, (DUR - elapsed) / 170) : 1;
       el.style.opacity = String(opacity);
       el.style.transform =
         `translate(${x.toFixed(1)}px, ${(-y).toFixed(1)}px) ` +
-        `rotate(${rot.toFixed(1)}deg) ` +
         `scaleX(${scX.toFixed(3)}) scaleY(${scY.toFixed(3)})`;
       // contact shadow: grounded sibling, follows x, breathes with height
       if (shadow) {
@@ -157,7 +202,7 @@ export default function BasketballStage({ onDone }: { onDone: () => void }) {
   return (
     <>
       <div className="stage-basketball" ref={ref}>
-        <Ball size={26} />
+        <PixelBall size={26} />
       </div>
       <span className="bb-shadow" ref={shadowRef} aria-hidden="true" />
     </>

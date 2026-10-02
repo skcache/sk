@@ -351,6 +351,9 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(bbStage.includes("RESTITUTION"), true, "true restitution physics missing");
   assert.equal(bbStage.includes("GRAVITY"), true, "time-integrated gravity missing");
   assert.equal(bbStage.includes("bb-shadow"), true, "contact shadow missing");
+  assert.equal(bbStage.includes("PixelBall"), true, "8-bit pixel sprite missing");
+  assert.equal(bbStage.includes("crispEdges"), true, "pixel sprite must stay hard-edged");
+  assert.equal(bbStage.includes("SPINS"), false, "pixel sprites must not rotate");
   // chiba lab: the one-time letter cascade mini easter egg - NOT the
   // inference glow sweep
   const chiba = read("components/ChibaWord.tsx");

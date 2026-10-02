@@ -630,21 +630,17 @@ body {
 }
 
 /* contact shadow under the ball: grounds the flight, breathes with
-   height (opacity + spread driven per-frame in BasketballStage) */
+   height (opacity + spread driven per-frame in BasketballStage).
+   8-bit style: a hard-edged chunky block, no blur, no soft gradient */
 .bb-shadow {
   position: absolute;
   left: 0;
   bottom: 6px;
   width: 26px;
   height: 7px;
-  border-radius: 50%;
-  background: radial-gradient(
-    ellipse at center,
-    rgba(0, 0, 0, 0.55),
-    rgba(0, 0, 0, 0) 68%
-  );
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.55);
   transform-origin: center;
-  filter: blur(0.5px);
   pointer-events: none;
 }
 
