@@ -5,43 +5,37 @@ import { motion, useReducedMotion } from "motion/react";
 import { ThinkingOrb } from "thinking-orbs";
 import TactileWord from "./TactileWord";
 
-const THINK_MS = 3000; // the word visibly thinks, then returns
-
-/* reasoning states; one is picked at random per activation so every
-   run feels alive (all render the same 20px preset - measurement
-   stable) */
-const INFER_ORB_STATES = ["solving", "working", "searching", "weaving", "composing", "breathing"] as const;
-type OrbState = (typeof INFER_ORB_STATES)[number];
-
-const pickOrbState = (): OrbState =>
-  INFER_ORB_STATES[Math.floor(Math.random() * INFER_ORB_STATES.length)];
+const THINK_MS = 2500; // the word visibly thinks, then returns
 
 /**
  * Signature interaction: "inference" becomes a tiny thinking process.
  *
  * hard press -> the word becomes ONE inline status unit: a single
- * `thinking` word + a 20px ThinkingOrb (state="solving") sitting 3px
- * beside it. The text crossfades in place while the cell springs open,
- * CLIPPING the orb so it is revealed smoothly from behind the word's
- * edge; the orb works for ~3s (state randomized per run), then the
- * unit retracts (orb clipped away) and the word returns. No trailing
- * marker - the return is the resolution.
+ * `Thinking` word + a 20px solving ThinkingOrb sitting 3px beside it.
+ * The text crossfades in place while the cell springs open, CLIPPING
+ * the orb so it is revealed smoothly from behind the word's edge; the
+ * orb works for ~2.5s, then the unit retracts (orb clipped away) and
+ * the word returns. No trailing marker - the return is the resolution.
+ *
+ * Deterministic: the orb state is ALWAYS "solving", every accepted
+ * activation replays the exact same choreography, and activation is
+ * IGNORED while already thinking (no timeout reset, no partial
+ * restart). The next click after idle runs the identical sequence.
  *
  * Layout: no permanent reservation. Two invisible probes measure the
- * real widths of "inference" and "thinking + orb"; a Motion spring
+ * real widths of "inference" and "Thinking + orb"; a Motion spring
  * animates the live cell between those widths only while active, so
  * at rest the button is exactly word-sized (no dead gap, no oversized
  * focus ring) and the surrounding prose shifts smoothly by only a few
  * pixels during the deliberate interaction. The cell clips its
  * content, so the orb can structurally never overlap "systems".
  *
- * Reduced motion: instant static swap "inference"/"thinking" + a
+ * Reduced motion: instant static swap "inference"/"Thinking" + a
  * frozen orb for the hold, no morph travel.
  */
 export default function InferenceWord() {
   const reduceMotion = useReducedMotion();
   const [phase, setPhase] = useState<"idle" | "thinking">("idle");
-  const [orbState, setOrbState] = useState<OrbState>("solving");
   const safety = useRef<ReturnType<typeof setTimeout>[]>([]);
 
   const [widths, setWidths] = useState<{ idle: number; active: number } | null>(null);
@@ -76,8 +70,10 @@ export default function InferenceWord() {
   }, []);
 
   const activate = useCallback(() => {
+    // deterministic: ignore activations while already thinking - no
+    // timeout reset, no partial restart
+    if (phase === "thinking") return;
     clearSafety();
-    setOrbState(pickOrbState());
     setPhase("thinking");
     safety.current = [
       setTimeout(() => {
@@ -85,7 +81,7 @@ export default function InferenceWord() {
         safety.current = [];
       }, THINK_MS),
     ];
-  }, [clearSafety]);
+  }, [phase, clearSafety]);
 
   useEffect(() => clearSafety, [clearSafety]);
 
@@ -107,7 +103,7 @@ export default function InferenceWord() {
           className="word-morph-probe word-morph-probe-flex"
           aria-hidden="true"
         >
-          <span>thinking</span>
+          <span>Thinking</span>
           <ThinkingOrb
             state="solving"
             size={20}
@@ -144,8 +140,8 @@ export default function InferenceWord() {
             </motion.span>
 
             {/* thinking unit: crossfades in as the cell opens; the orb
-                is progressively revealed by the clip until the unit fits.
-                its reasoning state is randomized on every activation */}
+                is progressively revealed by the clip until the unit
+                fits. deterministic: always the solving state */}
             <motion.span
               className="word-morph-active"
               initial={false}
@@ -157,9 +153,9 @@ export default function InferenceWord() {
               }
               aria-hidden={phase === "thinking" ? undefined : true}
             >
-              <span>thinking</span>
+              <span>Thinking</span>
               <ThinkingOrb
-                state={orbState}
+                state="solving"
                 size={20}
                 theme="dark"
                 paused={!!reduceMotion}
@@ -172,7 +168,7 @@ export default function InferenceWord() {
             <span className="word-morph-base">inference</span>
           </span>
         )}
-        <span className="sr-only">{phase === "thinking" ? "thinking" : "inference"}</span>
+        <span className="sr-only">{phase === "thinking" ? "Thinking" : "inference"}</span>
       </span>
     </TactileWord>
   );

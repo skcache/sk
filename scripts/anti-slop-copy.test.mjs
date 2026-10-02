@@ -231,10 +231,11 @@ test("polish pass: reveal, grain, plaque, affordance, autoplay", () => {
   // grain is SVG feTurbulence fixed overlay
   assert.equal(css.includes("feTurbulence"), true, "grain turbulence missing");
   assert.equal(css.includes("pointer-events: none"), true, "overlay must not block clicks");
-  // UCSD local identity: gold rule + trident, no plaque box
-  assert.equal(css.includes("#c9a227"), true, "UCSD gold identity missing");
-  assert.equal(css.includes(".badge-rule"), true, "gold rule missing");
-  assert.equal(css.includes(".badge-trident-wrap"), true, "trident mark missing");
+  // UCSD V2: one-time navy->gold paint pass, trident pop + stage throw
+  assert.equal(css.includes(".ucsd-paint"), true, "UCSD paint wipe missing");
+  assert.equal(css.includes("#182B49"), true, "UCSD navy missing");
+  assert.equal(css.includes("#C69214"), true, "UCSD gold missing");
+  assert.equal(css.includes(".ucsd-pop"), true, "word-side trident pop missing");
   assert.equal(css.includes(".identity-slot"), true, "experience identity slots missing");
   // affordance: hover contrast only (dotted underlines removed in repair pass)
   assert.equal(css.includes(".word-button:hover"), true, "hover affordance missing");
@@ -301,10 +302,11 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(inf.includes("state=\"solving\""), true, "solving state missing");
   assert.equal(inf.includes("size={20}"), true, "20px inline orb missing");
   assert.equal(inf.includes("word-morph"), true, "fixed morph slot missing");
-  assert.equal(inf.includes("THINK_MS = 3000"), true, "3s inference hold missing");
-  assert.equal(inf.includes("INFER_ORB_STATES"), true, "randomized orb states missing");
-  assert.equal(inf.includes("thinking</span>"), true, "active word is lowercase thinking");
-  assert.equal(inf.includes(">Thinking<"), false, "capitalized Thinking must be gone");
+  assert.equal(inf.includes("THINK_MS = 2500"), true, "2.5s inference hold missing");
+  assert.equal(inf.includes("INFER_ORB_STATES"), false, "randomized orb states must be gone");
+  assert.equal(inf.includes("pickOrbState"), false, "random orb selection must be gone");
+  assert.equal(inf.includes("Thinking</span>"), true, "active word is capitalized Thinking");
+  assert.equal(inf.includes("if (phase === \"thinking\") return"), true, "activations must be ignored while thinking");
   assert.equal(inf.includes('.split("'), false, "per-letter split must be gone");
   assert.equal(inf.includes('thinkin"'), false, "misspelled thinkin token must be gone");
   assert.equal(inf.includes("word-morph-char"), false, "per-char spans must be gone");
@@ -312,9 +314,12 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   for (const asset of ["gdg-mark.svg", "kw-mark.svg"]) {
     assert.equal(all.includes(asset), true, `canonical asset missing: ${asset}`);
   }
-  // basketball: long settle hold kept
+  // basketball: the word is ONLY the trigger; the ball lives in the stage
   const bb = read("components/BasketballWord.tsx");
-  assert.equal(bb.includes("0.87"), true, "ball hold segment missing");
+  assert.equal(bb.includes("useStage"), true, "basketball must open the stage");
+  assert.equal(bb.includes("word-ball"), false, "inline word ball must be gone");
+  const bbStage = read("components/BasketballStage.tsx");
+  assert.equal(bbStage.includes("BOUNCE_H"), true, "gravity bounce heights missing");
 });
 
 test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => {
@@ -332,22 +337,32 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   }
   const music = read("components/MusicIsland.tsx");
   assert.equal(music.includes("setTimeout"), false, "island must not hand-roll its own timer chain");
-  assert.equal(music.includes("scheduleAnimation"), true, "island must use the cult UI animation queue");
-  assert.equal(music.includes("morph"), true, "island must drive one continuous morph");
-  assert.equal(music.includes("MUSIC_ORB_STATES"), true, "island must randomize its orb state");
-  assert.equal(music.includes("ThinkingOrb"), true, "island must carry a living orb");
+  assert.equal(music.includes("useScheduledAnimations"), true, "island must use the official animation queue");
+  assert.equal(music.includes("DynamicIslandProvider"), true, "island must use the official provider");
+  assert.equal(music.includes("SIZE_PRESETS.COMPACT_LONG"), true, "island must use the official preset");
+  assert.equal(music.includes("layoutId"), true, "island must share layout with the word");
+  assert.equal(music.includes("ThinkingOrb"), false, "music must have zero ThinkingOrb");
+  assert.equal(music.includes("buildFrames"), false, "frame table must be gone");
+  assert.equal(music.includes("requestAnimationFrame"), false, "rAF engine must be gone");
+  assert.equal(music.includes("MUSIC_ORB_STATES"), false, "music orb states must be gone");
+  assert.equal(music.includes("STEP_MS"), false, "frame stepping must be gone");
+  const musicWord = read("components/MusicWord.tsx");
+  assert.equal(musicWord.includes('layoutId="music-island"'), true, "word seed missing");
   const stageCode = read("components/InteractionStage.tsx");
-  assert.equal(stageCode.includes("active ? 88 : 44"), false, "stage must not expand in space");
   assert.equal(stageCode.includes("AnimatePresence"), true, "stage must keep the swap machinery");
-  assert.equal(stageCode.includes("44px"), true, "stage must keep a fixed quiet slot");
+  assert.equal(stageCode.includes('mode="wait"'), true, "stage must swap with mode=wait");
+  assert.equal(stageCode.includes('"basketball"'), true, "stage must host basketball");
+  assert.equal(stageCode.includes('"ucsd"'), true, "stage must host ucsd");
   const css = read("globals.css");
-  assert.equal(css.includes(".dynamic-island"), true, "island shell CSS missing");
-  assert.equal(css.includes("backdrop-filter"), true, "liquid glass blur missing");
+  assert.equal(css.includes(".interaction-stage"), true, "stage CSS missing");
+  assert.equal(css.includes("height: 72px"), true, "mobile stage height missing");
+  assert.equal(css.includes("height: 88px"), true, "desktop stage height missing");
+  assert.equal(css.includes(".dynamic-island-row"), true, "island row CSS missing");
+  assert.equal(css.includes(".dynamic-island-shell"), true, "island shell CSS missing");
   assert.equal(css.includes(".dynamic-island-eq"), true, "equalizer bars CSS missing");
-  assert.equal(css.includes(".dynamic-island-progress"), true, "progress bar CSS missing");
   assert.equal(css.includes(".dynamic-island-title"), true, "island typography CSS missing");
   assert.equal(css.includes("underline dotted"), false, "dotted underline affordance must be gone");
-  for (const stale of [".island-art", ".island-meta", ".island-title", ".island-artist", "word-notch", "word-morph-resolve", "dynamic-island-dot", ".dynamic-island-content", ".dynamic-island-container"]) {
+  for (const stale of ["word-ball", "badge-rule", "badge-trident-wrap", "badge-type", "badge-identity", "dynamic-island-progress", "word-notch", "word-morph-resolve", "dynamic-island-dot", ".dynamic-island-content", ".dynamic-island-container", "buildFrames", "STEP_MS", "INFER_ORB_STATES", "MUSIC_ORB_STATES"]) {
     assert.equal(source.includes(stale), false, `stale class present: ${stale}`);
   }
   const fav = read("config/favorite-song.ts");

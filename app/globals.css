@@ -187,52 +187,47 @@ body {
 
 /* ---------- uc san diego: local identity ---------- */
 
-.badge-type {
+.ucsd-word {
   position: relative;
-  z-index: 1;
   display: inline-block;
 }
 
-.badge-identity {
+/* one-time left-to-right paint pass (UCSD navy -> gold) via a
+   clipped overlay revealed across the phrase; .run is added once
+   after the page reveal settles and removed on animation end */
+.ucsd-paint::after {
+  content: "UC San Diego";
   position: absolute;
   inset: 0;
-  z-index: 0;
+  background: linear-gradient(90deg, #182B49, #C69214);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  clip-path: inset(0 100% 0 0);
   pointer-events: none;
 }
 
-/* gold rule, drawn with scaleX from the left edge */
-.badge-rule {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 1px;
-  z-index: 1;
-  height: 1.5px;
-  transform-origin: left center;
-  background: #c9a227;
+.ucsd-paint.run::after {
+  animation: ucsd-reveal 1.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* tiny trident stamps in at the phrase's end */
-.badge-trident-wrap {
-  position: absolute;
-  right: 0;
-  bottom: -2px;
-  z-index: 1;
-  line-height: 0;
+@keyframes ucsd-reveal {
+  to {
+    clip-path: inset(0 0 0 0);
+  }
 }
 
-/* ---------- basketball: mini physics ---------- */
-
-.word-ball {
+/* word-side trident pop: rises and tilts above the phrase */
+.ucsd-pop {
   position: absolute;
-  right: 3px;
-  bottom: 4px;
-  width: 14px;
-  height: 14px;
-  border-radius: 9999px;
-  overflow: hidden;
+  left: 50%;
+  top: -26px;
+  margin-left: -9px;
+  z-index: 2;
   pointer-events: none;
+  color: var(--color-ink);
 }
+
 
 /* ---------- experience identity marks ---------- */
 
@@ -330,91 +325,83 @@ body {
 
 /* ---------- shared interaction stage ---------- */
 
-/* fixed anchor below the intro: a 44px quiet slot that NEVER expands.
-   Eggs mount here as floating overlays (position absolute, centered
-   via auto margins so Motion's width springs never fight a
-   transform); the page layout below does not move. Nothing visible
-   when idle. */
+/* a real bounded playground between the intro and the experience
+   section. Fixed height at rest (72px mobile / 88px desktop) as
+   intentional breathing room - invisible chrome, NEVER resizes for an
+   animation. Toys (music island, ball, trident) play inside. */
 .interaction-stage {
   position: relative;
-  height: 44px;
+  height: 72px;
 }
 
-/* music egg: Apple's Dynamic Island playing music, in liquid glass.
-   The shell morphs through keyframed sizes (one continuous animation);
-   this CSS carries the material - translucent gradient surface,
-   backdrop blur + saturation, specular top highlight, soft glow - and
-   floats the shell OVER the page (absolute + centered by auto margins
-   so Motion's width springs never fight a transform). */
-.dynamic-island {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  margin: 0 auto;
-  z-index: 5;
-  overflow: hidden;
-  max-width: calc(100vw - 48px);
-  background: linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.1),
-    rgba(255, 255, 255, 0.035) 40%,
-    rgba(14, 17, 22, 0.82)
-  );
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.25),
-    0 18px 40px -12px rgba(0, 0, 0, 0.55),
-    0 0 28px rgba(255, 255, 255, 0.05);
+@media (min-width: 640px) {
+  .interaction-stage {
+    height: 88px;
+  }
 }
 
-/* specular sheen across the glass */
-.dynamic-island::before {
-  content: "";
+/* music word seed: the box the island is born from (shared layoutId) */
+.music-word {
+  position: relative;
+  display: inline-block;
+}
+
+.music-seed {
   position: absolute;
   inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-  background: radial-gradient(120% 90% at 20% 0%, rgba(255, 255, 255, 0.1), transparent 55%);
 }
 
-/* hoisted artwork: walks between its resting places (centered at
-   compact, left edge at expanded); motion animates left/width/height */
-.dynamic-island-art {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  margin: auto 0;
-  border-radius: 8px;
-  overflow: hidden;
-  flex: none;
-}
-
-.dynamic-island-art img {
+/* music island anchor: the stable box Motion projects from/to the
+   word seed (layoutId). Constant 300x56 so the shared-layout scale
+   stays bounded - the shell's own width animation lives inside it. */
+.music-island-anchor {
+  position: relative;
   display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  width: 300px;
+  height: 56px;
+  margin: 0 auto;
 }
 
-/* compactLong layer: equalizer bars + title, sits right of the art */
-.dynamic-island-compact-layer {
-  position: absolute;
-  left: 84px;
-  right: 16px;
-  top: 0;
-  bottom: 0;
+/* island content row inside the official Cult UI shell */
+.dynamic-island-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  min-width: 0;
+  justify-content: center;
+  gap: 12px;
+  padding: 0 18px;
   white-space: nowrap;
 }
 
-/* three quiet bars: the 'playing' heartbeat of the compact pill */
+.dynamic-island-art {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex: none;
+}
+
+.dynamic-island-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  text-align: left;
+}
+
+.dynamic-island-title {
+  font-size: 13.5px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.dynamic-island-description {
+  font-size: 11.5px;
+  color: var(--color-muted);
+  margin: 0;
+}
+
+/* three quiet bars: the 'playing' heartbeat */
 .dynamic-island-eq {
   display: flex;
   align-items: flex-end;
@@ -448,63 +435,29 @@ body {
   }
 }
 
-/* expanded layer: orb + title/artist, left of the walking art */
-.dynamic-island-expanded-layer {
+/* subtle glass on the official shell (the island is the object, not
+   the material) */
+.dynamic-island-shell {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.28);
+}
+
+/* stage projectiles */
+.stage-basketball {
   position: absolute;
-  left: 62px;
-  right: 16px;
-  top: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-  white-space: nowrap;
-}
-
-.dynamic-island-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-}
-
-.dynamic-island-title {
-  font-size: 13.5px;
-  font-weight: 500;
-  letter-spacing: -0.01em;
-  color: var(--color-ink);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.dynamic-island-description {
-  font-size: 11.5px;
-  color: var(--color-muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* hairline progress: fills across the expanded hold */
-.dynamic-island-progress {
-  position: absolute;
-  left: 14px;
-  right: 14px;
+  left: 0;
   bottom: 8px;
-  height: 2px;
-  border-radius: 2px;
-  background: rgba(243, 241, 234, 0.12);
-  overflow: hidden;
+  width: 26px;
+  height: 26px;
+  will-change: transform;
 }
 
-.dynamic-island-progress-fill {
-  display: block;
-  height: 100%;
-  border-radius: 2px;
-  background: rgba(243, 241, 234, 0.55);
-  transform-origin: left;
+.stage-ucsd {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  margin-top: -13px;
+  color: var(--color-ink);
+  will-change: transform;
 }
 
 /* ---------- page reveal (progressive enhancement) ---------- */

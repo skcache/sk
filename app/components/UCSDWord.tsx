@@ -3,154 +3,102 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import TactileWord from "./TactileWord";
+import { useStage } from "./StageProvider";
 
-// One controlling window; every child normalizes to this duration and
-// the parent unmounts everything together at the end.
-const SEQUENCE_MS = 720;
-const HOLD_MS = 40;
-
-const INK = "#f3f1ea";
-const GOLD = "#c9a227";
-
-// normalized phases inside the 720ms window
-const SNAP = 0.17; // identity on: 0-122ms
-const RULE = [0.17, 0.36] as const; // gold rule resolves: 122-260ms
-const STROKE_START = 0.22; // trident first stroke: ~160ms
-const COLLAPSE = 0.88; // holds until ~630ms, then exits
+const WIPE_DELAY = 1100; // after the page reveal settles
+const POP_MS = 620; // word-side pop window
 
 /**
- * LOCAL UCSD identity response. No plaque, no box: on release the
- * phrase itself flips to gold, a 1px gold rule draws under it, and a
- * tiny trident stamps in at the phrase's end. All marks live inside
- * the word's own box, layout untouched, then everything collapses.
+ * UC San Diego, the V2 way.
+ *
+ * FIRST LOAD: once, after the page reveal settles, the phrase gets one
+ * left-to-right color pass - UCSD navy -> gold painted across the text
+ * (clip-path reveal via .ucsd-paint), then returns to plain ink. No
+ * trident autoplay, never repeats. Reduced motion: no pass.
+ *
+ * CLICK: a small trident pops above the word (rise + tilt, ~0.5s),
+ * then the stage runs a larger trident projectile left->right. Extra
+ * clicks are ignored while one throw is running.
  */
-function Trident({ run }: { run: number }) {
-  const track = {
-    duration: 0.1,
-    ease: "easeOut" as const,
-    times: [0, 0.35, 0.85, 1],
-  };
-  const strokes = [
-    { d: "M7 13.5V5.5", delay: STROKE_START },
-    { d: "M1.5 6h11", delay: STROKE_START + 0.06 },
-    { d: "M4 6V2M10 6V2", delay: STROKE_START + 0.12 },
-  ];
+function TridentMark({ size = 16 }: { size?: number }) {
   return (
-    <svg
-      viewBox="0 0 14 14"
-      className="block h-[9px] w-[9px]"
-      fill="none"
-      aria-hidden="true"
-    >
-      {strokes.map((s, i) => (
-        <motion.path
-          key={`${run}-${i}`}
-          d={s.d}
-          stroke={GOLD}
-          strokeWidth={1.4}
-          initial={{ pathLength: 0, opacity: 0 }}
-          animate={{ pathLength: [0, 1, 1, 1], opacity: [0, 1, 1, 0] }}
-          transition={{ ...track, delay: s.delay }}
-        />
-      ))}
+    <svg viewBox="0 0 14 14" width={size} height={size} fill="none" aria-hidden="true">
+      <path d="M7 13.5V5.5" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" />
+      <path d="M1.5 6h11" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" />
+      <path d="M4 6V2M10 6V2" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" />
     </svg>
   );
 }
 
 export default function UCSDWord() {
   const reduceMotion = useReducedMotion();
-  const [run, setRun] = useState(0);
-  const [active, setActive] = useState(false);
-  const safety = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const { open, active } = useStage();
+  const [wipe, setWipe] = useState(false);
+  const [pop, setPop] = useState(0);
+  const wipeRef = useRef<HTMLSpanElement>(null);
+  const popTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const clearSafety = useCallback(() => {
-    if (safety.current) {
-      clearTimeout(safety.current);
-      safety.current = null;
+  // ONE left-to-right color pass after the reveal settles
+  useEffect(() => {
+    if (reduceMotion) return;
+    const t = setTimeout(() => setWipe(true), WIPE_DELAY);
+    return () => clearTimeout(t);
+  }, [reduceMotion]);
+
+  // after the pass completes, return the phrase to plain ink
+  useEffect(() => {
+    if (!wipe || !wipeRef.current) return;
+    const el = wipeRef.current;
+    const done = () => setWipe(false);
+    el.addEventListener("animationend", done, { once: true });
+    return () => el.removeEventListener("animationend", done);
+  }, [wipe]);
+
+  const clearPop = useCallback(() => {
+    if (popTimer.current) {
+      clearTimeout(popTimer.current);
+      popTimer.current = null;
     }
   }, []);
 
   const activate = useCallback(() => {
-    clearSafety();
-    setActive(true);
-    setRun((r) => r + 1);
-    // the ONLY unmount signal; every child lives inside this window
-    safety.current = setTimeout(() => {
-      setActive(false);
-      safety.current = null;
-    }, SEQUENCE_MS + HOLD_MS);
-  }, [clearSafety]);
+    if (active === "ucsd") return; // one throw at a time
+    clearPop();
+    setPop((p) => p + 1);
+    popTimer.current = setTimeout(() => {
+      setPop(0);
+      popTimer.current = null;
+    }, POP_MS);
+    open("ucsd");
+  }, [active, open, clearPop]);
 
-  useEffect(() => clearSafety, [clearSafety]);
-
-  if (reduceMotion) {
-    // Static: instant gold identity (text + rule), no assembly motion.
-    return (
-      <TactileWord label="UC San Diego" onActivate={activate} className="whitespace-nowrap">
-        <span className="word-anchor">
-          <motion.span
-            key={run}
-            className="badge-type"
-            animate={active ? { color: GOLD } : { color: INK }}
-            transition={{ duration: 0.01 }}
-          >
-            UC San Diego
-          </motion.span>
-          {active && (
-            <motion.span
-              key={`rule-${run}`}
-              aria-hidden="true"
-              className="badge-rule"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.01 }}
-            />
-          )}
-        </span>
-      </TactileWord>
-    );
-  }
+  useEffect(() => clearPop, [clearPop]);
 
   return (
     <TactileWord label="UC San Diego" onActivate={activate} className="whitespace-nowrap">
       <span className="word-anchor">
-        {/* the phrase itself becomes the identity; no box around it */}
-        <motion.span
-          className="badge-type"
-          animate={active ? { color: [INK, GOLD, GOLD, INK] } : { color: INK }}
-          transition={
-            active
-              ? {
-                  times: [0, SNAP, COLLAPSE, 1],
-                  duration: SEQUENCE_MS / 1000,
-                  ease: "easeOut",
-                }
-              : { duration: 0.01 }
-          }
+        <span
+          ref={wipeRef}
+          className={`ucsd-word${wipe && !reduceMotion ? " ucsd-paint run" : ""}`}
         >
           UC San Diego
-        </motion.span>
-
-        {active && (
-          <span key={`identity-${run}`} className="badge-identity">
-            {/* gold rule resolves after the identity lands */}
-            <motion.span
-              className="badge-rule"
-              aria-hidden="true"
-              initial={{ scaleX: 0, opacity: 0 }}
-              animate={{ scaleX: [0, 0, 1, 1, 0], opacity: [0, 0, 1, 1, 0] }}
-              transition={{
-                times: [0, RULE[0], RULE[1], COLLAPSE, 1],
-                duration: SEQUENCE_MS / 1000,
-                ease: "easeOut",
-              }}
-            />
-
-            {/* tiny trident stamps in, finishes well inside the window */}
-            <span className="badge-trident-wrap" aria-hidden="true">
-              <Trident run={run} />
-            </span>
-          </span>
+        </span>
+        {pop > 0 && (
+          <motion.span
+            key={`pop-${pop}`}
+            className="ucsd-pop"
+            aria-hidden="true"
+            initial={{ opacity: 0, y: 10, rotate: -8, scale: 0.9 }}
+            animate={{
+              opacity: [0, 1, 1, 0],
+              y: [10, -4, -8, -16],
+              rotate: [-8, 5, -2, 10],
+              scale: [0.9, 1, 1.03, 1],
+            }}
+            transition={{ duration: 0.5, times: [0, 0.18, 0.72, 1], ease: "easeOut" }}
+          >
+            <TridentMark size={18} />
+          </motion.span>
         )}
       </span>
     </TactileWord>
