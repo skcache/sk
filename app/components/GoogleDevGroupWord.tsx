@@ -57,7 +57,7 @@ export default function GoogleDevGroupWord() {
         else setOn(true);
       }}
       ariaPressed={on}
-      className="whitespace-nowrap"
+      className="identity-btn whitespace-nowrap"
     >
       <span className="identity-slot">
         {(on || closing) && (

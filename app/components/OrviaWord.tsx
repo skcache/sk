@@ -39,6 +39,7 @@ export default function OrviaWord() {
         else setOn(true);
       }}
       ariaPressed={on}
+      className="identity-btn"
     >
       <span className="identity-slot">
         {on || closing ? (

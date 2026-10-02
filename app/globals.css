@@ -94,6 +94,12 @@ body {
   text-underline-offset: 3px;
 }
 
+/* identity rows carry real logos: no dotted underline ever (it paints
+   under the marks and reads as a broken pill) */
+.word-button.identity-btn {
+  text-decoration: none;
+}
+
 .word-button:hover,
 .word-button:focus-visible {
   text-decoration-color: rgba(243, 241, 234, 0.72);
@@ -300,7 +306,7 @@ body {
   white-space: nowrap;
   vertical-align: -0.06em;
   clip-path: inset(-100% 0 -100% 0);
-  margin-right: 0.14em;
+  margin-right: 0.2em;
 }
 
 .k-mark {
