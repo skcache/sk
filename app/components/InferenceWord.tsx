@@ -11,19 +11,20 @@ const RESOLVE_MS = 380; // brief resolved marker, then back
 /**
  * Signature interaction: "inference" becomes a tiny thinking process.
  *
- * hard press -> the word cross-resolves into `thinking` alongside a
- * 20px ThinkingOrb (state="solving"), the orb works for ~1.1s, a brief
- * resolved marker appears, then the word cleanly returns.
+ * hard press -> the word becomes ONE inline status unit: a single
+ * `Thinking` word + a 20px ThinkingOrb (state="solving") sitting 3px
+ * beside it, the orb works for ~1.1s, a brief resolved marker appears,
+ * then the word cleanly returns.
  *
- * Layout: a fixed inline grid slot. Its single max-content column
- * always sizes to the WIDEST state ("inference" vs "thinkin" + the
- * 20px orb + gap); base and overlay share one cell (grid-area 1/1)
- * with no absolute positioning, so neither state can escape and
- * surrounding prose never moves or reflows - on any viewport or line
- * wrap. The overlay stays mounted and hidden at rest, so the slot
- * width is reserved from first paint.
+ * Layout: no reservation. Two invisible probes measure the real widths
+ * of "inference" and "Thinking + orb"; a Motion spring animates the
+ * live cell between those widths only while active, so at rest the
+ * button is exactly word-sized (no dead gap, no oversized focus ring)
+ * and the surrounding prose shifts smoothly by only a few pixels
+ * during the deliberate interaction. The orb can never overlap
+ * "systems" because the cell is its real inline size.
  *
- * Reduced motion: instant static swap "inference"/"thinking" + a frozen
+ * Reduced motion: instant static swap "inference"/"Thinking" + a frozen
  * orb for the hold, no morph travel, no animation layered on top.
  */
 export default function InferenceWord() {
@@ -31,6 +32,31 @@ export default function InferenceWord() {
   const [run, setRun] = useState(0);
   const [phase, setPhase] = useState<"idle" | "thinking" | "resolved">("idle");
   const safety = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const [widths, setWidths] = useState<{ idle: number; active: number } | null>(null);
+  const idleProbe = useRef<HTMLSpanElement>(null);
+  const activeProbe = useRef<HTMLSpanElement>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const measure = () => {
+      if (mounted && idleProbe.current && activeProbe.current) {
+        setWidths({
+          idle: idleProbe.current.offsetWidth,
+          active: activeProbe.current.offsetWidth,
+        });
+      }
+    };
+    measure();
+    document.fonts.ready.then(measure).catch(() => {});
+    const ro = new ResizeObserver(measure);
+    if (idleProbe.current) ro.observe(idleProbe.current);
+    if (activeProbe.current) ro.observe(activeProbe.current);
+    return () => {
+      mounted = false;
+      ro.disconnect();
+    };
+  }, []);
 
   const clearSafety = useCallback(() => {
     safety.current.forEach(clearTimeout);
@@ -57,64 +83,55 @@ export default function InferenceWord() {
   return (
     <TactileWord label="inference" onActivate={activate} className="word-morph-btn">
       <span className="word-morph">
-        {/* in-flow base text; hidden while the orb thinks */}
-        <motion.span
-          className="word-morph-base"
-          animate={{ opacity: phase === "thinking" ? 0 : 1 }}
-          transition={
-            phase === "thinking"
-              ? quick ?? { duration: 0.05, ease: "easeOut" }
-              : quick ?? { duration: 0.3, ease: "easeOut" }
-          }
-        >
+        {/* measurement probes: absolute, invisible, zero layout weight */}
+        <span ref={idleProbe} className="word-morph-probe" aria-hidden="true">
           inference
-        </motion.span>
-
-        {/* always mounted so the grid cell reserves the widest state
-            from first paint; hidden via opacity + aria until the press */}
-        <motion.span
-          key={`think-${run}`}
-          className="word-morph-overlay"
-          aria-label={phase === "idle" ? undefined : "thinking"}
-          aria-hidden={phase === "idle" || undefined}
-          initial={false}
-          animate={{ opacity: phase === "idle" || phase === "resolved" ? 0 : 1 }}
-          transition={quick ?? { duration: 0.2, ease: "easeOut" }}
+        </span>
+        <span
+          ref={activeProbe}
+          className="word-morph-probe word-morph-probe-flex"
+          aria-hidden="true"
         >
-            {/* clean cross-resolve: chars settle into place, no scramble.
-                the orb takes the place of the final "g": the word is
-                visibly thinking inside its own footprint */}
-            {"thinkin".split("").map((c, i) => (
-              <motion.span
-                key={i}
-                className="word-morph-char"
-                initial={{ opacity: 0, y: 2, scale: 0.985 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={
-                  quick ?? {
-                    delay: i * 0.024,
-                    duration: 0.16,
-                    ease: "easeOut",
-                  }
-                }
-              >
-                {c}
-              </motion.span>
-            ))}
+          <span>Thinking</span>
+          <ThinkingOrb
+            state="solving"
+            size={20}
+            theme="dark"
+            paused={!!reduceMotion}
+            aria-hidden="true"
+          />
+        </span>
 
-            {/* the tiny living orb: the word itself is thinking */}
-            <ThinkingOrb
-              state="solving"
-              size={20}
-              theme="dark"
-              paused={!!reduceMotion}
-              style={{ flex: "none", opacity: phase === "resolved" ? 0.65 : 1 }}
-            />
+        {/* the live cell: width springs between the two measured widths.
+            idle = the word; active = "Thinking" + orb. no permanent
+            reservation - prose shifts smoothly only while it thinks */}
+        <motion.span
+          className="word-morph-cell"
+          initial={false}
+          animate={{
+            width: widths ? (phase === "thinking" ? widths.active : widths.idle) : "auto",
+          }}
+          transition={quick ?? { type: "spring", stiffness: 420, damping: 34, mass: 0.7 }}
+        >
+          {phase === "idle" || phase === "resolved" ? (
+            <span className="word-morph-base">inference</span>
+          ) : (
+            <span className="word-morph-active">
+              <span>Thinking</span>
+              <ThinkingOrb
+                state="solving"
+                size={20}
+                theme="dark"
+                paused={!!reduceMotion}
+                style={{ flex: "none" }}
+              />
+            </span>
+          )}
         </motion.span>
 
         {/* brief resolved marker under the returning word */}
         {phase === "resolved" && (
-          <span className="word-morph-overlay word-morph-resolve" key={`res-${run}`}>
+          <span className="word-morph-resolve" key={`res-${run}`}>
             <motion.span
               className="word-notch-cell"
               initial={{ opacity: 0, scale: 0.5 }}

@@ -1,188 +1,99 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import {
-  motion,
-  useReducedMotion,
-  type Transition,
-  type Variants,
-} from "motion/react";
+import { motion, useReducedMotion } from "motion/react";
 import { favoriteSong } from "../config/favorite-song";
+import {
+  DynamicIsland,
+  DynamicIslandProvider,
+  DynamicContainer,
+  DynamicTitle,
+  DynamicDescription,
+  useDynamicIslandSize,
+  scheduleAnimation,
+  type DynamicIslandPreset,
+} from "./kit/dynamic-island";
 
 /**
- * The music island: a Dynamic Island style state machine
+ * The music egg: the real Cult UI Dynamic Island state machine
  * (empty -> compact -> compactLong -> long -> compactLong -> compact
- * -> empty) driven by ONE master timer chain, fully cleaned up on
- * unmount so no state update can ever fire after the island leaves.
- *
- * The container morphs width / height / border-radius on springs while
- * the artwork and track meta fade in only during the long state. A
- * quiet dark card on the site palette; not a phone clone.
+ * -> empty) driven by the kit's preset shell + scheduleAnimation queue.
+ * The long state shows artwork, title and artist from the editable
+ * favorite-song config. No audio, no APIs; compact and quiet.
  */
-
-type Phase = "empty" | "compact" | "compactLong" | "long";
-
-// expansion: soft, slight overshoot; collapse: crisp, no bounce
-const EXPAND: Transition = {
-  type: "spring",
-  stiffness: 280,
-  damping: 26,
-  mass: 1,
-};
-const COLLAPSE: Transition = {
-  type: "spring",
-  stiffness: 340,
-  damping: 30,
-  mass: 1,
-};
-const INSTANT: Transition = { duration: 0.01 };
-
-// master schedule, ms from mount; the long state is held ~2.6s
-const ENTER_COMPACT = 60;
-const ENTER_COMPACT_LONG = 240;
-const ENTER_LONG = 480;
-const HOLD_LONG = 2600;
-const EXIT_COMPACT_LONG = ENTER_LONG + HOLD_LONG; // 3080
-const EXIT_COMPACT = EXIT_COMPACT_LONG + 300; // 3380
-const EXIT_EMPTY = EXIT_COMPACT + 180; // 3560
-const CALL_DONE = EXIT_EMPTY + 120; // 3680
-
 export default function MusicIsland({ onDone }: { onDone: () => void }) {
-  const reduceMotion = useReducedMotion();
-  const [phase, setPhase] = useState<Phase>("empty");
+  return (
+    <DynamicIslandProvider>
+      <IslandBody onDone={onDone} />
+    </DynamicIslandProvider>
+  );
+}
 
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const alive = useRef(true);
+function IslandBody({ onDone }: { onDone: () => void }) {
   const onDoneRef = useRef(onDone);
   useEffect(() => {
     onDoneRef.current = onDone;
   }, [onDone]);
 
-  // the expanded card never exceeds the viewport
-  const longWidth = useMemo(() => {
-    if (typeof window === "undefined") return 320;
-    return Math.min(320, window.innerWidth - 48);
-  }, []);
+  const reduceMotion = useReducedMotion();
+  const [preset, setPreset] = useState<DynamicIslandPreset>("default");
+  useDynamicIslandSize(preset);
 
   useEffect(() => {
-    alive.current = true;
-    timers.current = [];
+    let alive = true;
+    const timers: number[] = [];
     const at = (delay: number, fn: () => void) => {
-      timers.current.push(
-        setTimeout(() => {
-          if (!alive.current) return;
-          fn();
-        }, delay)
-      );
+      timers.push(scheduleAnimation(delay, () => { if (alive) fn(); }));
     };
-
-    at(ENTER_COMPACT, () => setPhase("compact"));
-    at(ENTER_COMPACT_LONG, () => setPhase("compactLong"));
-    at(ENTER_LONG, () => setPhase("long"));
-    at(EXIT_COMPACT_LONG, () => setPhase("compactLong"));
-    at(EXIT_COMPACT, () => setPhase("compact"));
-    at(EXIT_EMPTY, () => setPhase("empty"));
-    at(CALL_DONE, () => onDoneRef.current());
-
+    at(80, () => setPreset("compact"));
+    at(260, () => setPreset("compactLong"));
+    at(500, () => setPreset("long"));
+    at(3200, () => setPreset("compactLong"));
+    at(3520, () => setPreset("compact"));
+    at(3700, () => setPreset("default"));
+    at(3850, () => onDoneRef.current());
     return () => {
-      alive.current = false;
-      timers.current.forEach(clearTimeout);
-      timers.current = [];
+      alive = false;
+      timers.forEach(clearTimeout);
+      timers.length = 0;
     };
   }, []);
 
-  const container: Variants = {
-    empty: {
-      width: 0,
-      height: 0,
-      borderRadius: 22,
-      opacity: 0,
-      scale: 0.86,
-      transition: reduceMotion ? INSTANT : COLLAPSE,
-    },
-    compact: {
-      width: 150,
-      height: 40,
-      borderRadius: 22,
-      opacity: 1,
-      scale: 1,
-      transition: reduceMotion ? INSTANT : EXPAND,
-    },
-    compactLong: {
-      width: 210,
-      height: 40,
-      borderRadius: 22,
-      opacity: 1,
-      scale: 1,
-      transition: reduceMotion ? INSTANT : EXPAND,
-    },
-    long: {
-      width: longWidth,
-      height: 132,
-      borderRadius: 22,
-      opacity: 1,
-      scale: 1,
-      transition: reduceMotion ? INSTANT : EXPAND,
-    },
-  };
-
-  const content: Variants = {
-    empty: {
-      opacity: 0,
-      scale: 0.92,
-      transition: reduceMotion ? INSTANT : { duration: 0.14, ease: "easeIn" },
-    },
-    compact: {
-      opacity: 0,
-      scale: 0.92,
-      transition: reduceMotion ? INSTANT : { duration: 0.14, ease: "easeIn" },
-    },
-    compactLong: {
-      opacity: 0,
-      scale: 0.92,
-      transition: reduceMotion ? INSTANT : { duration: 0.14, ease: "easeIn" },
-    },
-    long: {
-      opacity: 1,
-      scale: 1,
-      transition: reduceMotion
-        ? INSTANT
-        : { delay: 0.08, duration: 0.22, ease: "easeOut" },
-    },
-  };
+  const contentT = reduceMotion
+    ? { duration: 0.01 }
+    : { delay: 0.06, duration: 0.2, ease: "easeOut" as const };
 
   return (
-    <motion.div
-      className="island"
-      initial={false}
-      animate={phase}
-      variants={container}
+    <DynamicIsland
+      aria-label={`now playing: ${favoriteSong.title} by ${favoriteSong.artist}`}
       exit={
         reduceMotion
-          ? { opacity: 0, transition: INSTANT }
-          : {
-              opacity: 0,
-              scale: 0.96,
-              transition: { duration: 0.18, ease: "easeOut" },
-            }
+          ? { opacity: 0, transition: { duration: 0.01 } }
+          : { opacity: 0, transition: { duration: 0.15 } }
       }
-      aria-label={`now playing: ${favoriteSong.title} by ${favoriteSong.artist}`}
     >
-      <motion.div className="island-content" variants={content}>
-        <Image
-          className="island-art"
-          src={favoriteSong.artwork}
-          alt=""
-          width={56}
-          height={56}
-          unoptimized
-        />
-        <div className="island-meta">
-          <span className="island-title">{favoriteSong.title}</span>
-          <span className="island-artist">{favoriteSong.artist}</span>
-        </div>
-      </motion.div>
-    </motion.div>
+      <DynamicContainer>
+        <motion.div
+          className="dynamic-island-content"
+          initial={false}
+          animate={{ opacity: preset === "long" ? 1 : 0 }}
+          transition={contentT}
+        >
+          <Image
+            className="dynamic-island-art"
+            src={favoriteSong.artwork}
+            alt=""
+            width={34}
+            height={34}
+            unoptimized
+          />
+          <span className="dynamic-island-meta">
+            <DynamicTitle>{favoriteSong.title}</DynamicTitle>
+            <DynamicDescription>{favoriteSong.artist}</DynamicDescription>
+          </span>
+        </motion.div>
+      </DynamicContainer>
+    </DynamicIsland>
   );
 }

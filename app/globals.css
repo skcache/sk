@@ -86,12 +86,9 @@ body {
   touch-action: manipulation;
   /* uniform rigid-object press, anchored at the baseline edge */
   transform-origin: 50% 100%;
-  /* quiet static affordance: an extremely faint dotted underline tells
-     touch users these words are tappable without shouting */
-  text-decoration: underline dotted;
-  text-decoration-color: rgba(243, 241, 234, 0.28);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 3px;
+  /* affordance: quiet hover contrast (no dotted underline; the press
+     itself and the tactile response teach interactivity) */
+  transition: color 150ms ease;
 }
 
 /* identity rows carry real logos: no dotted underline ever (it paints
@@ -100,9 +97,8 @@ body {
   text-decoration: none;
 }
 
-.word-button:hover,
-.word-button:focus-visible {
-  text-decoration-color: rgba(243, 241, 234, 0.72);
+.word-button:hover {
+  color: #ffffff;
 }
 
 /* keyboard-only focus treatment: subtle ring, never a box after a click */
@@ -111,81 +107,80 @@ body {
   outline-offset: 3px;
 }
 
-/* inference scopes the affordance to the word itself; the button's own
-   underline would paint across the reserved tail */
-.word-button.word-morph-btn {
-  text-decoration: none;
-}
-
-/* press = contrast only, no box: the word brightens and its dotted
-   underline compresses while the key travels */
+/* press = contrast only, no box: the word brightens and compresses
+   while the key travels */
 .word-button.is-pressed {
   color: #ffffff;
-  text-decoration-color: rgba(243, 241, 234, 0.85);
 }
 
 /* ---------- inference: thinking morph ---------- */
 
-/* fixed inline slot: an inline grid whose single max-content column
-   always sizes to the WIDEST state ("inference" vs "thinkin" + the
-   20px orb + gap), so base and overlay share ONE cell and neither can
-   escape. The overlay stays mounted (hidden at rest via opacity) so
-   the slot width is reserved from first paint: surrounding prose
-   never moves and the orb can never overlap the following text, at
-   any viewport or on line wrap. */
+/* no reservation: the cell is word-sized at rest and springs to
+   "Thinking + orb" only while active (real measured widths, Motion
+   spring). prose shifts smoothly by a few px, only during the press */
 .word-morph {
   position: relative;
-  display: inline-grid;
-  grid-template-columns: max-content;
-  text-align: left;
+  display: inline-block;
   white-space: nowrap;
+}
+
+/* probes are absolute + invisible: measurable, zero layout weight.
+   the flex probe mirrors the live Thinking + orb unit (same 3px gap)
+   so its measured width is exactly what the cell must animate to */
+.word-morph-probe {
+  position: absolute;
+  left: 0;
+  top: 0;
+  visibility: hidden;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.word-morph-probe-flex {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+/* the animated cell; inline-block so width animation reflows prose */
+.word-morph-cell {
+  display: inline-block;
+  white-space: nowrap;
+  vertical-align: baseline;
 }
 
 .word-morph-base {
-  grid-area: 1 / 1;
-  justify-self: start;
-  align-self: start;
   display: inline-block;
   white-space: nowrap;
   font: inherit;
-  /* the affordance hugs the WORD, not the reserved tail */
-  text-decoration: underline dotted;
-  text-decoration-color: rgba(243, 241, 234, 0.28);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 3px;
 }
 
-.word-button:hover .word-morph-base,
-.word-button:focus-visible .word-morph-base {
-  text-decoration-color: rgba(243, 241, 234, 0.72);
+/* Thinking + orb as ONE inline status unit: 3px gap, orb rides the
+   text's optical center (no container, no halo) */
+.word-morph-active {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
 }
 
-/* overlay: shares the base's cell (grid-area 1/1), left-aligned with
-   it. No absolute positioning, so it cannot escape the reserved slot. */
-.word-morph-overlay {
-  grid-area: 1 / 1;
-  justify-self: start;
-  align-self: start;
+/* 1px breathing between the orb and the following comma: the spring
+   settles within a fraction of a px, this guarantees the orb canvas
+   never touches surrounding prose (applied to the flex probe too, so
+   the measured width includes it) */
+.word-morph-active canvas,
+.word-morph-probe-flex canvas {
+  margin-right: 1px;
+}
+
+.word-morph-resolve {
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  width: 100%;
   display: flex;
   align-items: center;
-  gap: 4px;
-  white-space: nowrap;
-  pointer-events: none;
-}
-
-.word-morph-char {
-  display: inline-block;
-  font: inherit;
-}
-
-/* resolved marker: same cell, vertically centered (matching the old
-   absolute top:0/bottom:-3px placement) and stretched across the
-   reserved slot */
-.word-morph-resolve {
-  grid-area: 1 / 1;
-  justify-self: stretch;
-  align-self: center;
-  margin-top: 1.5px;
+  gap: 2px;
 }
 
 /* ---------- uc san diego: local identity ---------- */
@@ -333,8 +328,8 @@ body {
 
 /* ---------- shared interaction stage ---------- */
 
-/* bounded, quiet region under the intro paragraph. Idle = 64px of
-   plain breathing room (nothing visible); active = 140px, expanded by
+/* bounded, quiet region under the intro paragraph. Idle = 44px of
+   plain breathing room (nothing visible); active = 88px, expanded by
    one spring. Overflow hidden so no egg can spill into the page. */
 .interaction-stage {
   position: relative;
@@ -344,48 +339,57 @@ body {
   overflow: hidden;
 }
 
-/* music egg: a restrained dark card, not a phone clone.
-   Width/height are animated by the island's state machine; the CSS
-   only clamps the card to the viewport and carries the palette.
-   The card centers in the flex interaction stage. */
-.island {
+/* music egg: Cult UI Dynamic Island shell. Width/height/border-radius
+   are animated by the kit's preset state machine; the CSS carries the
+   palette and clamps to the viewport. The shell centers in the flex
+   interaction stage. */
+.dynamic-island {
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
   max-width: calc(100vw - 48px);
-  padding: 16px 20px;
-  border-radius: 22px;
   background: var(--color-surface);
   border: 1px solid var(--color-hairline);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
 }
 
-.island-content {
+.dynamic-island-container {
   display: flex;
   align-items: center;
-  gap: 14px;
+  justify-content: center;
+  gap: 12px;
+  padding: 0 16px;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+/* content fades in only during the long state */
+.dynamic-island-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   min-width: 0;
   max-width: 100%;
 }
 
-.island-art {
-  width: 56px;
-  height: 56px;
-  border-radius: 10px;
+.dynamic-island-art {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
   flex: none;
   object-fit: cover;
 }
 
-.island-meta {
+.dynamic-island-meta {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
   min-width: 0;
 }
 
-.island-title {
-  font-size: 15px;
+.dynamic-island-title {
+  font-size: 13.5px;
   font-weight: 500;
   letter-spacing: -0.01em;
   color: var(--color-ink);
@@ -394,8 +398,8 @@ body {
   text-overflow: ellipsis;
 }
 
-.island-artist {
-  font-size: 13px;
+.dynamic-island-description {
+  font-size: 11.5px;
   color: var(--color-muted);
   white-space: nowrap;
   overflow: hidden;

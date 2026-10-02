@@ -163,6 +163,8 @@ test("no fabricated links: private repo never linked, no invented URLs", () => {
     "https://x.com/skcache",
     "https://www.linkedin.com/in/skuwar",
     "https://skx.si",
+    // vendored component provenance (Cult UI DynamicIsland MIT source)
+    "https://www.cult-ui.com/docs/components/dynamic-island",
   ];
   const unexpected = urls.filter((u) => !allowed.includes(u));
   assert.equal(unexpected.length, 0, `unexpected URL(s): ${unexpected.join(", ")}`);
@@ -234,9 +236,9 @@ test("polish pass: reveal, grain, plaque, affordance, autoplay", () => {
   assert.equal(css.includes(".badge-rule"), true, "gold rule missing");
   assert.equal(css.includes(".badge-trident-wrap"), true, "trident mark missing");
   assert.equal(css.includes(".identity-slot"), true, "experience identity slots missing");
-  // affordance: rest 28%, hover/focus 72%
-  assert.equal(css.includes("rgba(243, 241, 234, 0.28)"), true, "rest affordance alpha wrong");
-  assert.equal(css.includes("rgba(243, 241, 234, 0.72)"), true, "hover affordance alpha wrong");
+  // affordance: hover contrast only (dotted underlines removed in repair pass)
+  assert.equal(css.includes(".word-button:hover"), true, "hover affordance missing");
+  assert.equal(css.includes("transition: color 150ms ease"), true, "hover brighten must fade smoothly");
   // V1/V2 boundary: inference NEVER autoplays - no IntroAutoplay file,
   // no render, nothing presses anything on load
   const page = read("page.tsx");
@@ -299,6 +301,10 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(inf.includes('state="solving"'), true, "solving state missing");
   assert.equal(inf.includes("size={20}"), true, "20px inline orb missing");
   assert.equal(inf.includes("word-morph"), true, "fixed morph slot missing");
+  assert.equal(inf.includes("Thinking</span>"), true, "Thinking must be one capitalized word");
+  assert.equal(inf.includes('.split("'), false, "per-letter split must be gone");
+  assert.equal(inf.includes('thinkin"'), false, "misspelled thinkin token must be gone");
+  assert.equal(inf.includes("word-morph-char"), false, "per-char spans must be gone");
   // experience identities use the canonical public assets
   for (const asset of ["gdg-mark.svg", "kw-mark.svg"]) {
     assert.equal(all.includes(asset), true, `canonical asset missing: ${asset}`);
@@ -306,4 +312,32 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   // basketball: long settle hold kept
   const bb = read("components/BasketballWord.tsx");
   assert.equal(bb.includes("0.87"), true, "ball hold segment missing");
+});
+
+test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => {
+  const kit = read("components/kit/dynamic-island.tsx");
+  for (const p of [
+    "DynamicIslandProvider",
+    "DynamicIsland",
+    "DynamicContainer",
+    "DynamicTitle",
+    "DynamicDescription",
+    "useDynamicIslandSize",
+    "scheduleAnimation",
+  ]) {
+    assert.equal(kit.includes(p), true, `kit primitive missing: ${p}`);
+  }
+  const music = read("components/MusicIsland.tsx");
+  assert.equal(music.includes("setTimeout"), false, "island must not hand-roll its own timer chain");
+  assert.equal(music.includes("scheduleAnimation"), true, "island must use the cult UI animation queue");
+  assert.equal(music.includes("useDynamicIslandSize"), true, "island must drive the preset shell");
+  const stageCode = read("components/InteractionStage.tsx");
+  assert.equal(stageCode.includes("active ? 88 : 44"), true, "stage heights must be 44 idle / 88 active");
+  const css = read("globals.css");
+  assert.equal(css.includes(".dynamic-island"), true, "island shell CSS missing");
+  assert.equal(css.includes(".dynamic-island-title"), true, "island typography CSS missing");
+  assert.equal(css.includes("underline dotted"), false, "dotted underline affordance must be gone");
+  for (const stale of [".island-art", ".island-meta", ".island-title", ".island-artist"]) {
+    assert.equal(source.includes(stale), false, `stale island class present: ${stale}`);
+  }
 });

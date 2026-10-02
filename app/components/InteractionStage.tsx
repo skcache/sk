@@ -14,8 +14,9 @@ export type StageAction = "music" | "basketball" | "markets" | "ucsd";
  * - exactly one active interaction at a time (AnimatePresence
  *   mode="wait"; exiting panels unmount and clear their timers, so
  *   switching can never leave stale state)
- * - idle height ~64px with nothing visible; active height ~140px,
- *   expanded by one smooth spring
+ * - idle height ~44px with nothing visible; active height ~88px,
+ *   expanded by one smooth spring (music's compact shell fits inside;
+ *   future panels may raise this ceiling when they land)
  * - overflow hidden (nothing can spill into the page), mobile safe
  * - future panels: basketball / markets / ucsd mount here the same way
  *   music does (add `active === "..."` branches and their keys)
@@ -36,7 +37,7 @@ export default function InteractionStage({
     <motion.div
       className="interaction-stage"
       initial={false}
-      animate={{ height: active ? 140 : 64 }}
+      animate={{ height: active ? 88 : 44 }}
       transition={t}
       aria-hidden={!active}
     >
