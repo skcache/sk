@@ -228,24 +228,12 @@ test("polish pass: reveal, grain, plaque, affordance, autoplay", () => {
   // affordance: rest 28%, hover/focus 72%
   assert.equal(css.includes("rgba(243, 241, 234, 0.28)"), true, "rest affordance alpha wrong");
   assert.equal(css.includes("rgba(243, 241, 234, 0.72)"), true, "hover affordance alpha wrong");
-  // autoplay tour drives the real tactile buttons, never GDG/Keywords
-  const autoplay = read("components/IntroAutoplay.tsx");
-  assert.equal(autoplay.includes('press("inference")'), true);
-  assert.equal(
-    autoplay.includes('press("UC San Diego")'),
-    false,
-    "autoplay must not press UCSD"
-  );
-  assert.equal(
-    autoplay.includes('press("basketball")'),
-    false,
-    "autoplay must not press basketball"
-  );
-  assert.equal(autoplay.includes('press("GDG")'), false, "autoplay must not press GDG");
-  // one-shot, no loop
-  assert.equal(autoplay.includes("setInterval"), false, "no looping autoplay");
-  // five reveal slots on the page
+  // V1/V2 boundary: inference NEVER autoplays - no IntroAutoplay file,
+  // no render, nothing presses anything on load
   const page = read("page.tsx");
+  assert.equal(page.includes("IntroAutoplay"), false, "autoplay render must be gone");
+  assert.equal(source.includes("IntroAutoplay"), false, "IntroAutoplay component must be deleted");
+  // five reveal slots on the page
   assert.equal((page.match(/data-reveal/g) || []).length, 5, "expected 5 reveal slots");
 });
 

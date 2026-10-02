@@ -3,7 +3,6 @@ import OrviaWord from "./components/OrviaWord";
 import GoogleDevGroupWord from "./components/GoogleDevGroupWord";
 import KeywordsWord from "./components/KeywordsWord";
 import PageReveal from "./components/PageReveal";
-import IntroAutoplay from "./components/IntroAutoplay";
 import { ExternalLink } from "lucide-react";
 
 const socials = [
@@ -157,7 +156,6 @@ export default function Home() {
           className="mx-auto pt-14 pb-32 sm:pt-16 sm:pb-28 max-w-[48rem]"
         >
           <Intro />
-          <IntroAutoplay />
         </section>
 
         <section data-reveal aria-labelledby="things-done" className="mx-auto pb-24 sm:pb-28 max-w-[56rem]">
