@@ -345,13 +345,17 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(bbStage.includes("RESTITUTION"), true, "true restitution physics missing");
   assert.equal(bbStage.includes("GRAVITY"), true, "time-integrated gravity missing");
   assert.equal(bbStage.includes("bb-shadow"), true, "contact shadow missing");
-  // chiba lab: the one-time sweep mini easter egg
+  // chiba lab: the one-time letter cascade mini easter egg - NOT the
+  // inference glow sweep
   const chiba = read("components/ChibaWord.tsx");
   assert.equal(chiba.includes("TactileWord"), true, "chiba must keep the tactile click");
-  assert.equal(chiba.includes("chiba-sweep"), true, "one-time sweep missing");
-  assert.equal(chiba.includes("onAnimationEnd"), true, "sweep must clear after one pass");
-  assert.equal(chiba.includes("animationName"), true, "sweep must filter its own animationend");
-  assert.equal(css.includes("chiba-sweep-once"), true, "sweep keyframes missing");
+  assert.equal(chiba.includes("chiba-letter"), true, "letter cascade missing");
+  assert.equal(chiba.includes("chiba-sweep"), false, "chiba must NOT reuse the inference sweep");
+  assert.equal(chiba.includes("animationDelay"), true, "cascade stagger missing");
+  assert.equal(chiba.includes("onAnimationEnd"), true, "cascade must clear after one pass");
+  assert.equal(chiba.includes("animationName"), true, "cascade must filter its own animationend");
+  assert.equal(css.includes("chiba-letter-pop"), true, "cascade keyframes missing");
+  assert.equal(css.includes("chiba-sweep-once"), false, "old sweep keyframes must be gone");
 });
 
 test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => {
