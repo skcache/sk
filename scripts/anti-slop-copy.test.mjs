@@ -65,14 +65,15 @@ test("intro copy preserved verbatim", () => {
     ", systems, and building software. Outside of that,",
     "basketball",
     "markets",
-    "design",
+    "music",
   ]) {
     assert.equal(text.includes(line), true, `intro copy missing: ${line}`);
   }
+  assert.equal(intro.includes("design"), false, "design is gone from the intro");
   // the sentence must end the school name with a period before "I'm mostly into"
   assert.match(intro, /\.\{" "\}I&apos;m mostly into/, "period missing after UC San Diego");
-  // markets and design are plain text now, with the Oxford comma intact
-  assert.equal(text.includes(", markets, and design"), true, "comma or plain-text list lost");
+  // markets stays plain text, music gained an interaction; Oxford comma intact
+  assert.equal(text.includes(", markets, and"), true, "Oxford comma lost");
 });
 
 test("interaction architecture: three objects, no generic API", () => {
@@ -80,10 +81,18 @@ test("interaction architecture: three objects, no generic API", () => {
   for (const tag of ["<UCSDWord", "<InferenceWord", "<BasketballWord"]) {
     assert.equal(intro.includes(tag), true, `missing object: ${tag}`);
   }
-  // markets / design / systems must NOT have their own interaction objects
+  // markets / systems must NOT have their own interaction objects
   for (const tag of ["<MarketsWord", "<DesignWord", "<SystemsWord"]) {
     assert.equal(intro.includes(tag), false, `stray object present: ${tag}`);
   }
+  // V2: music opens the shared stage; the stage is wired via provider
+  assert.equal(intro.includes("<MusicWord"), true, "music word missing");
+  const stage = read("components/InteractionStage.tsx");
+  assert.equal(stage.includes("AnimatePresence"), true, "stage needs AnimatePresence");
+  assert.equal(stage.includes('mode="wait"'), true, "stage must swap with mode=wait");
+  assert.equal(stage.includes("music"), true, "stage must accept the music action");
+  const provider = read("components/StageProvider.tsx");
+  assert.equal(provider.includes("InteractionStage"), true, "provider must render the stage");
   // old generic API is gone
   const all = files.map(read).join("\n");
   assert.equal(all.includes("trigger("), false, "old trigger() API must be gone");

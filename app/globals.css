@@ -126,18 +126,25 @@ body {
 
 /* ---------- inference: thinking morph ---------- */
 
-/* fixed inline slot: sized to the word itself (the "thinking" overlay
-   with the orb as the final letter fits inside it), so surrounding
-   prose never moves and there is no visible reserve gap at rest */
+/* fixed inline slot: an inline grid whose single max-content column
+   always sizes to the WIDEST state ("inference" vs "thinkin" + the
+   20px orb + gap), so base and overlay share ONE cell and neither can
+   escape. The overlay stays mounted (hidden at rest via opacity) so
+   the slot width is reserved from first paint: surrounding prose
+   never moves and the orb can never overlap the following text, at
+   any viewport or on line wrap. */
 .word-morph {
   position: relative;
-  display: inline-block;
-  width: max-content;
+  display: inline-grid;
+  grid-template-columns: max-content;
   text-align: left;
   white-space: nowrap;
 }
 
 .word-morph-base {
+  grid-area: 1 / 1;
+  justify-self: start;
+  align-self: start;
   display: inline-block;
   white-space: nowrap;
   font: inherit;
@@ -153,12 +160,12 @@ body {
   text-decoration-color: rgba(243, 241, 234, 0.72);
 }
 
-/* absolute overlay: thinking chars + orb, no layout participation */
+/* overlay: shares the base's cell (grid-area 1/1), left-aligned with
+   it. No absolute positioning, so it cannot escape the reserved slot. */
 .word-morph-overlay {
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
+  grid-area: 1 / 1;
+  justify-self: start;
+  align-self: start;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -171,11 +178,14 @@ body {
   font: inherit;
 }
 
-/* resolved marker sits at the baseline under the returning word */
+/* resolved marker: same cell, vertically centered (matching the old
+   absolute top:0/bottom:-3px placement) and stretched across the
+   reserved slot */
 .word-morph-resolve {
-  bottom: -3px;
-  left: 0;
-  right: 0;
+  grid-area: 1 / 1;
+  justify-self: stretch;
+  align-self: center;
+  margin-top: 1.5px;
 }
 
 /* ---------- uc san diego: local identity ---------- */
@@ -319,6 +329,77 @@ body {
   padding: 0;
   pointer-events: none;
   border-radius: 3px;
+}
+
+/* ---------- shared interaction stage ---------- */
+
+/* bounded, quiet region under the intro paragraph. Idle = 64px of
+   plain breathing room (nothing visible); active = 140px, expanded by
+   one spring. Overflow hidden so no egg can spill into the page. */
+.interaction-stage {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* music egg: a restrained dark card, not a phone clone.
+   Width/height are animated by the island's state machine; the CSS
+   only clamps the card to the viewport and carries the palette.
+   The card centers in the flex interaction stage. */
+.island {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  max-width: calc(100vw - 48px);
+  padding: 16px 20px;
+  border-radius: 22px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-hairline);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+}
+
+.island-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.island-art {
+  width: 56px;
+  height: 56px;
+  border-radius: 10px;
+  flex: none;
+  object-fit: cover;
+}
+
+.island-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.island-title {
+  font-size: 15px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--color-ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.island-artist {
+  font-size: 13px;
+  color: var(--color-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* ---------- page reveal (progressive enhancement) ---------- */

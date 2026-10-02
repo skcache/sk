@@ -1,5 +1,6 @@
 import BasketballWord from "./BasketballWord";
 import InferenceWord from "./InferenceWord";
+import MusicWord from "./MusicWord";
 import UCSDWord from "./UCSDWord";
 
 export default function Intro() {
@@ -14,7 +15,9 @@ export default function Intro() {
       <InferenceWord />
       , systems, and building software. Outside of that,{" "}
       <BasketballWord />
-      , markets, and design.
+      , markets, and{" "}
+      <MusicWord />
+      .
     </p>
   );
 }

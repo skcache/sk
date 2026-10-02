@@ -15,9 +15,13 @@ const RESOLVE_MS = 380; // brief resolved marker, then back
  * 20px ThinkingOrb (state="solving"), the orb works for ~1.1s, a brief
  * resolved marker appears, then the word cleanly returns.
  *
- * Layout: a fixed inline slot reserves the overlay width so surrounding
- * prose never moves; the orb rides in an absolute overlay, so there is
- * zero line-height or paragraph reflow.
+ * Layout: a fixed inline grid slot. Its single max-content column
+ * always sizes to the WIDEST state ("inference" vs "thinkin" + the
+ * 20px orb + gap); base and overlay share one cell (grid-area 1/1)
+ * with no absolute positioning, so neither state can escape and
+ * surrounding prose never moves or reflows - on any viewport or line
+ * wrap. The overlay stays mounted and hidden at rest, so the slot
+ * width is reserved from first paint.
  *
  * Reduced motion: instant static swap "inference"/"thinking" + a frozen
  * orb for the hold, no morph travel, no animation layered on top.
@@ -66,15 +70,17 @@ export default function InferenceWord() {
           inference
         </motion.span>
 
-        {phase !== "idle" && (
-          <motion.span
-            key={`think-${run}`}
-            className="word-morph-overlay"
-            aria-label="thinking"
-            initial={false}
-            animate={{ opacity: phase === "resolved" ? 0 : 1 }}
-            transition={quick ?? { duration: 0.2, ease: "easeOut" }}
-          >
+        {/* always mounted so the grid cell reserves the widest state
+            from first paint; hidden via opacity + aria until the press */}
+        <motion.span
+          key={`think-${run}`}
+          className="word-morph-overlay"
+          aria-label={phase === "idle" ? undefined : "thinking"}
+          aria-hidden={phase === "idle" || undefined}
+          initial={false}
+          animate={{ opacity: phase === "idle" || phase === "resolved" ? 0 : 1 }}
+          transition={quick ?? { duration: 0.2, ease: "easeOut" }}
+        >
             {/* clean cross-resolve: chars settle into place, no scramble.
                 the orb takes the place of the final "g": the word is
                 visibly thinking inside its own footprint */}
@@ -104,8 +110,7 @@ export default function InferenceWord() {
               paused={!!reduceMotion}
               style={{ flex: "none", opacity: phase === "resolved" ? 0.65 : 1 }}
             />
-          </motion.span>
-        )}
+        </motion.span>
 
         {/* brief resolved marker under the returning word */}
         {phase === "resolved" && (

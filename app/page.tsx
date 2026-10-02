@@ -3,6 +3,7 @@ import OrviaWord from "./components/OrviaWord";
 import GoogleDevGroupWord from "./components/GoogleDevGroupWord";
 import KeywordsWord from "./components/KeywordsWord";
 import PageReveal from "./components/PageReveal";
+import StageProvider from "./components/StageProvider";
 import { ExternalLink } from "lucide-react";
 
 const socials = [
@@ -149,13 +150,18 @@ export default function Home() {
 
       <main className="mx-auto w-full max-w-[72rem] px-5 sm:px-6 lg:px-8">
         <PageReveal />
+        {/* the stage lives in the intro's breathing room: idle 64px is
+            part of the existing air, so the page looks identical at
+            rest; the section padding is trimmed to keep that total */}
         <section
           id="intro"
           data-reveal
           aria-label="Intro"
-          className="mx-auto pt-14 pb-32 sm:pt-16 sm:pb-28 max-w-[48rem]"
+          className="mx-auto pt-14 pb-16 sm:pt-16 sm:pb-14 max-w-[48rem]"
         >
-          <Intro />
+          <StageProvider>
+            <Intro />
+          </StageProvider>
         </section>
 
         <section data-reveal aria-labelledby="things-done" className="mx-auto pb-24 sm:pb-28 max-w-[56rem]">
