@@ -317,7 +317,7 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(inf.includes("paused={!!reduceMotion}"), true, "reduced-motion pause missing");
   assert.equal(inf.includes("state={orbState}"), true, "live orb must use the randomized state");
   assert.equal(inf.includes('size={32}'), true, "orb renders sharp at package size");
-  assert.equal(inf.includes("orb-22"), true, "22px orb display wrapper missing");
+  assert.equal(inf.includes("orb-24"), true, "24px orb display wrapper missing");
   assert.equal(inf.includes("word-morph"), true, "fixed morph slot missing");
   assert.equal(inf.includes("THINK_MS = 2500"), true, "2.5s inference hold missing");
   assert.equal(inf.includes("INFER_ORB_STATES"), true, "random orb states must exist");

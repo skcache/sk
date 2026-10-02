@@ -16,18 +16,19 @@ const pickOrbState = (): OrbState => INFER_ORB_STATES[Math.floor(Math.random() *
  *
  * hard press -> the word becomes ONE inline status unit: a single
  * lowercase `thinking` word with a soft light glow sweeping left ->
- * right across the letters, plus a crisp 22px reasoning orb 3px
- * beside it. The text crossfades in place while the cell springs
- * open, CLIPPING the orb so it is revealed smoothly from behind the
- * word's edge; the orb works for ~2.5s, then the unit retracts (orb
- * clipped away) and the word returns. No trailing marker - the
- * return is the resolution.
+ * right across the letters, plus a crisp 24px reasoning orb with a
+ * 3px gap beside it. The text crossfades in place - a symmetric
+ * 0.18s base-out + 0.18s unit-in crossing so there is no empty
+ * window during the open - while the cell springs open, CLIPPING
+ * the orb so it is revealed smoothly from behind the word's edge;
+ * the orb works for ~2.5s, then the unit retracts (orb clipped
+ * away) over 0.2s easeIn and the word returns.
  *
- * Deterministic: the orb state is ALWAYS "solving" and the glow is a
- * fixed CSS sweep, so every accepted activation replays the exact
- * same choreography; activation is IGNORED while already thinking
- * (no timeout reset, no partial restart). The next click after idle
- * runs the identical sequence.
+ * The glow is a fixed CSS sweep and the orb picks a randomized
+ * reasoning state per accepted activation, so every run replays the
+ * same choreography with a fresh orb; activation is IGNORED while
+ * already thinking (no timeout reset, no partial restart). The next
+ * click after idle runs the identical sequence.
  *
  * Layout: no permanent reservation. Two invisible probes measure the
  * real widths of "inference" and "Thinking + orb"; a Motion spring
@@ -94,10 +95,63 @@ export default function InferenceWord() {
 
   useEffect(() => clearSafety, [clearSafety]);
 
-  const quick = reduceMotion ? { duration: 0.01 } : undefined;
+  // WAAPI crossfade + sweep restart. The declarative opacity
+  // transitions snap in this motion version (initial={false} drops
+  // plain-value transitions - verified frame-by-frame: zero
+  // intermediate opacities). Drive the swap imperatively: frame-
+  // accurate, and we can ALSO restart the glow sweep per activation
+  // so the band is never caught mid-pass at a random spot.
+  const cellRef = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const cell = cellRef.current;
+    if (!cell) return;
+    // READ current states BEFORE cancelling: the previous phase's
+    // fill:forwards animations are still holding (base 0 / active 1
+    // during thinking). cancel() drops the fill, so reading after
+    // would snap back to the CSS baseline (base 1 / active 0) and
+    // the retract would render as an instant cut.
+    const baseEl = cell.querySelector<HTMLElement>(".word-morph-base");
+    const activeEl = cell.querySelector<HTMLElement>(".word-morph-active");
+    const baseFrom = baseEl ? parseFloat(getComputedStyle(baseEl).opacity) : 1;
+    const actFrom = activeEl ? parseFloat(getComputedStyle(activeEl).opacity) : 0;
+    cell.getAnimations({ subtree: true }).forEach((a) => a.cancel());
+    const glow = cell.querySelector<HTMLElement>(".thinking-glow");
+    const thinking = phase === "thinking";
+    if (reduceMotion) {
+      if (baseEl) baseEl.style.opacity = thinking ? "0" : "1";
+      if (activeEl) activeEl.style.opacity = thinking ? "1" : "0";
+      return;
+    }
+    // symmetric crossfade: both words present mid-swap (no empty window)
+    if (baseEl) {
+      baseEl.animate([{ opacity: baseFrom }, { opacity: thinking ? 0 : 1 }], {
+        duration: thinking ? 180 : 240,
+        delay: thinking ? 0 : 60,
+        easing: "ease-out",
+        fill: "forwards",
+      });
+    }
+    if (activeEl) {
+      activeEl.animate([{ opacity: actFrom }, { opacity: thinking ? 1 : 0 }], {
+        duration: thinking ? 180 : 200,
+        easing: thinking ? "ease-out" : "ease-in",
+        fill: "forwards",
+      });
+    }
+    // deterministic sweep start: kill the CSS animation, reflow, let
+    // it restart from 0% - the band begins entering from the LEFT
+    // edge on every activation
+    if (glow) {
+      glow.classList.add("sweep-off");
+      void glow.offsetWidth;
+      glow.classList.remove("sweep-off");
+    }
+  }, [phase, reduceMotion]);
 
   // width spring: deliberate, near-critical, no bounce
-  const widthT = quick ?? { type: "spring" as const, stiffness: 480, damping: 40, mass: 0.85 };
+  const widthT = reduceMotion
+    ? { duration: 0.01 }
+    : { type: "spring" as const, stiffness: 480, damping: 40, mass: 0.85 };
 
   return (
     <TactileWord label="inference" onActivate={activate} className="word-morph-btn">
@@ -113,7 +167,7 @@ export default function InferenceWord() {
           aria-hidden="true"
         >
           <span>thinking</span>
-          <span className="orb-22" aria-hidden="true">
+          <span className="orb-24" aria-hidden="true">
             <ThinkingOrb
               state="solving"
               size={32}
@@ -128,6 +182,7 @@ export default function InferenceWord() {
             pre-measure it renders as a plain word-sized cell (no flash) */}
         {widths ? (
           <motion.span
+            ref={cellRef}
             className="word-morph-cell"
             initial={false}
             animate={{
@@ -135,38 +190,22 @@ export default function InferenceWord() {
             }}
             transition={widthT}
           >
-            {/* idle word */}
-            <motion.span
-              className="word-morph-base"
-              initial={false}
-              animate={{ opacity: phase === "thinking" ? 0 : 1 }}
-              transition={
-                phase === "thinking"
-                  ? quick ?? { duration: 0.07, ease: "easeOut" }
-                  : quick ?? { duration: 0.22, ease: "easeOut", delay: 0.05 }
-              }
-            >
-              inference
-            </motion.span>
+            {/* idle word: opacity driven by the WAAPI crossfade (see
+                the phase effect above - declarative transitions snap
+                in this motion version) */}
+            <span className="word-morph-base">inference</span>
 
             {/* thinking unit: crossfades in as the cell opens; the orb
                 is progressively revealed by the clip until the unit
                 fits. randomized reasoning orb per run */}
-            <motion.span
+            <span
               className="word-morph-active"
-              initial={false}
-              animate={{ opacity: phase === "thinking" ? 1 : 0 }}
-              transition={
-                phase === "thinking"
-                  ? quick ?? { duration: 0.16, ease: "easeOut", delay: 0.05 }
-                  : quick ?? { duration: 0.12, ease: "easeIn" }
-              }
               aria-hidden={phase === "thinking" ? undefined : true}
             >
               <span className="thinking-glow" data-text="thinking">
                 thinking
               </span>
-              <span className="orb-22">
+              <span className="orb-24">
                 <ThinkingOrb
                   state={orbState}
                   size={32}
@@ -174,7 +213,7 @@ export default function InferenceWord() {
                   paused={!!reduceMotion}
                 />
               </span>
-            </motion.span>
+            </span>
           </motion.span>
         ) : (
           <span className="word-morph-cell">

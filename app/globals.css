@@ -162,7 +162,8 @@ body {
 }
 
 /* thinking + orb as ONE inline status unit: 3px gap, orb rides the
-   text's optical center, same cell as the base word */
+   text's optical center, same cell as the base word. hidden by
+   default - the WAAPI crossfade animates it in/out per phase */
 .word-morph-active {
   grid-area: 1 / 1;
   justify-self: start;
@@ -172,6 +173,7 @@ body {
   gap: 3px;
   white-space: nowrap;
   pointer-events: none;
+  opacity: 0;
 }
 
 /* the lowercase thinking glow: the base letters DIM while thinking
@@ -183,7 +185,10 @@ body {
 .thinking-glow {
   position: relative;
   display: inline-block;
-  color: rgba(243, 241, 234, 0.4); /* dimmed until the band lights it */
+  color: rgba(243, 241, 234, 0.75); /* dimmed until the band lights it -
+                                        never fully dead, so the unit never
+                                        reads as broken while the band is
+                                        between passes */
 }
 
 .thinking-glow::after {
@@ -193,9 +198,9 @@ body {
   background: linear-gradient(
     100deg,
     transparent 25%,
-    rgba(255, 255, 255, 0.45) 43%,
+    rgba(255, 255, 255, 0.55) 43%,
     rgba(255, 255, 255, 1) 50%,
-    rgba(255, 255, 255, 0.45) 57%,
+    rgba(255, 255, 255, 0.55) 57%,
     transparent 75%
   );
   background-size: 200% 100%;
@@ -205,8 +210,19 @@ body {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+  /* a short lead-in lets the unit finish its fade-in BEFORE the band
+     arrives, so the glow never appears mid-air; the pause repeats
+     softly between passes (reading as rhythm, not a glitch) */
   animation: thinking-sweep 1.9s cubic-bezier(0.42, 0, 0.58, 1) infinite;
+  animation-delay: 0.12s;
   pointer-events: none;
+}
+
+/* sweep restart: the component toggles this class (add -> reflow ->
+   remove) on every activation so the band ALWAYS starts entering
+   from the left edge of the word - never mid-pass at a random spot */
+.thinking-glow.sweep-off::after {
+  animation: none;
 }
 
 @keyframes thinking-sweep {
@@ -218,34 +234,24 @@ body {
   }
 }
 
-/* the orb renders sharp at the package's 32px and DISPLAYS at 22px
-   (canvas CSS size) - slightly bigger than before, crystal sharp */
-.orb-22 {
-  width: 22px;
-  height: 22px;
+/* the orb renders sharp at the package's 32px and DISPLAYS at 24px
+   (canvas CSS size) - the star of the interaction gets a little room
+   to breathe: 24px display plus a 3px gap before the following comma,
+   so the canvas never touches surrounding prose */
+.orb-24 {
+  width: 24px;
+  height: 24px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: none;
   overflow: hidden;
+  margin-right: 3px; /* breathing before the following comma */
 }
 
-/* the orb renders sharp at the package's 32px and DISPLAYS at 22px
-   (canvas CSS size) - slightly bigger than the default, crystal sharp */
-.orb-22 {
-  width: 22px;
-  height: 22px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  overflow: hidden;
-  margin-right: 1px; /* breathing before the following comma */
-}
-
-.orb-22 canvas {
-  width: 22px;
-  height: 22px;
+.orb-24 canvas {
+  width: 24px;
+  height: 24px;
 }
 
 /* ---------- uc san diego: local identity ---------- */
