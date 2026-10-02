@@ -125,14 +125,17 @@ export default function InferenceWord() {
       if (activeEl) activeEl.style.opacity = thinking ? "1" : "0";
       return;
     }
-    // symmetric crossfade: both words present mid-swap (no empty window)
+    // symmetric crossfade: both words present mid-swap (no empty
+    // window). fill: BOTH so the from-state holds during the delay -
+    // with forwards, the phase flip would flash the CSS baseline
+    // (base visibly pops full -> then re-fades = the retract jitter)
     if (baseEl) {
       fadeAnims.current.push(
         baseEl.animate([{ opacity: baseFrom }, { opacity: thinking ? 0 : 1 }], {
           duration: thinking ? 180 : 240,
-          delay: thinking ? 0 : 60,
+          delay: thinking ? 0 : 40,
           easing: "ease-out",
-          fill: "forwards",
+          fill: "both",
         }),
       );
     }
@@ -141,7 +144,7 @@ export default function InferenceWord() {
         activeEl.animate([{ opacity: actFrom }, { opacity: thinking ? 1 : 0 }], {
           duration: thinking ? 180 : 200,
           easing: thinking ? "ease-out" : "ease-in",
-          fill: "forwards",
+          fill: "both",
         }),
       );
     }
@@ -149,10 +152,21 @@ export default function InferenceWord() {
     // staggered traveling-light animation (native, per-glyph)
   }, [phase, reduceMotion]);
 
-  // width spring: deliberate, near-critical, no bounce
+  // width spring: deliberate, near-critical, no bounce. On the
+  // RETRACT the spring waits for the crossfade to finish (mirror of
+  // the open) - shrinking while the unit is fully visible would cut
+  // the orb mid-fade and read as jitter
   const widthT = reduceMotion
     ? { duration: 0.01 }
-    : { type: "spring" as const, stiffness: 480, damping: 40, mass: 0.85 };
+    : phase === "thinking"
+      ? { type: "spring" as const, stiffness: 480, damping: 40, mass: 0.85 }
+      : {
+          type: "spring" as const,
+          stiffness: 480,
+          damping: 40,
+          mass: 0.85,
+          delay: 0.16,
+        };
 
   return (
     <TactileWord label="inference" onActivate={activate} className="word-morph-btn">
@@ -208,7 +222,13 @@ export default function InferenceWord() {
                   <span
                     key={i}
                     className="tw"
-                    style={{ animationDelay: `${i * 70}ms` }}
+                    style={{
+                      // organic rhythm: jittered delays + slightly
+                      // different cycle lengths per letter so the wave
+                      // breathes like the orb instead of a metronome
+                      animationDelay: `${i * 76 + ((i * 37) % 23)}ms`,
+                      animationDuration: `${1.05 + (i % 3) * 0.09}s`,
+                    }}
                   >
                     {c}
                   </span>

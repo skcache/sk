@@ -197,7 +197,7 @@ body {
 @keyframes tw-wave {
   0%,
   100% {
-    color: rgba(243, 241, 234, 0.62);
+    color: rgba(243, 241, 234, 0.5);
     text-shadow: 0 0 0 rgba(255, 255, 255, 0);
   }
   50% {
@@ -245,6 +245,10 @@ body {
    fills them the same way (pass 2) - both going DOWN->UP, matching
    the trident's own shoot. Base ink at rest. */
 .ucsd-word.ucsd-rise .ucsd-seg {
+  /* the glyph fill must be TRANSPARENT so the clipped gradient shows
+     through the letterforms - without this, the opaque ink text
+     paints OVER the whole fill and the pass is invisible */
+  color: transparent;
   background-size: 100% 200%;
   background-repeat: no-repeat;
   -webkit-background-clip: text;
