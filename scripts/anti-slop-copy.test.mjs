@@ -244,7 +244,9 @@ test("polish pass: reveal, grain, plaque, affordance, autoplay", () => {
   assert.equal(css.includes(".ucsd-pop"), false, "word pop must be gone");
   assert.equal(css.includes(".identity-slot"), true, "experience identity slots missing");
   const gdg = read("components/GoogleDevGroupWord.tsx");
-  assert.equal(gdg.includes('return "#4285F4"'), true, "Dev Group must join the brand blue");
+  assert.equal(gdg.includes("PALETTE"), true, "uniform four-color sweep missing");
+  assert.equal(gdg.includes('PALETTE[i % PALETTE.length]'), true, "continuous palette sequence missing");
+  assert.equal(gdg.includes("return \"#4285F4\""), false, "Dev Group must not fall flat to solid blue");
   // affordance: hover contrast only (dotted underlines removed in repair pass)
   assert.equal(css.includes(".word-button:hover"), true, "hover affordance missing");
   assert.equal(css.includes(".word-button::after"), false, "underline affordance must be gone");
