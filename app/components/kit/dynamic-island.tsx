@@ -27,8 +27,8 @@ export type DynamicIslandPreset = "default" | "compact" | "compactLong" | "long"
 export const DYNAMIC_ISLAND_SIZES: Record<DynamicIslandPreset, DynamicIslandSize> = {
   default: { width: 0, height: 0, borderRadius: 0 },
   compact: { width: 150, height: 36, borderRadius: 20 },
-  compactLong: { width: 190, height: 36, borderRadius: 20 },
-  long: { width: 260, height: 56, borderRadius: 22 },
+  compactLong: { width: 190, height: 36, borderRadius: 22 },
+  long: { width: 260, height: 56, borderRadius: 24 },
 };
 
 type DynamicIslandContextValue = {
@@ -75,7 +75,7 @@ export function DynamicIsland({
       transition={
         reduceMotion
           ? { duration: 0.01 }
-          : { type: "spring", stiffness: 260, damping: 26, mass: 1 }
+          : { type: "spring", stiffness: 360, damping: 30, mass: 0.9 }
       }
       exit={exit}
       {...rest}

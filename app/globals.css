@@ -142,26 +142,38 @@ body {
   gap: 3px;
 }
 
-/* the animated cell; inline-block so width animation reflows prose */
+/* the animated cell: inline-grid so both states share one cell and
+   the row takes the tallest state (no line growth); clipped so the orb
+   is revealed/retracted by the growing box and can never escape into
+   surrounding prose */
 .word-morph-cell {
-  display: inline-block;
+  display: inline-grid;
+  grid-template-columns: max-content;
+  overflow: hidden;
   white-space: nowrap;
   vertical-align: baseline;
 }
 
 .word-morph-base {
+  grid-area: 1 / 1;
+  justify-self: start;
+  align-self: center;
   display: inline-block;
   white-space: nowrap;
   font: inherit;
 }
 
-/* Thinking + orb as ONE inline status unit: 3px gap, orb rides the
-   text's optical center (no container, no halo) */
+/* thinking + orb as ONE inline status unit: 3px gap, orb rides the
+   text's optical center, same cell as the base word */
 .word-morph-active {
+  grid-area: 1 / 1;
+  justify-self: start;
+  align-self: center;
   display: inline-flex;
   align-items: center;
   gap: 3px;
   white-space: nowrap;
+  pointer-events: none;
 }
 
 /* 1px breathing between the orb and the following comma: the spring
@@ -171,16 +183,6 @@ body {
 .word-morph-active canvas,
 .word-morph-probe-flex canvas {
   margin-right: 1px;
-}
-
-.word-morph-resolve {
-  position: absolute;
-  left: 0;
-  bottom: -3px;
-  width: 100%;
-  display: flex;
-  align-items: center;
-  gap: 2px;
 }
 
 /* ---------- uc san diego: local identity ---------- */
@@ -328,22 +330,28 @@ body {
 
 /* ---------- shared interaction stage ---------- */
 
-/* bounded, quiet region under the intro paragraph. Idle = 44px of
-   plain breathing room (nothing visible); active = 88px, expanded by
-   one spring. Overflow hidden so no egg can spill into the page. */
+/* fixed anchor below the intro: a 44px quiet slot that NEVER expands.
+   Eggs mount here as floating overlays (position absolute, centered
+   via auto margins so Motion's width springs never fight a
+   transform); the page layout below does not move. Nothing visible
+   when idle. */
 .interaction-stage {
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
+  height: 44px;
 }
 
 /* music egg: Cult UI Dynamic Island shell. Width/height/border-radius
    are animated by the kit's preset state machine; the CSS carries the
-   palette and clamps to the viewport. The shell centers in the flex
-   interaction stage. */
+   palette, clamps to the viewport, and floats the shell OVER the page
+   (absolute + centered by auto margins, so Motion's width springs
+   never fight a transform). */
 .dynamic-island {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  margin: 0 auto;
+  z-index: 5;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -351,7 +359,7 @@ body {
   max-width: calc(100vw - 48px);
   background: var(--color-surface);
   border: 1px solid var(--color-hairline);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.28);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.45);
 }
 
 .dynamic-island-container {
@@ -364,13 +372,24 @@ body {
   min-width: 0;
 }
 
-/* content fades in only during the long state */
+/* the compact pill is alive: a quiet status dot */
+.dynamic-island-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 9999px;
+  background: rgba(243, 241, 234, 0.55);
+  flex: none;
+}
+
+/* content is centered on the shell and fades in during the long state */
 .dynamic-island-content {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 12px;
   min-width: 0;
-  max-width: 100%;
 }
 
 .dynamic-island-art {
@@ -453,33 +472,6 @@ body {
   pointer-events: none;
   opacity: 0.04;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
-}
-
-.word-notch {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -3px;
-  display: flex;
-  align-items: flex-end;
-  gap: 3px;
-  pointer-events: none;
-}
-
-/* 3px output cell + 1px resolved underline: the visible consequence */
-.word-notch-cell {
-  width: 3px;
-  height: 3px;
-  border-radius: 1px;
-  background: #f3f1ea;
-  flex: none;
-}
-
-.word-notch-line {
-  height: 1px;
-  flex: 1;
-  background: rgba(243, 241, 234, 0.4);
-  transform-origin: left;
 }
 
 /* Respect reduced motion: collapse all transitions and animation */

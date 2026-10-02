@@ -301,7 +301,8 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(inf.includes('state="solving"'), true, "solving state missing");
   assert.equal(inf.includes("size={20}"), true, "20px inline orb missing");
   assert.equal(inf.includes("word-morph"), true, "fixed morph slot missing");
-  assert.equal(inf.includes("Thinking</span>"), true, "Thinking must be one capitalized word");
+  assert.equal(inf.includes("thinking</span>"), true, "active word is lowercase thinking");
+  assert.equal(inf.includes(">Thinking<"), false, "capitalized Thinking must be gone");
   assert.equal(inf.includes('.split("'), false, "per-letter split must be gone");
   assert.equal(inf.includes('thinkin"'), false, "misspelled thinkin token must be gone");
   assert.equal(inf.includes("word-morph-char"), false, "per-char spans must be gone");
@@ -332,12 +333,18 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(music.includes("scheduleAnimation"), true, "island must use the cult UI animation queue");
   assert.equal(music.includes("useDynamicIslandSize"), true, "island must drive the preset shell");
   const stageCode = read("components/InteractionStage.tsx");
-  assert.equal(stageCode.includes("active ? 88 : 44"), true, "stage heights must be 44 idle / 88 active");
+  assert.equal(stageCode.includes("active ? 88 : 44"), false, "stage must not expand in space");
+  assert.equal(stageCode.includes("AnimatePresence"), true, "stage must keep the swap machinery");
+  assert.equal(stageCode.includes("44px"), true, "stage must keep a fixed quiet slot");
   const css = read("globals.css");
   assert.equal(css.includes(".dynamic-island"), true, "island shell CSS missing");
+  assert.equal(css.includes(".dynamic-island-dot"), true, "compact status dot CSS missing");
   assert.equal(css.includes(".dynamic-island-title"), true, "island typography CSS missing");
   assert.equal(css.includes("underline dotted"), false, "dotted underline affordance must be gone");
-  for (const stale of [".island-art", ".island-meta", ".island-title", ".island-artist"]) {
-    assert.equal(source.includes(stale), false, `stale island class present: ${stale}`);
+  for (const stale of [".island-art", ".island-meta", ".island-title", ".island-artist", "word-notch", "word-morph-resolve"]) {
+    assert.equal(source.includes(stale), false, `stale class present: ${stale}`);
   }
+  const fav = read("config/favorite-song.ts");
+  assert.equal(fav.includes("Kick"), true, "favorite song missing");
+  assert.equal(fav.includes("Future"), true, "favorite artist missing");
 });

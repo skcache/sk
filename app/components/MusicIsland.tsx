@@ -47,12 +47,12 @@ function IslandBody({ onDone }: { onDone: () => void }) {
       timers.push(scheduleAnimation(delay, () => { if (alive) fn(); }));
     };
     at(80, () => setPreset("compact"));
-    at(260, () => setPreset("compactLong"));
-    at(500, () => setPreset("long"));
-    at(3200, () => setPreset("compactLong"));
-    at(3520, () => setPreset("compact"));
-    at(3700, () => setPreset("default"));
-    at(3850, () => onDoneRef.current());
+    at(280, () => setPreset("compactLong"));
+    at(520, () => setPreset("long"));
+    at(3020, () => setPreset("compactLong"));
+    at(3220, () => setPreset("compact"));
+    at(3380, () => setPreset("default"));
+    at(3500, () => onDoneRef.current());
     return () => {
       alive = false;
       timers.forEach(clearTimeout);
@@ -62,7 +62,11 @@ function IslandBody({ onDone }: { onDone: () => void }) {
 
   const contentT = reduceMotion
     ? { duration: 0.01 }
-    : { delay: 0.06, duration: 0.2, ease: "easeOut" as const };
+    : { delay: 0.05, duration: 0.24, ease: [0.16, 1, 0.3, 1] as const };
+  const dotT = reduceMotion
+    ? { duration: 0.01 }
+    : { duration: 0.18, ease: "easeOut" as const };
+  const showDot = preset === "compact" || preset === "compactLong";
 
   return (
     <DynamicIsland
@@ -74,10 +78,19 @@ function IslandBody({ onDone }: { onDone: () => void }) {
       }
     >
       <DynamicContainer>
+        {/* the compact pill is alive: a quiet dot while the island
+            works up to its long state */}
+        <motion.span
+          className="dynamic-island-dot"
+          initial={false}
+          animate={{ opacity: showDot ? 0.8 : 0, scale: showDot ? 1 : 0.6 }}
+          transition={dotT}
+          aria-hidden="true"
+        />
         <motion.div
           className="dynamic-island-content"
           initial={false}
-          animate={{ opacity: preset === "long" ? 1 : 0 }}
+          animate={{ opacity: preset === "long" ? 1 : 0, y: preset === "long" ? 0 : 6 }}
           transition={contentT}
         >
           <Image

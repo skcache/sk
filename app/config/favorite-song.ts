@@ -5,7 +5,7 @@
  * inside /public (see public/album-art.svg for the default).
  */
 export const favoriteSong = {
-  title: "afterglow",
-  artist: "unknown",
+  title: "Kick",
+  artist: "Future",
   artwork: "/album-art.svg",
 } as const;
