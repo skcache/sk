@@ -222,13 +222,14 @@ export default function InferenceWord() {
                   <span
                     key={i}
                     className="tw"
-                    style={{
-                      // organic rhythm: jittered delays + slightly
-                      // different cycle lengths per letter so the wave
-                      // breathes like the orb instead of a metronome
-                      animationDelay: `${i * 76 + ((i * 37) % 23)}ms`,
-                      animationDuration: `${1.05 + (i % 3) * 0.09}s`,
-                    }}
+                    style={
+                      // coherent LTR wave: SAME cycle length for every
+                      // letter, pure ascending stagger (i * 70ms). Any
+                      // per-letter duration variance breaks phase
+                      // coherence - the crest starts jumping around
+                      // the word instead of sweeping left to right.
+                      { animationDelay: `${i * 70}ms` }
+                    }
                   >
                     {c}
                   </span>

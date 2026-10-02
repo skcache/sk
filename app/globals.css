@@ -190,7 +190,10 @@ body {
 .tw {
   display: inline-block;
   color: rgba(243, 241, 234, 0.86);
-  animation: tw-wave 1.15s ease-in-out infinite;
+  /* ONE tempo for every letter - a shared cycle keeps the crest
+     phase-coherent so the light sweeps left -> right in a clean
+     single wave (per-letter duration variance scatters it) */
+  animation: tw-wave 1.05s ease-in-out infinite;
   will-change: color, text-shadow;
 }
 
