@@ -176,6 +176,48 @@ body {
   pointer-events: none;
 }
 
+/* the lowercase thinking glow: a soft light band sweeping left ->
+   right across the letters, clipped to the text. deterministic (pure
+   CSS, same sweep every activation); under reduced motion the global
+   animation kill leaves the band parked off-canvas, so the word is
+   plain text */
+.thinking-glow {
+  position: relative;
+  display: inline-block;
+}
+
+.thinking-glow::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    transparent 22%,
+    rgba(255, 255, 255, 0) 41%,
+    rgba(255, 255, 255, 0.9) 50%,
+    rgba(255, 255, 255, 0) 59%,
+    transparent 78%
+  );
+  background-size: 220% 100%;
+  background-repeat: no-repeat;
+  background-position: 135% 0; /* parked off-canvas: reduced-motion
+                                  (animations killed) leaves plain text */
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: thinking-sweep 1.5s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  pointer-events: none;
+}
+
+@keyframes thinking-sweep {
+  0% {
+    background-position: 135% 0;
+  }
+  100% {
+    background-position: -135% 0;
+  }
+}
+
 /* 1px breathing between the orb and the following comma: the spring
    settles within a fraction of a px, this guarantees the orb canvas
    never touches surrounding prose (applied to the flex probe too, so
@@ -199,7 +241,7 @@ body {
   content: "UC San Diego";
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, #182B49, #C69214);
+  background: linear-gradient(90deg, #182B49 0%, #1D3560 38%, #B98A13 74%, #E3B23C 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -208,7 +250,7 @@ body {
 }
 
 .ucsd-paint.run::after {
-  animation: ucsd-reveal 1.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: ucsd-reveal 1.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 @keyframes ucsd-reveal {
@@ -373,11 +415,14 @@ body {
 }
 
 .dynamic-island-art {
-  width: 34px;
-  height: 34px;
-  border-radius: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
   object-fit: cover;
   flex: none;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.09),
+    inset 0 -6px 12px rgba(0, 0, 0, 0.18);
 }
 
 .dynamic-island-meta {
@@ -405,30 +450,36 @@ body {
 .dynamic-island-eq {
   display: flex;
   align-items: flex-end;
-  gap: 2px;
+  gap: 2.5px;
   height: 14px;
   flex: none;
 }
 
 .dynamic-island-eq i {
   width: 2px;
-  background: rgba(243, 241, 234, 0.55);
   border-radius: 1px;
-  animation: eq-bounce 0.9s ease-in-out infinite;
+  background: rgba(243, 241, 234, 0.55);
+  animation: eq-bounce 0.95s ease-in-out infinite;
 }
 
 .dynamic-island-eq i:nth-child(2) {
-  animation-delay: 0.18s;
+  animation-delay: 0.22s;
 }
 
 .dynamic-island-eq i:nth-child(3) {
-  animation-delay: 0.36s;
+  animation-delay: 0.46s;
+  animation-duration: 1.15s;
+}
+
+.dynamic-island-eq i:nth-child(4) {
+  animation-delay: 0.11s;
+  animation-duration: 0.8s;
 }
 
 @keyframes eq-bounce {
   0%,
   100% {
-    height: 4px;
+    height: 3px;
   }
   50% {
     height: 13px;
@@ -449,6 +500,25 @@ body {
   width: 26px;
   height: 26px;
   will-change: transform;
+}
+
+/* contact shadow under the ball: grounds the flight, breathes with
+   height (opacity + spread driven per-frame in BasketballStage) */
+.bb-shadow {
+  position: absolute;
+  left: 0;
+  bottom: 6px;
+  width: 26px;
+  height: 7px;
+  border-radius: 50%;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, 0.55),
+    rgba(0, 0, 0, 0) 68%
+  );
+  transform-origin: center;
+  filter: blur(0.5px);
+  pointer-events: none;
 }
 
 .stage-ucsd {

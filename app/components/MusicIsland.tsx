@@ -45,12 +45,13 @@ function MusicBody({ onDone }: { onDone: () => void }) {
   }, [onDone]);
 
   // official animation queue - delays are incremental (each step
-  // waits its delay after the previous one): compactLong arrives at
-  // t=420ms and holds until t=2920ms = ~2.5s of music state
+  // waits its delay after the previous one): compact at t=180ms,
+  // compactLong at t=700ms, held until t=3100ms = ~2.4s of music
+  // state, then collapsing back through compact to empty at t=3330ms
   useScheduledAnimations([
-    { size: SIZE_PRESETS.COMPACT, delay: 60 },
-    { size: SIZE_PRESETS.COMPACT_LONG, delay: 360 },
-    { size: SIZE_PRESETS.COMPACT, delay: 2500 },
+    { size: SIZE_PRESETS.COMPACT, delay: 180 },
+    { size: SIZE_PRESETS.COMPACT_LONG, delay: 520 },
+    { size: SIZE_PRESETS.COMPACT, delay: 2400 },
     { size: SIZE_PRESETS.EMPTY, delay: 230 },
   ]);
 
@@ -78,8 +79,8 @@ function MusicBody({ onDone }: { onDone: () => void }) {
           className="dynamic-island-art"
           src={favoriteSong.artwork}
           alt=""
-          width={34}
-          height={34}
+          width={36}
+          height={36}
           unoptimized
         />
         <span className="dynamic-island-meta">
@@ -91,6 +92,7 @@ function MusicBody({ onDone }: { onDone: () => void }) {
           </DynamicDescription>
         </span>
         <span className="dynamic-island-eq" aria-hidden="true">
+          <i />
           <i />
           <i />
           <i />

@@ -234,7 +234,8 @@ test("polish pass: reveal, grain, plaque, affordance, autoplay", () => {
   // UCSD V2: one-time navy->gold paint pass, trident pop + stage throw
   assert.equal(css.includes(".ucsd-paint"), true, "UCSD paint wipe missing");
   assert.equal(css.includes("#182B49"), true, "UCSD navy missing");
-  assert.equal(css.includes("#C69214"), true, "UCSD gold missing");
+  assert.equal(css.includes("#B98A13"), true, "UCSD gold missing");
+  assert.equal(css.includes("#E3B23C"), true, "UCSD bright gold missing");
   assert.equal(css.includes(".ucsd-pop"), true, "word-side trident pop missing");
   assert.equal(css.includes(".identity-slot"), true, "experience identity slots missing");
   // affordance: hover contrast only (dotted underlines removed in repair pass)
@@ -282,6 +283,8 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   const ucsd = read("components/UCSDWord.tsx");
   assert.equal(ucsd.includes("onAnimationComplete"), false, "no child unmounts the badge");
   assert.equal(ucsd.includes("badge-plaque"), false, "the plaque box is gone");
+  assert.equal(ucsd.includes("ucsd-paint"), true, "one-time paint wipe missing");
+  assert.equal(ucsd.includes('type: "spring"'), true, "pop must feel spring-loaded");
   // shared identity language: plain letter at rest, live mark box opens
   for (const cls of ["o-letter", "k-letter", "o-markbox", "gdg-markbox", ".k-markbox", ".o-mark", ".gdg-mark"]) {
     assert.equal(css.includes(cls), true, `identity class missing: ${cls}`);
@@ -305,7 +308,9 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(inf.includes("THINK_MS = 2500"), true, "2.5s inference hold missing");
   assert.equal(inf.includes("INFER_ORB_STATES"), false, "randomized orb states must be gone");
   assert.equal(inf.includes("pickOrbState"), false, "random orb selection must be gone");
-  assert.equal(inf.includes("Thinking</span>"), true, "active word is capitalized Thinking");
+  assert.equal(inf.includes("thinking</span>"), true, "active word is lowercase thinking");
+  assert.equal(inf.includes("thinking-glow"), true, "left-to-right text glow missing");
+  assert.equal(inf.includes('data-text="thinking"'), true, "glow overlay text missing");
   assert.equal(inf.includes("if (phase === \"thinking\") return"), true, "activations must be ignored while thinking");
   assert.equal(inf.includes('.split("'), false, "per-letter split must be gone");
   assert.equal(inf.includes('thinkin"'), false, "misspelled thinkin token must be gone");
@@ -320,6 +325,7 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(bb.includes("word-ball"), false, "inline word ball must be gone");
   const bbStage = read("components/BasketballStage.tsx");
   assert.equal(bbStage.includes("BOUNCE_H"), true, "gravity bounce heights missing");
+  assert.equal(bbStage.includes("bb-shadow"), true, "contact shadow missing");
 });
 
 test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => {

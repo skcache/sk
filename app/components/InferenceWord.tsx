@@ -11,16 +11,19 @@ const THINK_MS = 2500; // the word visibly thinks, then returns
  * Signature interaction: "inference" becomes a tiny thinking process.
  *
  * hard press -> the word becomes ONE inline status unit: a single
- * `Thinking` word + a 20px solving ThinkingOrb sitting 3px beside it.
- * The text crossfades in place while the cell springs open, CLIPPING
- * the orb so it is revealed smoothly from behind the word's edge; the
- * orb works for ~2.5s, then the unit retracts (orb clipped away) and
- * the word returns. No trailing marker - the return is the resolution.
+ * lowercase `thinking` word with a soft light glow sweeping left ->
+ * right across the letters, plus a 20px solving ThinkingOrb 3px
+ * beside it. The text crossfades in place while the cell springs
+ * open, CLIPPING the orb so it is revealed smoothly from behind the
+ * word's edge; the orb works for ~2.5s, then the unit retracts (orb
+ * clipped away) and the word returns. No trailing marker - the
+ * return is the resolution.
  *
- * Deterministic: the orb state is ALWAYS "solving", every accepted
- * activation replays the exact same choreography, and activation is
- * IGNORED while already thinking (no timeout reset, no partial
- * restart). The next click after idle runs the identical sequence.
+ * Deterministic: the orb state is ALWAYS "solving" and the glow is a
+ * fixed CSS sweep, so every accepted activation replays the exact
+ * same choreography; activation is IGNORED while already thinking
+ * (no timeout reset, no partial restart). The next click after idle
+ * runs the identical sequence.
  *
  * Layout: no permanent reservation. Two invisible probes measure the
  * real widths of "inference" and "Thinking + orb"; a Motion spring
@@ -103,7 +106,7 @@ export default function InferenceWord() {
           className="word-morph-probe word-morph-probe-flex"
           aria-hidden="true"
         >
-          <span>Thinking</span>
+          <span>thinking</span>
           <ThinkingOrb
             state="solving"
             size={20}
@@ -153,7 +156,9 @@ export default function InferenceWord() {
               }
               aria-hidden={phase === "thinking" ? undefined : true}
             >
-              <span>Thinking</span>
+              <span className="thinking-glow" data-text="thinking">
+                thinking
+              </span>
               <ThinkingOrb
                 state="solving"
                 size={20}
@@ -168,7 +173,7 @@ export default function InferenceWord() {
             <span className="word-morph-base">inference</span>
           </span>
         )}
-        <span className="sr-only">{phase === "thinking" ? "Thinking" : "inference"}</span>
+        <span className="sr-only">{phase === "thinking" ? "thinking" : "inference"}</span>
       </span>
     </TactileWord>
   );

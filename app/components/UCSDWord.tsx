@@ -88,14 +88,14 @@ export default function UCSDWord() {
             key={`pop-${pop}`}
             className="ucsd-pop"
             aria-hidden="true"
-            initial={{ opacity: 0, y: 10, rotate: -8, scale: 0.9 }}
-            animate={{
-              opacity: [0, 1, 1, 0],
-              y: [10, -4, -8, -16],
-              rotate: [-8, 5, -2, 10],
-              scale: [0.9, 1, 1.03, 1],
+            initial={{ opacity: 0, y: 12, rotate: -10, scale: 0.85 }}
+            animate={{ opacity: [0, 1, 1, 0], y: -15, rotate: 6, scale: 1 }}
+            transition={{
+              opacity: { duration: 0.5, times: [0, 0.18, 0.72, 1], ease: "easeOut" },
+              y: { type: "spring", stiffness: 460, damping: 22, mass: 0.7 },
+              rotate: { type: "spring", stiffness: 380, damping: 20 },
+              scale: { type: "spring", stiffness: 520, damping: 24 },
             }}
-            transition={{ duration: 0.5, times: [0, 0.18, 0.72, 1], ease: "easeOut" }}
           >
             <TridentMark size={18} />
           </motion.span>
