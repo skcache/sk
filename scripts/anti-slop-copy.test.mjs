@@ -232,23 +232,25 @@ test("polish pass: reveal, grain, plaque, affordance, autoplay", () => {
   // grain is SVG feTurbulence fixed overlay
   assert.equal(css.includes("feTurbulence"), true, "grain turbulence missing");
   assert.equal(css.includes("pointer-events: none"), true, "overlay must not block clicks");
-  // UCSD V3: one run-class CSS choreography, all-gold minimal trident
-  assert.equal(css.includes(".ucsd-glyph"), true, "layered glyphs missing");
-  assert.equal(css.includes(".ucsd-glyph .navy"), true, "navy glyph layer missing");
-  assert.equal(css.includes(".ucsd-glyph .gold"), true, "gold glyph layer missing");
-  assert.equal(css.includes(".ucsd-glyph .base"), true, "ink base glyph missing");
+  // UCSD final: click-only phrase-level sweep, WAAPI-owned, no per-glyph work
+  assert.equal(css.includes(".ucsd-glyph"), false, "per-glyph layers must be gone");
+  assert.equal(css.includes(".ucsd-base"), true, "ink base span missing");
+  assert.equal(css.includes(".ucsd-navy"), true, "phrase navy overlay missing");
+  assert.equal(css.includes(".ucsd-gold"), true, "phrase gold overlay missing");
+  assert.equal(css.includes("ucsd-gap"), false, "the per-word gap must be gone");
   assert.equal(css.includes("opacity: 0"), true, "overlays must be invisible at rest (invisible reset)");
-  assert.equal(css.includes("transition: clip-path"), false, "clip transitions must be gone (CSS animation owns the paint)");
-  assert.equal(css.includes(".ucsd-word.run .navy"), true, "navy run hook missing");
-  assert.equal(css.includes(".ucsd-word.run .gold"), true, "gold run hook missing");
-  assert.equal(css.includes("ucsd-navy-rise"), true, "navy keyframe choreography missing");
-  assert.equal(css.includes("ucsd-gold-rise"), true, "gold keyframe choreography missing");
-  assert.equal(css.includes("--ucsd-run-ms"), true, "the single run-duration variable missing");
+  assert.equal(css.includes("transition: clip-path"), false, "clip transitions must be gone (WAAPI owns the paint)");
+  assert.equal(css.includes("transition: none"), true, "the clip must never transition - no reverse wipe");
+  assert.equal(css.includes("ucsd-navy-rise"), false, "the CSS paint keyframes must be gone (WAAPI owns timing)");
+  assert.equal(css.includes("ucsd-gold-rise"), false, "the CSS paint keyframes must be gone (WAAPI owns timing)");
+  assert.equal(css.includes("--ucsd-run-ms"), false, "the run-duration variable must be gone (one TIMING contract)");
   assert.equal(css.includes("pass-navy"), false, "the old pass state classes must be gone");
   assert.equal(css.includes("pass-gold"), false, "the old pass state classes must be gone");
   assert.equal(css.includes("pass-melt"), false, "the old pass state classes must be gone");
-  assert.equal(css.includes(".ucsd-staff"), true, "trident staff group missing");
-  assert.equal(css.includes(".ucsd-head"), true, "trident head group missing");
+  assert.equal(css.includes(".ucsd-staff"), false, "SVG <g> clipping must be gone");
+  assert.equal(css.includes(".ucsd-head"), false, "SVG <g> clipping must be gone");
+  assert.equal(css.includes(".trident-staff-layer"), true, "the staff HTML layer missing");
+  assert.equal(css.includes(".trident-head-layer"), true, "the head HTML layer missing");
   assert.equal(css.includes("ucsd-head-part1"), false, "the faceted trident parts must be gone");
   assert.equal(css.includes("build-staff"), false, "the build-class hooks must be gone");
   assert.equal(css.includes("build-head"), false, "the build-class hooks must be gone");
@@ -303,37 +305,52 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   ]) {
     assert.equal(all.includes(stale), false, `stale system present: ${stale}`);
   }
-  // UCSD: one run-class CSS choreography; React says RUN STARTED/FINISHED
+  // UCSD: click-only phrase-level sweep + one WAAPI timing contract
   const ucsd = read("components/UCSDWord.tsx");
   assert.equal(ucsd.includes("TridentMark"), true, "trident asset missing");
-  assert.equal(ucsd.includes("LETTERS"), true, "letter split missing");
-  assert.equal(ucsd.includes('"UC San Diego".split("")'), true, "letter split with real word gaps required");
-  assert.equal(ucsd.includes("LOAD_MS = 500"), true, "the fast load tempo missing");
-  assert.equal(ucsd.includes("CLICK_MS = 950"), true, "the click tempo missing");
-  assert.equal(ucsd.includes("HOLD_MS"), true, "the completion beat missing");
-  assert.equal(ucsd.includes("--ucsd-run-ms"), true, "the single run-duration variable missing");
-  assert.equal(ucsd.includes('className={`ucsd-word${run ? " run" : ""}`}'), true, "RUN STARTED hook missing");
-  assert.equal(ucsd.includes("setTimeout(() => setPass"), false, "the old per-phase timeout machine must be gone");
+  assert.equal(ucsd.includes("UCSD_TIMING"), true, "the one timing contract missing");
+  assert.equal(ucsd.includes("navyEnd: 300"), true, "navy window must end at 300ms");
+  assert.equal(ucsd.includes("goldStart: 260"), true, "gold chase must begin at 260ms");
+  assert.equal(ucsd.includes("goldEnd: 610"), true, "gold window must end at 610ms");
+  assert.equal(ucsd.includes("settleEnd: 780"), true, "the settle beat must be 780ms");
+  assert.equal(ucsd.includes("hold: 90"), true, "the completion beat must be 90ms");
+  // the phrase-level stack: ONE base + TWO absolute overlays, no per-glyph work
+  assert.equal(ucsd.includes("LETTERS"), false, "the per-character split must be gone");
+  assert.equal(ucsd.includes('"UC San Diego".split("")'), false, "per-glyph spans must be gone");
+  assert.equal(ucsd.includes("ucsd-base"), true, "the ink base span missing");
+  assert.equal(ucsd.includes("ucsd-navy"), true, "the phrase navy overlay missing");
+  assert.equal(ucsd.includes("ucsd-gold"), true, "the phrase gold overlay missing");
+  // no page-load animation of any kind - click only
+  assert.equal(ucsd.includes("WIPE_DELAY"), false, "the load delay must be gone");
+  assert.equal(ucsd.includes("LOAD_MS"), false, "the load tempo must be gone");
+  assert.equal(ucsd.includes("play(false"), false, "the load paint branch must be gone");
+  // one WAAPI timeline + one deterministic flight - no physics loops
+  assert.equal(ucsd.includes("requestAnimationFrame"), false, "the rAF flight loop must be gone");
+  assert.equal(ucsd.includes("performance.now"), false, "manual physics clock must be gone");
+  assert.equal(ucsd.includes("translate3d"), true, "the flight must use translate3d");
+  assert.equal(ucsd.includes("onfinish"), true, "the flight must finish to a clean state");
+  assert.equal(ucsd.includes("Math.min(750, Math.max(420"), true, "distance-clamped flight duration missing");
+  assert.equal(ucsd.includes("MARK_W / 2"), true, "spawn must be centered by the mark width");
+  assert.equal(ucsd.includes("MARK_H - 6"), true, "spawn must sit above the phrase by the mark height");
+  assert.equal(ucsd.includes('"idle" | "building" | "flying"'), true, "the 3-state machine missing");
+  assert.equal(ucsd.includes("ucsd-trident-fly"), true, "trident flight wrapper missing");
   assert.equal(ucsd.includes("pass-navy"), false, "the old pass classes must be gone");
   assert.equal(ucsd.includes("pass-gold"), false, "the old pass classes must be gone");
   assert.equal(ucsd.includes("pass-melt"), false, "the old pass classes must be gone");
   assert.equal(ucsd.includes("FORM_MS"), false, "the internal formation timer must be gone");
   assert.equal(ucsd.includes("HOVER_MS"), false, "the hover timer must be gone");
-  assert.equal(ucsd.includes("runningRef.current"), true, "click-while-running must be ignored");
-  assert.equal(ucsd.includes("onAnimationComplete"), false, "no child unmounts the badge");
-  assert.equal(ucsd.includes("badge-plaque"), false, "the plaque box is gone");
-  assert.equal(ucsd.includes("ucsd-trident-fly"), true, "trident flight missing");
   assert.equal(ucsd.includes("useStage"), false, "ucsd must NOT use the shared stage anymore");
-  assert.equal(ucsd.includes("play(false), WIPE_DELAY"), true, "the load runs the paint hint once");
   const trident = read("components/TridentMark.tsx");
   const goldFills = (trident.match(/fill=\{GOLD\}/g) || []).length;
-  assert.equal(goldFills >= 3, true, "the trident must be drawn in solid gold");
+  assert.equal(goldFills >= 4, true, "every trident path must be solid gold");
   assert.equal(/N_LIGHT|N_MID|N_SHADOW|G_LIGHT|G_MID|G_SHADOW/.test(trident), false, "the low-poly facet palettes must be gone");
   assert.equal(trident.includes("#182B49"), false, "the trident must have NO navy/blue fill");
   const paths = (trident.match(/<path/g) || []).length;
   assert.equal(paths <= 5, true, `the minimal trident must be 3-5 paths max (has ${paths})`);
-  assert.equal(trident.includes("ucsd-staff"), true, "staff group missing");
-  assert.equal(trident.includes("ucsd-head"), true, "head group missing");
+  assert.equal(trident.includes("trident-staff-layer"), true, "the staff HTML layer missing");
+  assert.equal(trident.includes("trident-head-layer"), true, "the head HTML layer missing");
+  assert.equal(trident.includes('className="ucsd-staff"'), false, "SVG <g> clipping must be gone");
+  assert.equal(trident.includes('className="ucsd-head"'), false, "SVG <g> clipping must be gone");
   // shared identity language: plain letter at rest, live mark box opens
   for (const cls of ["o-letter", "k-letter", "o-markbox", "gdg-markbox", ".k-markbox", ".o-mark", ".gdg-mark"]) {
     assert.equal(css.includes(cls), true, `identity class missing: ${cls}`);
