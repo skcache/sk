@@ -15,15 +15,17 @@ function TridentMark({
   height = 26,
   staffRef,
   headRef,
+  markRef,
 }: {
   width?: number;
   height?: number;
   staffRef?: Ref<HTMLSpanElement>;
   headRef?: Ref<HTMLSpanElement>;
+  markRef?: Ref<HTMLSpanElement>;
 }) {
   const viewBox = "0 0 140 44";
   return (
-    <span className="trident-mark" style={{ width, height }} aria-hidden="true">
+    <span className="trident-mark" style={{ width, height }} aria-hidden="true" ref={markRef}>
       <span className="trident-staff-layer" ref={staffRef}>
         <svg viewBox={viewBox} width={width} height={height}>
           {/* the long thin shaft */}

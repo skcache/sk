@@ -233,6 +233,7 @@ test("polish pass: reveal, grain, plaque, affordance, autoplay", () => {
   assert.equal(css.includes("feTurbulence"), true, "grain turbulence missing");
   assert.equal(css.includes("pointer-events: none"), true, "overlay must not block clicks");
   // UCSD final: click-only phrase-level sweep, WAAPI-owned, no per-glyph work
+  assert.equal((css.match(/uc san diego: the click-only double pass/g) || []).length, 1, "the UCSD CSS block must exist exactly once (no duplicate)");
   assert.equal(css.includes(".ucsd-glyph"), false, "per-glyph layers must be gone");
   assert.equal(css.includes(".ucsd-base"), true, "ink base span missing");
   assert.equal(css.includes(".ucsd-navy"), true, "phrase navy overlay missing");
@@ -309,11 +310,18 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   const ucsd = read("components/UCSDWord.tsx");
   assert.equal(ucsd.includes("TridentMark"), true, "trident asset missing");
   assert.equal(ucsd.includes("UCSD_TIMING"), true, "the one timing contract missing");
-  assert.equal(ucsd.includes("navyEnd: 300"), true, "navy window must end at 300ms");
-  assert.equal(ucsd.includes("goldStart: 260"), true, "gold chase must begin at 260ms");
-  assert.equal(ucsd.includes("goldEnd: 610"), true, "gold window must end at 610ms");
-  assert.equal(ucsd.includes("settleEnd: 780"), true, "the settle beat must be 780ms");
+  assert.equal(ucsd.includes("navyEnd: 340"), true, "navy window must end at 340ms");
+  assert.equal(ucsd.includes("goldStart: 250"), true, "gold chase must begin at 250ms");
+  assert.equal(ucsd.includes("goldEnd: 640"), true, "gold window must end at 640ms");
+  assert.equal(ucsd.includes("settleEnd: 800"), true, "the settle beat must be 800ms");
   assert.equal(ucsd.includes("hold: 90"), true, "the completion beat must be 90ms");
+  assert.equal(ucsd.includes("ACTUATION_MS"), true, "the post-release actuation beat missing");
+  assert.equal(ucsd.includes("cubic-bezier(0.22, 1, 0.36, 1)"), true, "the quick responsive rise ease missing");
+  assert.equal(ucsd.includes("textShadow"), true, "the sweep glow must ride the WAAPI reveal");
+  assert.equal(ucsd.includes("drop-shadow"), true, "the trident completion shimmer missing");
+  assert.equal(ucsd.includes("T.total + T.hold"), true, "the throw must wait for the full ink settle + beat");
+  assert.equal(ucsd.includes("rotate("), true, "the throw rotation missing");
+  assert.equal(ucsd.includes("const t = timers.current"), false, "cleanup must read the CURRENT refs (no stale array capture)");
   // the phrase-level stack: ONE base + TWO absolute overlays, no per-glyph work
   assert.equal(ucsd.includes("LETTERS"), false, "the per-character split must be gone");
   assert.equal(ucsd.includes('"UC San Diego".split("")'), false, "per-glyph spans must be gone");

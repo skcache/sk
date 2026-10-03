@@ -262,12 +262,12 @@ body {
 
 .ucsd-navy {
   color: #182B49; /* the official UCSD navy - the TEXT pass color */
-  text-shadow: 0 1px 10px rgba(24, 43, 73, 0.35);
+  text-shadow: 0 1px 10px rgba(24, 43, 73, 0.22); /* the settled glow */
 }
 
 .ucsd-gold {
   color: #C69214; /* the official UCSD gold - the TEXT pass color */
-  text-shadow: 0 1px 10px rgba(198, 146, 20, 0.32);
+  text-shadow: 0 1px 10px rgba(198, 146, 20, 0.18); /* the settled glow */
 }
 
 /* the trident: a fixed-size HTML wrapper holding TWO perfectly
@@ -313,93 +313,6 @@ body {
   will-change: transform;
   pointer-events: none;
 }
-
-/* ---------- uc san diego: the click-only double pass ---------- */
-
-/* CLICK ONLY - no page-load animation. At rest the phrase is
-   ordinary ink. On click the TWO phrase-level overlays sweep
-   bottom -> top (navy, then gold chasing directly over it - no
-   white gap), both fade by the settle beat to reveal the ink,
-   and the overlays rest invisible (opacity 0) under a hidden
-   clip: every reset is instant and unseen - a reverse/downward
-   wipe is structurally impossible because nothing ever animates
-   back toward inset(100%). The paint itself is ONE WAAPI timeline
-   built from UCSD_TIMING in UCSDWord.tsx - CSS here owns only the
-   rest states. */
-.ucsd-word {
-  position: relative;
-  display: inline-block;
-}
-
-.ucsd-base {
-  color: inherit; /* the resting ink - defines the dimensions */
-}
-
-.ucsd-navy,
-.ucsd-gold {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  clip-path: inset(100% 0 0 0); /* hidden below the baseline */
-  opacity: 0; /* invisible at rest: the idle reset is unseen */
-  transition: none; /* the clip NEVER transitions - no reverse wipe */
-}
-
-.ucsd-navy {
-  color: #182B49; /* the official UCSD navy - the TEXT pass color */
-  text-shadow: 0 1px 10px rgba(24, 43, 73, 0.35);
-}
-
-.ucsd-gold {
-  color: #C69214; /* the official UCSD gold - the TEXT pass color */
-  text-shadow: 0 1px 10px rgba(198, 146, 20, 0.32);
-}
-
-/* the trident: a fixed-size HTML wrapper holding TWO perfectly
-   overlapping SVGs (staff layer + head layer, same viewBox). The
-   FORMATION clips the HTML layer wrappers - predictable on every
-   browser/mobile - never SVG <g> elements. Rest = fully concealed;
-   WAAPI reveals staff with the navy window and head with the gold
-   window. Both layers are GOLD: the text passes set TIMING only,
-   not color. */
-.trident-mark {
-  position: relative;
-  display: block;
-  pointer-events: none;
-}
-
-.trident-staff-layer,
-.trident-head-layer {
-  position: absolute;
-  inset: 0;
-  clip-path: inset(100% 0 0 0); /* concealed until the reveal */
-  transition: none;
-}
-
-.trident-mark svg {
-  display: block;
-}
-
-/* the trident throw: positioned at the spawn point, then ONE
-   WAAPI translate3d animates it right off the viewport - a fixed
-   layer over the page, compositor-friendly, no per-frame work. */
-.ucsd-trident-wrap {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-  pointer-events: none;
-}
-
-.ucsd-trident-fly {
-  position: fixed;
-  left: 0;
-  top: 0;
-  z-index: 41;
-  will-change: transform;
-  pointer-events: none;
-}
-
-
 
 /* ---------- chiba lab: the one-time letter cascade mini ---------- */
 
