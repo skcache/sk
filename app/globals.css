@@ -267,6 +267,10 @@ body {
 
 .ucsd-word.ucsd-fill .ucsd-letter {
   background-position: 0% 150%; /* NAVY pass risen: full navy */
+  /* the thinking-animation glow: the letters bloom as they color */
+  text-shadow: 0 1px 16px rgba(45, 85, 150, 0.45);
+  transition: background-position 0.4s cubic-bezier(0.45, 0, 0.55, 1),
+    text-shadow 0.4s ease;
 }
 
 /* the gold handoff: the sweep swaps to GOLD with the paint parked
@@ -288,12 +292,16 @@ body {
 
 .ucsd-word.ucsd-gold-rise .ucsd-letter {
   background-position: 0% 150%; /* GOLD pass risen: full gold */
-  transition: background-position 0.4s cubic-bezier(0.45, 0, 0.55, 1);
+  /* the glow follows the pass: navy bloom hands to the gold bloom */
+  text-shadow: 0 1px 18px rgba(198, 146, 20, 0.4);
+  transition: background-position 0.4s cubic-bezier(0.45, 0, 0.55, 1),
+    text-shadow 0.4s ease;
 }
 
 .ucsd-word.ucsd-melt .ucsd-letter {
   color: #f3f1ea;
-  transition: color 0.32s ease;
+  text-shadow: none;
+  transition: color 0.32s ease, text-shadow 0.32s ease;
 }
 
 /* the trident BUILD - the STAFF forms during the NAVY pass, the

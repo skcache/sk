@@ -243,6 +243,8 @@ test("polish pass: reveal, grain, plaque, affordance, autoplay", () => {
   assert.equal(css.includes("#C69214 58%"), true, "gold pass layer missing");
   assert.equal(css.includes("#2D5596 55%"), true, "gold pass must climb over navy (no white gap)");
   assert.equal(css.includes("0.4s cubic-bezier"), true, "pass timing missing");
+  assert.equal(css.includes("text-shadow: 0 1px 16px rgba(45, 85, 150, 0.45)"), true, "navy glow bloom missing (thinking-style)");
+  assert.equal(css.includes("text-shadow: 0 1px 18px rgba(198, 146, 20, 0.4)"), true, "gold glow bloom missing (thinking-style)");
   assert.equal(css.includes(".ucsd-staff"), true, "trident staff build missing");
   assert.equal(css.includes(".ucsd-head"), true, "trident head build missing");
   assert.equal(css.includes("ucsd-head-part1"), true, "head part 1 missing");
@@ -328,6 +330,10 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(ucsd.includes("setTimeout(runPaint, WIPE_DELAY)"), true, "the load runs the double pass once");
   assert.equal(ucsd.includes("buildStaff"), true, "staff build prop missing");
   assert.equal(ucsd.includes("buildHead"), true, "head build prop missing");
+  const trident = read("components/TridentMark.tsx");
+  assert.equal(trident.includes("LIGHT"), true, "low-poly light facet missing");
+  assert.equal(trident.includes("SHADOW"), true, "low-poly shadow facet missing");
+  assert.equal(trident.includes("OUTLINE"), false, "flat-shaded low-poly must have NO outline strokes");
   // shared identity language: plain letter at rest, live mark box opens
   for (const cls of ["o-letter", "k-letter", "o-markbox", "gdg-markbox", ".k-markbox", ".o-mark", ".gdg-mark"]) {
     assert.equal(css.includes(cls), true, `identity class missing: ${cls}`);
