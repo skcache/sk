@@ -533,20 +533,44 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   }
   const music = read("components/MusicIsland.tsx");
   assert.equal(music.includes("buildFrames"), false, "island must not hand-roll a frame table");
-  assert.equal(music.includes("requestAnimationFrame"), false, "island must not hand-roll rAF");
+  const rAFCount = (music.match(/requestAnimationFrame/g) || []).length;
+  assert.equal(rAFCount <= 1, true, "at most ONE deferred measurement frame is allowed - no rAF engine");
   assert.equal(music.includes("useScheduledAnimations"), true, "island must use the official animation queue");
-  assert.equal(music.includes("~3 seconds"), true, "3s lifecycle missing");
-  assert.equal(music.includes("delay: 2650"), true, "contract schedule missing");
+  assert.equal(music.includes("~3.4s"), true, "3.4s lifecycle missing");
+  // ONE visible object: Motion owns POSITION (the seed travel), the
+  // Cult shell owns DIMENSIONS - no invisible anchors, no layoutId
+  assert.equal(music.includes("layoutId"), false, "the invisible-anchor layoutId hack must be gone");
+  assert.equal(music.includes("music-island-anchor"), false, "the invisible 300x56 anchor must be gone");
+  assert.equal(music.includes("music-projectile"), true, "the visible traveling seed missing");
+  assert.equal(music.includes("music-seed-skin"), true, "the seed skin missing");
+  assert.equal(music.includes("stiffness: 460"), true, "the near-critical seed spring missing");
+  assert.equal(music.includes('type: "spring"'), true, "the seed travel must be a spring");
+  // the dead 300ms wait is gone: the shell expands as the seed settles
+  assert.equal(music.includes("delay: MUSIC_TIMING.compact"), true, "the arrival expansion missing (240ms)");
+  assert.equal(music.includes("delay: 300"), false, "the dead 300ms opening wait must be gone");
+  // the state machine stays small: external phrase + the official queue
+  assert.equal(music.includes('"opening"'), true, "the opening phase missing");
+  assert.equal(music.includes('"returning"'), true, "the return phase missing");
+  assert.equal(music.includes("delay: MUSIC_TIMING.collapse"), true, "the collapse schedule missing");
+  assert.equal(music.includes("delay: 2650"), false, "the old contract schedule must be gone");
+  // content leaves BEFORE the shell collapses
+  assert.equal(music.includes("rowExit"), true, "the content-exit beat missing");
+  assert.equal(music.includes("el.animate"), true, "the content exit WAAPI missing");
   assert.equal(music.includes("DynamicIslandProvider"), true, "island must use the official provider");
   assert.equal(music.includes("SIZE_PRESETS.COMPACT_LONG"), true, "island must use the official preset");
-  assert.equal(music.includes("layoutId"), true, "island must share layout with the word");
+  assert.equal(music.includes("favoriteSong.title"), true, "the song title missing");
+  assert.equal(music.includes("favoriteSong.artist"), true, "the artist missing");
+  assert.equal(music.includes("favoriteSong.artwork"), true, "the album art missing");
   assert.equal(music.includes("ThinkingOrb"), false, "music must have zero ThinkingOrb");
-  assert.equal(music.includes("buildFrames"), false, "frame table must be gone");
-  assert.equal(music.includes("requestAnimationFrame"), false, "rAF engine must be gone");
   assert.equal(music.includes("MUSIC_ORB_STATES"), false, "music orb states must be gone");
   assert.equal(music.includes("STEP_MS"), false, "frame stepping must be gone");
   const musicWord = read("components/MusicWord.tsx");
-  assert.equal(musicWord.includes('layoutId="music-island"'), true, "word seed missing");
+  assert.equal(musicWord.includes("layoutId"), false, "the word must not render an invisible seed");
+  assert.equal(musicWord.includes("music-seed"), false, "the invisible seed class must be gone");
+  // repeat clicks while active: IGNORED, never a toggle
+  const provider = read("components/StageProvider.tsx");
+  assert.equal(provider.includes('(prev === a ? prev : a)'), true, "repeat clicks must be ignored");
+  assert.equal(provider.includes('a === "music" ? null'), false, "the music toggle-close must be gone");
   const stageCode = read("components/InteractionStage.tsx");
   assert.equal(stageCode.includes("AnimatePresence"), true, "stage must keep the swap machinery");
   assert.equal(stageCode.includes('mode="wait"'), true, "stage must swap with mode=wait");
@@ -554,8 +578,19 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(stageCode.includes('"ucsd"'), false, "stage must NOT host ucsd (trident flies off the viewport)");
   const css = read("globals.css");
   assert.equal(css.includes(".interaction-stage"), true, "stage CSS missing");
-  assert.equal(css.includes("height: 26px"), true, "stage resting state missing");
-  assert.equal(css.includes(".interaction-stage.is-active"), true, "stage active expansion missing");
+  assert.equal(css.includes(".music-island-anchor"), false, "the invisible anchor CSS must be gone");
+  assert.equal(css.includes(".music-projectile"), true, "the traveling seed CSS missing");
+  assert.equal(css.includes(".music-seed-skin"), true, "the seed skin CSS missing");
+  assert.equal(css.includes("rgba(8, 8, 10, 0.92)"), true, "the near-black shell missing");
+  assert.equal(css.includes("rgba(255, 255, 255, 0.08)"), true, "the faint hairline border missing");
+  assert.equal(css.includes("max-width: calc(100vw - 56px)"), true, "the mobile viewport guard missing");
+  assert.equal(css.includes("eq-bounce"), true, "the equalizer heartbeat missing");
+  // the stage is a FIXED-height playground - it never breathes for an
+  // animation, so the old 26px rest + active-expansion rules are gone
+  const stageRule = css.match(/\.interaction-stage\s*\{([^}]+)\}/)?.[1] ?? "";
+  assert.equal(stageRule.includes("height: 72px"), true, "stage must be a fixed 72px playground");
+  assert.equal(stageRule.includes("transition"), false, "the stage must never transition its height");
+  assert.equal(css.includes(".interaction-stage.is-active"), false, "the active expansion must be gone");
   assert.equal(css.includes("height: 72px"), true, "mobile stage height missing");
   assert.equal(css.includes("height: 88px"), true, "desktop stage height missing");
   assert.equal(css.includes(".dynamic-island-row"), true, "island row CSS missing");

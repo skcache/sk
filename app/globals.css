@@ -518,51 +518,70 @@ body {
 /* ---------- shared interaction stage ---------- */
 
 /* a real bounded playground between the intro and the experience
-   section. Fixed height at rest (72px mobile / 88px desktop) as
-   intentional breathing room - invisible chrome, NEVER resizes for an
-   animation. Toys (music island, ball, trident) play inside. */
-/* the idle stage is pure breathing room - NO visible hairline (it
-   reads as a stray underline under the last intro word) */
+   section. FIXED height, always (72px mobile / 88px desktop) - a
+   stable stage that never breathes or resizes for an animation.
+   Toys (music island, ball, trident) play INSIDE the space; the
+   island moves into it instead of pushing the page around. */
 .interaction-stage {
   position: relative;
-  height: 26px; /* resting state: invisible breathing room, not a bug */
-  transition: height 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.interaction-stage.is-active {
   height: 72px;
 }
 
-.interaction-stage.is-active::before {
-  opacity: 0;
-}
-
 @media (min-width: 640px) {
-  .interaction-stage.is-active {
+  .interaction-stage {
     height: 88px;
   }
 }
 
-/* music word seed: the box the island is born from (shared layoutId) */
+/* ---------- music seed + island ---------- */
+
+/* the music word: only the trigger; the island measures THIS box */
 .music-word {
   position: relative;
   display: inline-block;
 }
 
-.music-seed {
+/* the traveling seed: the ONE visible object. Motion animates ONLY
+   its transform (position: word -> stage -> word); the shell inside
+   owns its own dimensions. The skin is a small dark physical object -
+   no glow, no glass, no card chrome. */
+.music-projectile {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+  will-change: transform;
+}
+
+.music-projectile.is-reduced {
+  /* reduced motion: no travel, the island simply lives at the stage */
+  display: none;
+}
+
+.music-seed-skin {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: #070709;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  opacity: 1;
+  transition: opacity 200ms ease;
+}
+
+.music-projectile-island {
   position: absolute;
   inset: 0;
 }
 
-/* music island anchor: the stable box Motion projects from/to the
-   word seed (layoutId). Constant 300x56 so the shared-layout scale
-   stays bounded - the shell's own width animation lives inside it. */
-.music-island-anchor {
-  position: relative;
-  display: block;
-  width: 300px;
-  height: 56px;
-  margin: 0 auto;
+/* the island shell: near-black, faint hairline, small soft shadow -
+   black dominates; this is a Dynamic Island, not a glass SaaS card */
+.music-island-shell {
+  background: rgba(8, 8, 10, 0.92);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 10px 32px rgba(0, 0, 0, 0.42),
+    0 2px 8px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+  max-width: calc(100vw - 56px);
 }
 
 /* island content row inside the official Cult UI shell */
@@ -592,6 +611,20 @@ body {
   gap: 1px;
   min-width: 0;
   text-align: left;
+  /* progressive disclosure: the meta is a zero-width slot until the
+     COMPACT_LONG state resolves it - the compact state shows ONLY
+     album art + equalizer, the full state adds title/artist */
+  opacity: 0;
+  max-width: 0;
+  overflow: hidden;
+  transition:
+    opacity 200ms ease,
+    max-width 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dynamic-island-meta.is-visible {
+  opacity: 1;
+  max-width: 150px;
 }
 
 .dynamic-island-title {
@@ -607,11 +640,11 @@ body {
   margin: 0;
 }
 
-/* the row's content enters a beat AFTER the shell expands and leaves
-   BEFORE the shell contracts (Apple's rhythm) - the WAAPI effect in
-   MusicIsland drives the opacity/scale */
+/* the row content's ENTRY is owned by the Cult container's state
+   transition (it fades in as the shell expands); the CLOSING fade is
+   the WAAPI in MusicIsland - content leaves before the shell
+   contracts */
 .island-row-content {
-  opacity: 0;
   display: block;
 }
 

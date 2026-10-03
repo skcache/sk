@@ -12,8 +12,9 @@ const StageContext = createContext<{
  * Single stage pointer for the whole page. Intro words request the
  * stage through useStage().open(); the InteractionStage renders below
  * the intro. One provider, one active egg at a time; opening the
- * action that is already active is a no-op (repeat clicks are
- * ignored while a toy runs).
+ * action that is already active is a NO-OP - repeated clicks are
+ * ignored while a toy runs (one click = one deterministic
+ * performance, never a toggle).
  */
 export default function StageProvider({ children }: { children: ReactNode }) {
   const [active, setActive] = useState<StageAction | null>(null);
@@ -21,10 +22,7 @@ export default function StageProvider({ children }: { children: ReactNode }) {
   return (
     <StageContext.Provider
       value={{
-        open: (a) =>
-          setActive((prev) =>
-            prev === a ? (a === "music" ? null : prev) : a, // music toggles closed; other toys ignore re-open while running
-          ),
+        open: (a) => setActive((prev) => (prev === a ? prev : a)),
         active,
       }}
     >
