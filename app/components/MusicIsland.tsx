@@ -42,16 +42,16 @@ const MUSIC_TIMING = {
   artIn: 120, // content begins appearing BEFORE the shell finishes
   waveIn: 170, //
   pressStart: 650, // the force-touch press begins (stored compression)
-  pressRelease: 710, // ~45ms hold at full compression, then the POP
-  bloom: 740, // shell expansion starts DURING the release pop
+  pressRelease: 695, // ~40ms hold at full compression, then the release
+  bloom: 740, // shell expansion starts DURING the release
   metaIn: 840, // metadata begins before the shell is fully expanded
   progressIn: 900, //
   controlsIn: 960, //
-  uiLeave: 2350, // expanded-only UI starts fading (200ms)
-  collapse: 2430, // ~80ms later: the shell contracts WHILE UI fades
-  fadeShared: 3150, // art + waveform begin fading (280ms)
-  close: 3250, // pill shrinks + fades + slight scaleY, mirrored outro
-  done: 3550, // unmount after the dissolve; idle. ~3.5s total.
+  uiLeave: 3000, // expanded-only UI starts fading (200ms) after the
+  collapse: 3050, // ~1.9s fully-settled hold; ~50ms later the shell
+  fadeShared: 3400, // art + waveform begin fading (280ms) just before
+  close: 3460, // pill shrinks + fades + slight scaleY, mirrored outro
+  done: 3700, // unmount after the dissolve; idle. ~3.7s total.
 } as const;
 
 /* the exit curve: eased in-out (cubic-bezier(0.4, 0, 0.2, 1)) -
@@ -74,15 +74,15 @@ const SHELL_SPRING = {
 const WRAP_FADE = { duration: 0.28, ease: "easeInOut" } as const;
 
 /* the force-touch press: real stored compression - squashes (scaleX
-   0.982 / scaleY 0.95 / y 1) held ~45ms, then a spring-SHAPED POP
-   through ~1.008 -> ~1.0015 -> settle 1, while the shell blooms
-   DURING the release. Keyframed so the rebound is VISIBLE: with a
-   ~1.8% press amplitude, a true underdamped spring's overshoot is
-   only ~0.0005 (mathematically invisible). PRESS -> POP. */
+   0.982 / scaleY 0.95 / y 1) held ~40ms, then the release flows
+   directly into the shell bloom. As the expanded shell reaches its
+   target the WHOLE island rides a VERY subtle over-bloom (~1.018 -
+   barely visible, but it makes the settling physical) and settles.
+   No bounce circus. */
 const PRESS_DOWN = { duration: 0.04, ease: "easeInOut" as const };
-const PRESS_POP = {
-  duration: 0.18,
-  times: [0, 0.4, 0.75, 1],
+const BLOOM_OVERSHOOT = {
+  duration: 0.5,
+  times: [0, 0.55, 0.85, 1],
   ease: ["easeOut", "easeInOut", "easeOut"] as ("easeOut" | "easeInOut")[],
 } satisfies { duration: number; times: number[]; ease: ("easeOut" | "easeInOut")[] };
 
@@ -185,6 +185,7 @@ function MusicBody({ onDone }: { onDone: () => void }) {
   // whole object in (mirrored on the way out), hosts the force-touch
   // press, and applies the slight outro squash.
   const closing = phase === "closing";
+  const expanded = phase === "expanded"; // the bloom over-ride
   return (
     <div className="music-projectile">
       <motion.div
@@ -192,15 +193,15 @@ function MusicBody({ onDone }: { onDone: () => void }) {
         initial={{ opacity: 0 }}
         animate={{
           opacity: closing ? 0 : 1,
-          scaleX: pressed ? 0.982 : [0.982, 1.008, 1.0015, 1],
-          scaleY: pressed ? 0.95 : closing ? 0.9 : [0.95, 1.006, 1.001, 1],
-          y: pressed ? 1 : [1, 0.4, 0.1, 0],
+          scaleX: pressed ? 0.982 : expanded ? [1, 1.018, 1.002, 1] : 1,
+          scaleY: pressed ? 0.95 : closing ? 0.9 : expanded ? [1, 1.012, 1.001, 1] : 1,
+          y: pressed ? 1 : expanded ? [1, 0.2, 0, 0] : 0,
         }}
         transition={{
           opacity: WRAP_FADE,
-          scaleX: pressed ? PRESS_DOWN : PRESS_POP,
-          scaleY: pressed ? PRESS_DOWN : closing ? WRAP_FADE : PRESS_POP,
-          y: pressed ? PRESS_DOWN : PRESS_POP,
+          scaleX: pressed ? PRESS_DOWN : expanded ? BLOOM_OVERSHOOT : PRESS_DOWN,
+          scaleY: pressed ? PRESS_DOWN : closing ? WRAP_FADE : expanded ? BLOOM_OVERSHOOT : PRESS_DOWN,
+          y: pressed ? PRESS_DOWN : expanded ? BLOOM_OVERSHOOT : PRESS_DOWN,
         }}
       >
         {island}
@@ -312,37 +313,51 @@ function IslandInner({ uiIn, shared, artOpacity, waveOpacity }: IslandProps) {
             animate={{ opacity: uiIn ? 1 : 0, y: uiIn ? 0 : 4 }}
             transition={uiTransition(0.22)}
           >
-            <span className="island-star">
-              <svg width="21" height="21" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M12 3.8l2.5 5.05 5.6.82-4.05 3.95.95 5.57L12 16.35l-5.01 2.64.95-5.57-4.05-3.95 5.6-.82z"
-                  fill="currentColor"
-                />
-              </svg>
-            </span>
             <span className="island-controls-main">
-              <svg width="25" height="25" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M15 6 8.5 12l6.5 6" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M21.5 6 15 12l6.5 6" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+              {/* previous: two soft ROUNDED filled wedges + a slim
+                  rounded end bar (iOS skip-back silhouette) */}
+              <svg className="island-skip-prev" width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M15.2 5.9 8.4 12l6.8 6.1"
+                  fill="currentColor"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M20.8 5.9 14 12l6.8 6.1"
+                  fill="currentColor"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                />
+                <rect x="21.3" y="5.4" width="2.2" height="13.2" rx="1.1" fill="currentColor" />
               </svg>
               <svg className="island-control-play" width="30" height="30" viewBox="0 0 24 24" aria-hidden="true">
                 <rect x="3.5" y="2.5" width="6.5" height="19" rx="2.6" fill="currentColor" />
                 <rect x="14" y="2.5" width="6.5" height="19" rx="2.6" fill="currentColor" />
               </svg>
-              <svg width="25" height="25" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M9 6l6.5 6L9 18" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M15 6l6.5 6L15 18" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </span>
-            <span className="island-airplay">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M5.6 8.4a8.4 8.4 0 0 1 12.8 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                <path d="M8.3 10.9a5.2 5.2 0 0 1 7.4 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                <path d="M10.4 12.7a2.6 2.6 0 0 1 3.2 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+              {/* next: mirror - rounded wedges pointing right, bar left */}
+              <svg className="island-skip-next" width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
                 <path
-                  d="M12 11.4c.78 0 1.5.38 1.94 1L17.4 16.5c.5.62.07 1.6-.7 1.6H7.3c-.78 0-1.2-.98-.7-1.6L10.06 12.4c.44-.62 1.16-1 1.94-1z"
+                  d="M8.8 5.9 15.6 12l-6.8 6.1"
                   fill="currentColor"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
                 />
+                <path
+                  d="M3.2 5.9 10 12l-6.8 6.1"
+                  fill="currentColor"
+                  stroke="currentColor"
+                  strokeWidth="1.6"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                />
+                <rect x="0.5" y="5.4" width="2.2" height="13.2" rx="1.1" fill="currentColor" />
               </svg>
             </span>
           </motion.span>

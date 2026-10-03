@@ -713,20 +713,19 @@ body {
   transform: translate(-50%, -50%);
 }
 
-/* transport row: star | previous | pause | next | AirPlay on a REAL
-   5-column optical grid - each control centered in an equal cell, so
-   the centers are perfectly even and pause sits dead-center. Apple
-   silhouettes, one quiet muted-white language. Visual only. */
+/* transport row: previous | PAUSE | next on a real 3-column optical
+   grid - every control centered in an equal cell, pause dead-center,
+   spacious and minimal. No favorites, no AirPlay. */
 .island-controls {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 12px;
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   justify-items: center;
   align-items: center;
-  color: rgba(255, 255, 255, 0.8);
+  color: rgba(255, 255, 255, 0.82);
 }
 
 .island-controls-main {
@@ -818,23 +817,29 @@ body {
   position: absolute;
   left: 0;
   top: 0;
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   will-change: transform;
 }
 
-/* the impact particles: tiny pixel squares at the divider contact,
-   absolute in the stage, killed after their short lifetime */
-.bb-particles {
+/* the one contact cue per impact: a tiny soft orange glow that sits on
+   the divider line and fades out in ~90ms - nothing remains */
+.bb-contact-glows {
   position: absolute;
   inset: 0;
   pointer-events: none;
+  overflow: visible;
 }
 
-.bb-particle {
+.bb-contact-glow {
   position: absolute;
-  opacity: 1;
-  transition: opacity 120ms ease-out;
+  width: 20px;
+  height: 7px;
+  border-radius: 999px;
+  background: radial-gradient(ellipse at center, rgba(255, 154, 74, 0.85) 0%, rgba(255, 154, 74, 0.35) 55%, rgba(255, 154, 74, 0) 75%);
+  opacity: 0.85;
+  transition: opacity 90ms ease-out;
+  pointer-events: none;
 }
 
 /* ---------- page reveal (progressive enhancement) ---------- */
