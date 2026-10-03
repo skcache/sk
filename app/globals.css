@@ -541,38 +541,24 @@ body {
   display: inline-block;
 }
 
-/* the traveling seed: the ONE visible object. Motion animates ONLY
-   its transform (position: word -> stage -> word); the shell inside
-   owns its own dimensions. The skin is a small dark physical object -
-   no glow, no glass, no card chrome. */
+/* the island home: IN FLOW inside the interaction stage, 24px below
+   the intro paragraph - the stage is the fixed-height whitespace, the
+   island is its only content, so the page never moves. No travel, no
+   portal, nothing flies out of the word. */
 .music-projectile {
-  position: fixed;
-  z-index: 60;
-  pointer-events: none;
-  will-change: transform;
-}
-
-.music-projectile.is-reduced {
-  /* reduced motion: the island simply lives at the stage - it IS the
-     visible thing (no hidden projectile, no travel) */
-  position: fixed;
-  z-index: 60;
+  position: relative;
+  margin-top: 24px;
+  display: grid;
+  justify-items: center;
   pointer-events: none;
 }
 
-.music-seed-skin {
-  position: absolute;
-  inset: 0;
-  border-radius: 999px;
-  background: #070709;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  /* opacity is driven by Motion as an inline style - no CSS transition
-     here, or the two systems would fight over the same property */
-}
-
-.music-projectile-island {
-  position: absolute;
-  inset: 0;
+/* the ONLY extra wrapper: the intro/outro fade + the tactile press
+   cue. The shell itself is never touched by imperative animation, and
+   these are the only two properties Motion writes here. */
+.music-island-press-wrap {
+  display: grid;
+  justify-items: center;
 }
 
 /* the island shell: PURE BLACK like the sensor hardware the island
@@ -634,7 +620,7 @@ body {
 .island-expanded-meta {
   position: absolute;
   left: 76px;
-  top: 17px;
+  top: 16px;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -663,7 +649,7 @@ body {
   position: absolute;
   left: 16px;
   right: 16px;
-  top: 70px;
+  top: 60px;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -713,7 +699,7 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 12px;
+  bottom: 10px;
   display: block;
 }
 

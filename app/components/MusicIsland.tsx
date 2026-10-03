@@ -1,7 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion } from "motion/react";
 import { favoriteSong } from "../config/favorite-song";
@@ -13,48 +12,50 @@ import {
 } from "./kit/dynamic-island";
 
 /**
- * THE MUSIC DYNAMIC ISLAND - one physical black object.
+ * THE MUSIC DYNAMIC ISLAND - one physical black object that lives in
+ * the whitespace below the intro. There is NO word->stage travel: the
+ * island simply appears in place, mirrors its entrance and exit, and
+ * plays compact -> press -> expanded -> relax -> compact -> gone.
  *
- * SEED -> COMPACT island -> (press) -> EXPANDED Now Playing island ->
- * COMPACT -> SEED, ~5.0s, one deterministic performance per click.
+ * Intro/outro are mirrored (both ~250-300ms): a tiny centered pill
+ * grows into the 235x44 compact while fading in; the compact shrinks
+ * back to the tiny pill while fading out.
  *
  * ONE OWNER PER PROPERTY:
  *   - the Cult shell owns width / height / borderRadius (its official
  *     spring: stiffness 400, damping 30)
- *   - Motion owns EVERYTHING else: the seed travel, the tactile press
- *     cue, the art + waveform relocation/scale (on the SAME spring as
- *     the shell), and the expanded-content opacity/offset
+ *   - Motion owns EVERYTHING else: the intro/outro fade, the tactile
+ *     press cue, the art + waveform relocation/scale (on the SAME
+ *     spring as the shell), and the expanded-content opacity/offset
  *
  * The album art, the waveform, and the expanded UI are ALWAYS MOUNTED,
- * the SAME DOM elements from seed to seed. There are no CSS keyframes
- * and no imperative animation calls in this file - React state flips
- * motion targets and Motion resolves the physics.
+ * the same DOM elements from first frame to last. No CSS keyframes or
+ * imperative animation calls exist for the choreography - React state
+ * flips motion targets and Motion resolves the physics. CSS is static
+ * styling only, except the repeating waveform pulse.
  */
 
 /* THE ONE ABSOLUTE CLOCK - the whole performance lives on this table */
 const MUSIC_TIMING = {
-  compact: 70, // the shell starts widening while the seed is still gliding
-  skinFade: 130, // the seed skin dissolves - one visible object remains
-  artIn: 200, // the album art fades in as the shell reaches its width
-  waveIn: 280, // the waveform drifts in after it
-  pressStart: 900, // the tactile press cue begins (scale 1 -> .985)
-  pressRelease: 960, // the release - the bloom starts while it returns to 1
-  bloom: 970, // the SAME shell blooms into MUSIC_EXPANDED
-  uiLeave: 3400, // expanded-only content begins fading (shell still full)
-  collapse: 3520, // the same shell contracts; art + waveform return with it
-  fadeShared: 4370, // art + waveform begin fading (80ms before the move)
-  returnMs: 4450, // MOVE + SHRINK: EMPTY + travel home begin together
-  dissolve: 4750, // the seed fades into the word (opacity 1 -> 0)
-  done: 4960, // unmount after the dissolve; idle. Lifecycle ~5.0s.
+  compact: 0, // the shell EMPTY -> COMPACT immediately: the tiny pill
+  artIn: 140, // album art fades in as the compact takes shape
+  waveIn: 200, // waveform drifts in after it
+  pressStart: 780, // the tactile press begins (scale 1 -> .985)
+  pressRelease: 840, // the release - the bloom starts while it returns
+  bloom: 840, // press release + expansion = ONE gesture, same beat
+  uiLeave: 2680, // expanded-only UI fades while the shell relaxes
+  collapse: 2680, // the same shell contracts; art + wave return with it
+  close: 3520, // compact -> EMPTY + the whole object fades out (mirror)
+  done: 3800, // unmount after the fade completes; idle. ~3.8s total.
 } as const;
 
 /* the exit curve: eased in-out (cubic-bezier(0.4, 0, 0.2, 1)) -
    never a cheap ease-in tail */
 const EXIT_EASE: [number, number, number, number] = [0.4, 0, 0.2, 1];
 
-/* THE shared spring for every shared-element relocation. This is the
-   exact physics of the Cult shell (stiffness 400 / damping 30, mass 1)
-   so the shell, the art, and the waveform accelerate and settle as ONE
+/* THE shared spring for every shared-element relocation - the exact
+   physics of the Cult shell (stiffness 400 / damping 30, mass 1), so
+   the shell, the art, and the waveform accelerate and settle as ONE
    object instead of three systems with three different curves. */
 const SHELL_SPRING = {
   type: "spring" as const,
@@ -63,44 +64,39 @@ const SHELL_SPRING = {
   mass: 1,
 };
 
-/* the seed travel: near-critical, magnetically pulled - no bounce */
-const SEED_SPRING = {
-  type: "spring" as const,
-  stiffness: 500,
-  damping: 42,
-  mass: 0.8,
-};
+/* the intro/outro fade + the tiny physical press, both on the island's
+   single outer wrapper (never the shell itself) */
+const WRAP_FADE = { duration: 0.28, ease: "easeInOut" } as const;
 
 /* the UI unfold: quick, overlapping, eased out on entry and eased
    in-out on exit - all on the same duration so the pieces overlap
    into one continuous reveal (and one continuous dissolve) */
 const UI_EASE: [number, number, number, number] = [0.22, 1, 0.36, 1];
 
+/* the compact baseline (ACCEPTED - never redesigned) */
 const COMPACT_FORM = {
   art: { left: 8, top: 8, width: 28, height: 28, borderRadius: 7 },
   wave: { right: 10, top: 13, height: 18 },
 } as const;
 
+/* the expanded Now Playing form: snug 345x112, tightly arranged */
 const EXPANDED_FORM = {
   art: { left: 15, top: 14, width: 48, height: 48, borderRadius: 11 },
-  wave: { right: 16, top: 20, height: 24 },
+  wave: { right: 16, top: 19, height: 22 },
 } as const;
 
-type Phase = "opening" | "compact" | "expanded" | "compactClosing" | "returning" | "dissolve";
-
-const seedSpringFor = { x: SEED_SPRING, y: SEED_SPRING } as const;
+type Phase = "opening" | "compact" | "expanded" | "compactClosing" | "closing";
 
 /**
  * The music egg: ONE black object that physically becomes
- * SEED -> COMPACT Dynamic Island -> EXPANDED Now Playing island ->
- * COMPACT -> SEED, without ever breaking the illusion.
+ * tiny pill -> COMPACT Dynamic Island -> (press) -> EXPANDED Now
+ * Playing island -> COMPACT -> tiny pill, without breaking the
+ * illusion - mirrored intro and outro.
  *
- * Compact is the ACCEPTED baseline (235x44, pure black, art leading,
- * waveform trailing, black void center - no metadata). The expansion
- * blooms the SAME shell and simply moves/resizes the SAME art and
- * waveform elements on the shell's own spring. The expanded view adds
- * Kick / Future, a thin static progress rail with mock times, and
- * three visual-only transport controls plus an output glyph.
+ * The island renders IN FLOW inside the interaction stage (the fixed
+ * whitespace below the intro), 24px below the intro paragraph - there
+ * is no seed travel, no portal, nothing flies out of the word. The
+ * expanded form stays comfortably above the divider.
  */
 export default function MusicIsland({ onDone }: { onDone: () => void }) {
   return (
@@ -110,35 +106,15 @@ export default function MusicIsland({ onDone }: { onDone: () => void }) {
   );
 }
 
-/* the word that was pressed: the seed is born from ITS box */
-function findWordOrigin() {
-  const btn = [...document.querySelectorAll("button")].find(
-    (b) => (b.textContent ?? "").trim() === "music"
-  );
-  const r = btn?.getBoundingClientRect();
-  if (!r) return null;
-  return { x: r.left + r.width / 2, y: r.top + r.height / 2, w: r.width, h: r.height };
-}
-
-/* the stable playground: the island always forms at the stage's
-   center - the stage never grows or breathes for this */
-function findStageCenter() {
-  const el = document.querySelector(".interaction-stage");
-  const r = el?.getBoundingClientRect();
-  if (r) return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
-  return { x: window.innerWidth / 2, y: 420 };
-}
-
 function MusicBody({ onDone }: { onDone: () => void }) {
   const reduce = useReducedMotion();
-  const [origin, setOrigin] = useState<{ x: number; y: number; w: number; h: number } | null>(null);
-  const [stage, setStage] = useState<{ x: number; y: number } | null>(null);
-  const [phase, setPhase] = useState<Phase>("opening");
+  // reduced motion: the island shows its compact form in place - no
+  // press, no bloom, no UI - and fades out on schedule
+  const [phase, setPhase] = useState<Phase>(reduce ? "compact" : "opening");
   const [uiIn, setUiIn] = useState(false);
   const [pressed, setPressed] = useState(false);
-  const [artIn, setArtIn] = useState(false);
-  const [waveIn, setWaveIn] = useState(false);
-  const [sharedFading, setSharedFading] = useState(false);
+  const [artIn, setArtIn] = useState(reduce);
+  const [waveIn, setWaveIn] = useState(reduce);
   const onDoneRef = useRef(onDone);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
 
@@ -150,34 +126,14 @@ function MusicBody({ onDone }: { onDone: () => void }) {
     timers.current.push(setTimeout(fn, ms));
   }, []);
 
-  // measure once: the word's box (where the seed is born) and the
-  // stage center (where it lands) - deferred one frame so the press's
-  // paint is committed before we read it
+  // the whole performance on the ONE absolute clock: content
+  // entrances, press, bloom + UI unfold, UI exit, collapse, and the
+  // mirrored fade-out. No cumulative delays.
   useEffect(() => {
-    const id = requestAnimationFrame(() => {
-      setOrigin(findWordOrigin());
-      setStage(findStageCenter());
-      if (reduce) {
-        // reduced motion: the island appears at the stage center and
-        // simply lives its schedule in place - no travel, no skin
-        setPhase("compact");
-        schedule(MUSIC_TIMING.done, () => onDoneRef.current());
-      }
-    });
-    return () => {
-      cancelAnimationFrame(id);
-      timers.current.forEach(clearTimeout);
-      timers.current = [];
-    };
-  }, [reduce, schedule]);
-
-  // the whole performance on the ONE absolute clock: the skin, the
-  // shared-element entrances, the press cue, the bloom + UI unfold,
-  // the UI exit, the collapse, the shared fades, and the return home.
-  // No cumulative delays - every beat is an absolute offset from t0.
-  useEffect(() => {
-    if (!origin || !stage || reduce) return;
-    schedule(MUSIC_TIMING.skinFade, () => setPhase("compact"));
+    if (reduce) {
+      schedule(MUSIC_TIMING.done, () => onDoneRef.current());
+      return;
+    }
     schedule(MUSIC_TIMING.artIn, () => setArtIn(true));
     schedule(MUSIC_TIMING.waveIn, () => setWaveIn(true));
     schedule(MUSIC_TIMING.pressStart, () => setPressed(true));
@@ -188,88 +144,41 @@ function MusicBody({ onDone }: { onDone: () => void }) {
     });
     schedule(MUSIC_TIMING.uiLeave, () => setUiIn(false));
     schedule(MUSIC_TIMING.collapse, () => setPhase("compactClosing"));
-    schedule(MUSIC_TIMING.fadeShared, () => setSharedFading(true));
-    schedule(MUSIC_TIMING.returnMs, () => setPhase("returning"));
-    schedule(MUSIC_TIMING.dissolve, () => setPhase("dissolve"));
+    schedule(MUSIC_TIMING.close, () => setPhase("closing"));
     schedule(MUSIC_TIMING.done, () => onDoneRef.current());
-  }, [origin, stage, reduce, schedule]);
-
-  const seedW = origin ? Math.max(36, Math.min(56, origin.w * 0.7)) : 46;
-  const seedH = origin ? Math.max(18, Math.min(24, origin.h * 0.5)) : 22;
-  const delta = useMemo(() => {
-    if (!origin || !stage) return { x: 0, y: 0 };
-    return { x: stage.x - origin.x, y: stage.y - origin.y };
-  }, [origin, stage]);
+    return () => {
+      timers.current.forEach(clearTimeout);
+      timers.current = [];
+    };
+  }, [reduce, schedule]);
 
   // derived motion signals - plain booleans, no per-beat state
   const shared = phase === "expanded"; // art + waveform at the expanded placement
-  const sharedGone = sharedFading || phase === "returning" || phase === "dissolve";
-  const artOpacity = reduce ? 1 : sharedGone ? 0 : artIn ? 1 : 0;
-  const waveOpacity = reduce ? 1 : sharedGone ? 0 : waveIn ? 1 : 0;
-  const skinOpacity = phase === "opening" || phase === "returning" ? 1 : 0;
+  const artOpacity = artIn ? 1 : 0;
+  const waveOpacity = waveIn ? 1 : 0;
 
   const island = (
     <IslandInner uiIn={uiIn} shared={shared} artOpacity={artOpacity} waveOpacity={waveOpacity} />
   );
 
-  // reduced motion: the island simply appears at the stage center and
-  // lives its schedule in place - no travel, no skin
-  if (reduce) {
-    if (!stage) return null;
-    return (
-      <div
-        className="music-projectile is-reduced"
-        style={{ left: stage.x - seedW / 2, top: stage.y - seedH / 2, width: seedW, height: seedH }}
+  // IN FLOW: the island lives in the stage's whitespace, 24px below
+  // the intro. The stage is fixed-height and invisible; the island is
+  // its only content, so the page never moves. The wrapper fades the
+  // whole object in (mirrored on the way out) and hosts the press.
+  return (
+    <div className="music-projectile">
+      <motion.div
+        className="music-island-press-wrap"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: phase === "closing" ? 0 : 1, scale: pressed ? 0.985 : 1 }}
+        transition={{
+          opacity: WRAP_FADE,
+          scale: { duration: pressed ? 0.06 : 0.07, ease: "easeInOut" },
+        }}
       >
-        <span className="music-projectile-island">{island}</span>
-      </div>
-    );
-  }
-
-  if (!origin || !stage) return null;
-
-  // PORTAL to the body: the page's reveal wrappers carry transforms,
-  // which would turn position:fixed into a stage-relative offset - the
-  // seed must live in TRUE viewport coordinates (the same reason the
-  // trident portals). The Cult shell is mounted from the START: Motion
-  // carries its position, Cult stretches its dimensions, and the skin
-  // dissolves within ~130ms so only ONE black object exists.
-  return createPortal(
-    <motion.div
-      className="music-projectile"
-      style={{
-        left: origin.x - seedW / 2,
-        top: origin.y - seedH / 2,
-        width: seedW,
-        height: seedH,
-      }}
-      initial={false}
-      animate={
-        phase === "returning" || phase === "dissolve" ? { x: 0, y: 0 } : { x: delta.x, y: delta.y }
-      }
-      transition={seedSpringFor}
-    >
-      <motion.span
-        className="music-seed-skin"
-        aria-hidden="true"
-        initial={false}
-        animate={{ opacity: skinOpacity }}
-        transition={{ duration: 0.18, ease: "easeInOut" }}
-      />
-      <span className="music-projectile-island">
-        {/* the ONLY extra wrapper: the tactile press cue. The shell
-            itself is never touched by imperative animation. */}
-        <motion.div
-          className="music-island-press-wrap"
-          initial={false}
-          animate={{ scale: pressed ? 0.985 : 1 }}
-          transition={{ duration: pressed ? 0.055 : 0.07, ease: "easeInOut" }}
-        >
-          {island}
-        </motion.div>
-      </span>
-    </motion.div>,
-    document.body
+        {island}
+      </motion.div>
+    </div>
   );
 }
 
@@ -300,7 +209,7 @@ function IslandInner({ uiIn, shared, artOpacity, waveOpacity }: IslandProps) {
     at(MUSIC_TIMING.compact, () => dispatch({ type: "SET_SIZE", newSize: SIZE_PRESETS.COMPACT }));
     at(MUSIC_TIMING.bloom, () => dispatch({ type: "SET_SIZE", newSize: SIZE_PRESETS.MUSIC_EXPANDED }));
     at(MUSIC_TIMING.collapse, () => dispatch({ type: "SET_SIZE", newSize: SIZE_PRESETS.COMPACT }));
-    at(MUSIC_TIMING.returnMs, () => dispatch({ type: "SET_SIZE", newSize: SIZE_PRESETS.EMPTY }));
+    at(MUSIC_TIMING.close, () => dispatch({ type: "SET_SIZE", newSize: SIZE_PRESETS.EMPTY }));
     return () => {
       timers.current.forEach(clearTimeout);
       timers.current = [];
@@ -322,12 +231,16 @@ function IslandInner({ uiIn, shared, artOpacity, waveOpacity }: IslandProps) {
       className="music-island-shell mx-auto h-0 w-0 shrink-0 items-center justify-center border text-center text-ink"
     >
       <span className="island-row-content">
-        {/* the album art: ONE element from seed to seed - it physically
-            resizes and relocates on the shell's own spring */}
+        {/* the album art: ONE element from first frame to last - it
+            physically resizes and relocates on the shell's spring */}
         <motion.div
           className="dynamic-island-art"
           initial={false}
-          animate={shared ? { ...EXPANDED_FORM.art, opacity: artOpacity } : { ...COMPACT_FORM.art, opacity: artOpacity }}
+          animate={
+            shared
+              ? { ...EXPANDED_FORM.art, opacity: artOpacity }
+              : { ...COMPACT_FORM.art, opacity: artOpacity }
+          }
           transition={{
             left: SHELL_SPRING,
             top: SHELL_SPRING,
@@ -357,7 +270,7 @@ function IslandInner({ uiIn, shared, artOpacity, waveOpacity }: IslandProps) {
             className="island-progress-row"
             initial={false}
             animate={{ opacity: uiIn ? 1 : 0, y: uiIn ? 0 : 4 }}
-            transition={uiTransition(0.19)}
+            transition={uiTransition(0.18)}
           >
             <span className="island-time">1:20</span>
             <span className="island-progress">
@@ -370,7 +283,7 @@ function IslandInner({ uiIn, shared, artOpacity, waveOpacity }: IslandProps) {
             className="island-controls"
             initial={false}
             animate={{ opacity: uiIn ? 1 : 0, y: uiIn ? 0 : 4 }}
-            transition={uiTransition(0.25)}
+            transition={uiTransition(0.24)}
           >
             <span className="island-controls-main">
               <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -400,8 +313,9 @@ function IslandInner({ uiIn, shared, artOpacity, waveOpacity }: IslandProps) {
           </motion.span>
         </span>
 
-        {/* the live waveform: ONE element from seed to seed - it moves
-            to the expanded trailing slot on the shell's own spring */}
+        {/* the live waveform: ONE element from first frame to last -
+            it moves to the expanded trailing slot on the shell's
+            spring */}
         <motion.span
           className="dynamic-island-wave"
           aria-hidden="true"

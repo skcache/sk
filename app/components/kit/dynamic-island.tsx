@@ -110,13 +110,11 @@ const DynamicIslandSizePresets: Record<SizePresets, Preset> = {
     borderRadius: 46,
   },
   /* the MUSIC EXPANDED form: a real Now Playing panel, not a longer
-     pill - added for the sk music island's compact->expanded bloom.
-     Height is deliberately SNUG (127, not 148): the vertical rhythm
-     stays tight around the content with no dead space. */
+     pill - snug 345x112, tightly arranged with no dead vertical air */
   [SIZE_PRESETS.MUSIC_EXPANDED]: {
-    width: 371,
-    aspectRatio: 127 / 371,
-    borderRadius: 44,
+    width: 345,
+    aspectRatio: 112 / 345,
+    borderRadius: 40,
   },
   [SIZE_PRESETS.COMPACT_LONG]: {
     width: 300,
