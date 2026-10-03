@@ -232,15 +232,19 @@ body {
 /* ---------- uc san diego: the click-only double pass ---------- */
 
 /* CLICK ONLY - no page-load animation. At rest the phrase is
-   ordinary ink. On click the TWO phrase-level overlays sweep
-   bottom -> top (navy, then gold chasing directly over it - no
-   white gap), both fade by the settle beat to reveal the ink,
-   and the overlays rest invisible (opacity 0) under a hidden
-   clip: every reset is instant and unseen - a reverse/downward
-   wipe is structurally impossible because nothing ever animates
-   back toward inset(100%). The paint itself is ONE WAAPI timeline
-   built from UCSD_TIMING in UCSDWord.tsx - CSS here owns only the
-   rest states. */
+   ordinary ink. On click:
+   - the PAINT layers (branded fills) reveal bottom -> top with a
+     LINEAR clip front - one geometry mechanism, no mask system.
+   - the LIGHT CREST layers carry the glow inside a narrow band
+     riding the same front (their strip clip is also linear; their
+     intensity breathes ease-in-out via WAAPI - the thinking
+     principle, vertical).
+   PAINT owns color. LIGHT owns luminosity. The overlays rest
+   invisible (opacity 0, clip hidden, no text-shadow) so every
+   reset is instant and unseen - a reverse wipe is structurally
+   impossible because nothing here ever animates toward
+   inset(100%). The choreography is ONE WAAPI timeline built from
+   UCSD_TIMING in UCSDWord.tsx - CSS owns only the rest states. */
 .ucsd-word {
   position: relative;
   display: inline-block;
@@ -258,48 +262,45 @@ body {
   clip-path: inset(100% 0 0 0); /* hidden below the baseline */
   opacity: 0; /* invisible at rest: the idle reset is unseen */
   transition: none; /* the clip NEVER transitions - no reverse wipe */
-  /* the reveal front: the stable clip + a soft 8px mask feather.
-     The mask-SIZE animates (a plain length - it interpolates
-     smoothly in every engine, unlike gradient stops), so the sweep
-     front reads like the thinking band instead of a razor edge. The
-     clip stays as the safety net: if a browser ever fails the mask,
-     the clip alone still hides/reveals correctly. */
-  mask-image: linear-gradient(to top, rgba(0, 0, 0, 0) 0px, rgba(0, 0, 0, 0.4) 3px, #000 8px);
-  -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0) 0px, rgba(0, 0, 0, 0.4) 3px, #000 8px);
-  mask-size: 100% 0%;
-  -webkit-mask-size: 100% 0%;
-  mask-repeat: no-repeat;
-  -webkit-mask-repeat: no-repeat;
-  mask-position: bottom;
-  -webkit-mask-position: bottom;
 }
 
 .ucsd-navy {
-  /* the official UCSD navy - the TEXT pass color (readable tone so
-     the pass reads as BLUE, not black). Glow bloom like the
-     thinking light: a tight bright ring + a wide soft halo - the
-     sweep LIGHTS UP as it rises. */
-  color: #2D5596;
-  text-shadow:
-    0 0 8px rgba(116, 158, 214, 0.7),
-    0 0 22px rgba(77, 118, 186, 0.38);
+  color: #182B49; /* the branded UCSD navy - the paint fill */
 }
 
 .ucsd-gold {
-  /* the official UCSD gold - the TEXT pass color (bright gold so
-     the warm bloom actually lights the dark page). */
-  color: #E3B23C;
-  text-shadow:
-    0 0 8px rgba(240, 202, 103, 0.7),
-    0 0 22px rgba(227, 178, 60, 0.38);
+  color: #C69214; /* the branded UCSD gold - the paint fill */
+}
+
+/* the LIGHT CRESTS: duplicates of the phrase, visible only inside a
+   narrow band (14% of the phrase box, centered on the moving paint
+   front). Their color is the bright LIGHT tint of the pass; the
+   glow (text-shadow) and the band position are animated by WAAPI -
+   nothing here at rest. */
+.ucsd-navy-crest,
+.ucsd-gold-crest {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  clip-path: inset(86% 0 0 0); /* the band parked at the bottom */
+  opacity: 0; /* the light is off at rest */
+  transition: none;
+}
+
+.ucsd-navy-crest {
+  color: #4A76B8; /* the navy LIGHT tint */
+}
+
+.ucsd-gold-crest {
+  color: #E3B23C; /* the gold LIGHT tint */
 }
 
 /* the trident: a fixed-size HTML wrapper holding TWO perfectly
    overlapping SVGs (staff layer + head layer, same viewBox). The
    FORMATION clips the HTML layer wrappers - predictable on every
    browser/mobile - never SVG <g> elements. Rest = fully concealed;
-   WAAPI reveals staff with the navy window and head with the gold
-   window. Both layers are GOLD: the text passes set TIMING only,
+   WAAPI reveals staff with the navy front and head with the gold
+   front. Both layers are GOLD: the text passes set TIMING only,
    not color. */
 .trident-mark {
   position: relative;
@@ -313,17 +314,6 @@ body {
   inset: 0;
   clip-path: inset(100% 0 0 0); /* concealed until the reveal */
   transition: none;
-  /* the same soft 8px mask feather as the phrase overlays - the
-     formation front rides on mask-size (a smooth length), with the
-     clip as the safety net */
-  mask-image: linear-gradient(to top, rgba(0, 0, 0, 0) 0px, rgba(0, 0, 0, 0.4) 3px, #000 8px);
-  -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0) 0px, rgba(0, 0, 0, 0.4) 3px, #000 8px);
-  mask-size: 100% 0%;
-  -webkit-mask-size: 100% 0%;
-  mask-repeat: no-repeat;
-  -webkit-mask-repeat: no-repeat;
-  mask-position: bottom;
-  -webkit-mask-position: bottom;
 }
 
 .trident-mark svg {
@@ -348,6 +338,8 @@ body {
   will-change: transform;
   pointer-events: none;
 }
+
+
 
 /* ---------- chiba lab: the one-time letter cascade mini ---------- */
 
