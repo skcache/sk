@@ -275,13 +275,23 @@ body {
 }
 
 .ucsd-navy {
-  color: #182B49; /* the official UCSD navy - the TEXT pass color */
-  text-shadow: 0 1px 10px rgba(24, 43, 73, 0.22); /* the settled glow */
+  /* the official UCSD navy - the TEXT pass color (readable tone so
+     the pass reads as BLUE, not black). Glow bloom like the
+     thinking light: a tight bright ring + a wide soft halo - the
+     sweep LIGHTS UP as it rises. */
+  color: #2D5596;
+  text-shadow:
+    0 0 8px rgba(116, 158, 214, 0.7),
+    0 0 22px rgba(77, 118, 186, 0.38);
 }
 
 .ucsd-gold {
-  color: #C69214; /* the official UCSD gold - the TEXT pass color */
-  text-shadow: 0 1px 10px rgba(198, 146, 20, 0.18); /* the settled glow */
+  /* the official UCSD gold - the TEXT pass color (bright gold so
+     the warm bloom actually lights the dark page). */
+  color: #E3B23C;
+  text-shadow:
+    0 0 8px rgba(240, 202, 103, 0.7),
+    0 0 22px rgba(227, 178, 60, 0.38);
 }
 
 /* the trident: a fixed-size HTML wrapper holding TWO perfectly
