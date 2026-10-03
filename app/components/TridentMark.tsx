@@ -28,10 +28,8 @@ function TridentMark({
     <span className="trident-mark" style={{ width, height }} aria-hidden="true" ref={markRef}>
       <span className="trident-staff-layer" ref={staffRef}>
         <svg viewBox={viewBox} width={width} height={height}>
-          {/* the long thin shaft, FLARING into the collar region so
-              the shaft and the head read as ONE continuous object
-              (a thin line meeting a taller block looked broken) */}
-          <path d="M82 17.5 L82 30.5 L10 23.5 Q5 23.6 5 21.5 L10 19.5 Z" fill={GOLD} />
+          {/* the long thin shaft (1ad96e geometry) */}
+          <path d="M82 19.5 L82 24.5 L10 23.5 Q5 23.6 5 21.5 L10 19.5 Z" fill={GOLD} />
         </svg>
       </span>
       <span className="trident-head-layer" ref={headRef}>

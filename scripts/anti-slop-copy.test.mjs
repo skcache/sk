@@ -322,38 +322,43 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(ucsd.includes("TridentMark"), true, "trident asset missing");
   assert.equal(ucsd.includes("UCSD_TIMING"), true, "the one timing contract missing");
   assert.equal(ucsd.includes("total: 900"), true, "the phrase must be ink by 900ms");
-  assert.equal(ucsd.includes("navyEnd: 340"), true, "navy front must end at 340ms");
-  assert.equal(ucsd.includes("goldStart: 250"), true, "gold chase must begin at 250ms");
-  assert.equal(ucsd.includes("goldEnd: 640"), true, "gold front must end at 640ms");
-  assert.equal(ucsd.includes("settleEnd: 800"), true, "the settle must begin at 800ms");
+  assert.equal(ucsd.includes("navyEnd: 300"), true, "navy front must end at 300ms");
+  assert.equal(ucsd.includes("goldStart: 260"), true, "gold chase must begin at 260ms");
+  assert.equal(ucsd.includes("goldEnd: 610"), true, "gold front must end at 610ms");
+  assert.equal(ucsd.includes("settleEnd: 780"), true, "the settle must begin at 780ms");
   assert.equal(ucsd.includes("hold: 90"), true, "the completion beat must be 90ms");
-  // the 9ef choreography: RISE_EASE drives the reveals + the glow envelopes
-  assert.equal(ucsd.includes("RISE_EASE"), true, "the 9ef rise ease missing");
-  assert.equal(ucsd.includes("cubic-bezier(0.22, 1, 0.36, 1)"), true, "the 9ef rise curve missing");
-  assert.equal(ucsd.includes("GLOW_NAVY"), true, "the navy glow envelope missing");
-  assert.equal(ucsd.includes("GLOW_GOLD"), true, "the gold glow envelope missing");
-  assert.equal(ucsd.includes("offset: 0.55, textShadow"), true, "the glow peak must ride mid-reveal");
-  assert.equal(ucsd.includes("settle(navyRef.current"), true, "the navy settle fade missing");
-  assert.equal(ucsd.includes("settle(goldRef.current"), true, "the gold settle fade missing");
-  assert.equal(ucsd.includes("duration: T.total - T.settleEnd"), true, "the 800-900 settle window missing");
-  assert.equal(ucsd.includes("delay: T.settleEnd"), true, "the settle must start at settleEnd");
+  // the 1ad96e rise easing drives the GEOMETRY - exact two-keyframe reveals
+  assert.equal(ucsd.includes("const EASE = \"cubic-bezier(0.45, 0, 0.55, 1)\""), true, "the 1ad rise ease missing");
+  assert.equal(ucsd.includes("clipPath: \"inset(100% 0 0 0)\""), true, "the two-keyframe reveal start missing");
+  assert.equal(ucsd.includes("clipPath: \"inset(0 0 0 0)\""), true, "the two-keyframe reveal end missing");
+  assert.equal(ucsd.includes("RISE_EASE"), false, "the 9ef-era ease must be gone");
+  assert.equal(ucsd.includes("cubic-bezier(0.22, 1, 0.36, 1)"), false, "the 9ef-era ease must be gone");
+  // LIGHT is SEPARATE from geometry: its own ease-in-out textShadow anim
+  assert.equal(ucsd.includes("const GLOW_EASE = \"ease-in-out\""), true, "the light-only ease missing");
+  assert.equal(ucsd.includes("NAVY_GLOW_PEAK"), true, "the navy light peak missing");
+  assert.equal(ucsd.includes("0 0 9px rgba(80, 125, 190, 0.35)"), true, "the thinking-like navy glow peak missing");
+  assert.equal(ucsd.includes("0 0 5px rgba(80, 125, 190, 0.15)"), true, "the navy settled glow missing");
+  assert.equal(ucsd.includes("0 0 9px rgba(240, 202, 103, 0.38)"), true, "the thinking-like gold glow peak missing");
+  assert.equal(ucsd.includes("0 0 5px rgba(240, 202, 103, 0.16)"), true, "the gold settled glow missing");
+  assert.equal(ucsd.includes("offset: 0.5, textShadow"), true, "the light peak must ride mid-reveal");
   // the staff/head formation split: navy timing builds the staff,
   // gold timing builds the head - both gold
-  assert.equal(ucsd.includes("clip(staffRef.current, T.navyEnd - T.navyStart, T.navyStart)"), true, "staff must build with the navy pass");
-  assert.equal(ucsd.includes("clip(headRef.current, T.goldEnd - T.goldStart, T.goldStart)"), true, "head must build with the gold pass");
+  assert.equal(ucsd.includes("reveal(staffRef.current, T.navyEnd - T.navyStart, T.navyStart, false)"), true, "staff must build with the navy pass");
+  assert.equal(ucsd.includes("reveal(headRef.current, T.goldEnd - T.goldStart, T.goldStart, false)"), true, "head must build with the gold pass");
   assert.equal(ucsd.includes("staffRef"), true, "the staff layer ref missing");
   assert.equal(ucsd.includes("headRef"), true, "the head layer ref missing");
-  // the completion shimmer: tiny 6px pulse at total, then the throw
-  assert.equal(ucsd.includes("drop-shadow(0 0 6px rgba(198, 146, 20, 0.55))"), true, "the 9ef completion shimmer missing");
-  assert.equal(ucsd.includes("opacity: 0.97"), true, "the shimmer hold missing");
-  assert.equal(ucsd.includes("T.total + T.hold"), true, "the throw must wait for the full settle + beat");
+  // the completion pulse: tiny drop-shadow + brightness 1.06, NO opacity change
+  assert.equal(ucsd.includes("drop-shadow(0 0 6px rgba(242, 193, 78, 0.4)) brightness(1.06)"), true, "the restrained completion pulse missing");
+  assert.equal(ucsd.includes("T.total + T.hold"), true, "the throw must wait for the full settle + hold");
+  // the 1ad thin-staff trident geometry (pinned against the file read below)
+  assert.equal(ucsd.includes("duration: T.goldEnd"), false, "the one-phase build era must be gone");
   // the settled CSS glow (the resting state of each painted overlay)
-  assert.equal(css.includes("text-shadow: 0 1px 10px rgba(24, 43, 73, 0.22)"), true, "the 9ef navy settled glow missing");
-  assert.equal(css.includes("text-shadow: 0 1px 10px rgba(198, 146, 20, 0.18)"), true, "the 9ef gold settled glow missing");
-  // no later-era systems: no constant 8px shadow, no whole-mark single clip
-  assert.equal(ucsd.includes("textShadow"), true, "the glow envelope must animate the shadow");
-  assert.equal(ucsd.includes('duration: T.goldEnd, delay: 0'), false, "the whole-mark one-phase build must be gone - staff/head split restored");
-  assert.equal(css.includes("0 0 8px rgba(80, 125, 190, 0.3)"), false, "the constant shadow era must be gone");
+  assert.equal(css.includes("text-shadow: 0 0 5px rgba(80, 125, 190, 0.15)"), true, "the navy settled glow missing");
+  assert.equal(css.includes("text-shadow: 0 0 5px rgba(240, 202, 103, 0.16)"), true, "the gold settled glow missing");
+  // no later-era leftovers: no 9ef envelope constants, no brightness 1.06 absent, no one-phase build
+  assert.equal(ucsd.includes("GLOW_NAVY ="), false, "the 9ef glow-array era must be gone");
+  assert.equal(ucsd.includes("0 1px 10px"), false, "the 9ef offsets-style glow must be gone");
+  assert.equal(ucsd.includes("settle(navyRef"), false, "the 9ef settle helper must be gone");
   assert.equal(ucsd.includes("GLOW_STAGGER"), false, "the per-letter glow wave must be gone");
   assert.equal(ucsd.includes("CREST_LETTER_MS"), false, "the crest letter envelope must be gone");
   assert.equal(ucsd.includes("ucsd-pl"), false, "the per-letter paint spans must be gone");
@@ -368,14 +373,12 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(ucsd.includes("WebkitMaskSize"), false, "the webkit mask feather must be gone");
   assert.equal(ucsd.includes('duration: T.goldEnd, delay: 0'), false, "the whole-mark one-phase build must be gone - staff/head split restored");
   assert.equal(ucsd.includes("staffRef"), true, "the staff layer ref must be restored for the navy-timed reveal");
-  // the 9ef glow envelopes ride the same clock as the reveals
-  assert.equal(ucsd.includes("0 1px 10px rgba(24, 43, 73, 0.5)"), true, "the navy soft peak glow missing");
-  assert.equal(ucsd.includes("0 1px 10px rgba(198, 146, 20, 0.42)"), true, "the gold soft peak glow missing");
-  assert.equal(ucsd.includes("0 0 14px"), false, "the big halos must be gone - restrained 8px glow only");
+  assert.equal(ucsd.includes("0 0 14px"), false, "the big halos must be gone - restrained glow only");
   assert.equal(ucsd.includes("drop-shadow(0 0 6px"), true, "the restrained completion bloom missing");
   assert.equal(ucsd.includes("brightness(1.25)"), false, "the giant completion brightness must be gone");
   assert.equal(ucsd.includes("opacity: 0.92"), false, "the trident must never go translucent during the glint");
-  assert.equal(ucsd.includes("brightness(1.08)"), false, "the 9ef shimmer is a pure drop-shadow pulse - no brightness filter");
+  assert.equal(ucsd.includes("brightness(1.08)"), false, "the 9ef-era brightness must be gone - the 1ad pulse uses 1.06");
+  assert.equal(ucsd.includes("opacity: 0.97"), false, "the 9ef-era shimmer translucency must be gone");
   assert.equal(ucsd.includes("T.total + T.hold"), true, "the throw must wait for the full settle + hold");
   assert.equal(ucsd.includes("rotate("), true, "the throw rotation missing");
   assert.equal(ucsd.includes("const t = timers.current"), false, "cleanup must read the CURRENT refs (no stale array capture)");
@@ -418,6 +421,9 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(trident.includes("trident-head-layer"), true, "the head HTML layer missing");
   assert.equal(trident.includes('className="ucsd-staff"'), false, "SVG <g> clipping must be gone");
   assert.equal(trident.includes('className="ucsd-head"'), false, "SVG <g> clipping must be gone");
+  // the 1ad thin-staff geometry: the shaft is restored, the flared staff is gone
+  assert.equal(trident.includes("M82 19.5 L82 24.5"), true, "the 1ad thin staff must be restored");
+  assert.equal(trident.includes("M82 17.5 L82 30.5"), false, "the flared staff must be gone");
   // shared identity language: plain letter at rest, live mark box opens
   for (const cls of ["o-letter", "k-letter", "o-markbox", "gdg-markbox", ".k-markbox", ".o-mark", ".gdg-mark"]) {
     assert.equal(css.includes(cls), true, `identity class missing: ${cls}`);

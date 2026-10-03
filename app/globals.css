@@ -271,12 +271,12 @@ body {
 
 .ucsd-navy {
   color: #182B49; /* the official UCSD navy - the TEXT pass color */
-  text-shadow: 0 1px 10px rgba(24, 43, 73, 0.22); /* the settled glow */
+  text-shadow: 0 0 5px rgba(80, 125, 190, 0.15); /* the settled glow */
 }
 
 .ucsd-gold {
   color: #C69214; /* the official UCSD gold - the TEXT pass color */
-  text-shadow: 0 1px 10px rgba(198, 146, 20, 0.18); /* the settled glow */
+  text-shadow: 0 0 5px rgba(240, 202, 103, 0.16); /* the settled glow */
 }
 
 /* the trident: a fixed-size HTML wrapper holding TWO perfectly
