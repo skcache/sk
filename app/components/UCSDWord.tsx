@@ -27,6 +27,7 @@ const UCSD_TIMING = {
   goldStart: 230, // gold chases - clearly before navy finishes
   goldEnd: 640, // gold paint + head front (linear)
   navyCrestFade: 540, // navy light hands off to gold
+  navyPaintFade: 560, // the navy wash yields as the gold covers
   goldCrestFade: 790, // gold bloom exhales into the ink
   settleStart: 670, // paint colors begin fading (gold first)
   shimmerAt: 645, // trident completion bloom (head done at 640)
@@ -54,16 +55,27 @@ const RAISE_CLEARANCE = 40;
 
 const PHRASE = "UC San Diego";
 
-/* BAND: the light-crest strip - 14% of the phrase box, centered on
-   the moving paint front (about 20% of the glyph height - soft
+/* PREMIUM LIGHT MODEL (the thinking principle):
+   - DIM: like the thinking letters (rgba(243,241,234,.5)), the
+     whole phrase goes QUIET during the run - the base ink breathes
+     down to DIM and back, so the light reads against darkness.
+   - WASH: the paints are luminous washes, not solid fills - the
+     letters keep their luminance under the brand color.
+   - CREST: the bright tinted light rides the moving front with a
+     thinking-scale glow (tight 7px + faint 14px halo). */
+const DIM = 0.48;
+const WASH = 0.72;
+
+/* BAND: the light-crest strip - 16% of the phrase box, centered on
+   the moving paint front (about 24% of the glyph height - soft
    illumination, not a razor line). The strip slides bottom -> top
    LINEARLY with the front. */
-const BAND = "86% 0 0 0";
+const BAND = "84% 0 0 0";
 
 /* The crest light colors: brighter than the branded paint fills -
    PAINT stays branded, LIGHT makes it luminous. */
-const NAVY_CREST_GLOW = `0 0 6px rgba(80, 125, 190, 0.55), 0 0 12px rgba(80, 125, 190, 0.26)`;
-const GOLD_CREST_GLOW = `0 0 6px rgba(240, 202, 103, 0.55), 0 0 12px rgba(240, 202, 103, 0.26)`;
+const NAVY_CREST_GLOW = `0 0 7px rgba(80, 125, 190, 0.6), 0 0 14px rgba(80, 125, 190, 0.28)`;
+const GOLD_CREST_GLOW = `0 0 7px rgba(240, 202, 103, 0.6), 0 0 14px rgba(240, 202, 103, 0.28)`;
 const NO_GLOW = "0 0 0 rgba(0, 0, 0, 0)";
 
 type UcsdState = "idle" | "building" | "flying";
@@ -99,6 +111,7 @@ export default function UCSDWord() {
   const [state, setState] = useState<UcsdState>("idle");
   const [origin, setOrigin] = useState<{ left: number; top: number } | null>(null);
   const wordRef = useRef<HTMLSpanElement>(null);
+  const baseRef = useRef<HTMLSpanElement>(null);
   const navyRef = useRef<HTMLSpanElement>(null);
   const navyCrestRef = useRef<HTMLSpanElement>(null);
   const goldRef = useRef<HTMLSpanElement>(null);
@@ -193,8 +206,32 @@ export default function UCSDWord() {
       return;
     }
 
+    /* ---- THE DIM: like the thinking letters, the whole phrase
+       goes quiet while the energy runs - the base ink breathes down
+       and back, so the light crest reads against darkness. */
+    const base = baseRef.current;
+    if (base) {
+      runs.push(
+        base.animate(
+          [
+            { opacity: 1 },
+            { offset: 0.1, opacity: DIM },
+            { offset: 0.72, opacity: DIM },
+            { opacity: 1 },
+          ],
+          {
+            duration: T.total,
+            fill: "forwards",
+            easing: "ease-in-out",
+          }
+        )
+      );
+    }
+
     /* ---- PAINT FRONTS: position only, LINEAR, one velocity.
-       clip-path is the ONLY geometry mechanism (no mask system). */
+       clip-path is the ONLY geometry mechanism (no mask system).
+       The paints are luminous WASHES (WASH opacity - the letters
+       keep their luminance under the brand color). */
     const paint = (
       el: HTMLElement | null,
       dur: number,
@@ -206,25 +243,42 @@ export default function UCSDWord() {
       runs.push(
         el.animate(
           [
-            { clipPath: "inset(100% 0 0 0)", opacity: 1 },
-            { clipPath: "inset(0 0 0 0)", opacity: 1 },
+            { clipPath: "inset(100% 0 0 0)", opacity: WASH },
+            { clipPath: "inset(0 0 0 0)", opacity: WASH },
           ],
           { duration: dur, delay, fill: "forwards", easing: "linear" }
         )
       );
-      // the settle: the colors fade into the ink base (gold first;
-      // navy stays beneath it so there is never a white gap)
+      // the settle: the colors fade into the ink base (gold first)
+      if (settleEnd > settleStart) {
+        runs.push(
+          el.animate([{ opacity: WASH }, { opacity: 0 }], {
+            duration: settleEnd - settleStart,
+            delay: settleStart,
+            fill: "forwards",
+            easing: "ease",
+          })
+        );
+      }
+    };
+    // the navy's exit is its yield-below (it must not also run a
+    // later settle anim that could re-open it)
+    paint(navyRef.current, T.navyEnd, 0, 0, 0);
+    paint(goldRef.current, T.goldEnd - T.goldStart, T.goldStart, T.settleStart, T.total - 20);
+
+    // the navy WASH yields as the gold covers it (no muddy stack):
+    // the navy paint fades out right after its front completes
+    const navy = navyRef.current;
+    if (navy) {
       runs.push(
-        el.animate([{ opacity: 1 }, { opacity: 0 }], {
-          duration: settleEnd - settleStart,
-          delay: settleStart,
+        navy.animate([{ opacity: WASH }, { opacity: 0 }], {
+          duration: T.navyPaintFade - T.navyEnd,
+          delay: T.navyEnd,
           fill: "forwards",
-          easing: "ease",
+          easing: "ease-out",
         })
       );
-    };
-    paint(navyRef.current, T.navyEnd, 0, T.settleStart + 20, T.total);
-    paint(goldRef.current, T.goldEnd - T.goldStart, T.goldStart, T.settleStart, T.total - 20);
+    }
 
     /* ---- LIGHT CRESTS: the glow belongs to a narrow band riding
        the moving front. The strip position is LINEAR with the paint
@@ -365,7 +419,7 @@ export default function UCSDWord() {
             fills); the crests own LIGHT (a narrow glowing band
             riding the moving front). No layout shift. */}
         <span className="ucsd-word">
-          <span className="ucsd-base">{PHRASE}</span>
+          <span className="ucsd-base" ref={baseRef}>{PHRASE}</span>
           <span aria-hidden="true" className="ucsd-navy" ref={navyRef}>
             {PHRASE}
           </span>

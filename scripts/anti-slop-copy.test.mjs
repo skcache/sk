@@ -324,7 +324,10 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(ucsd.includes("navyCrestFade: 540"), true, "the navy light must hand off by 540ms");
   assert.equal(ucsd.includes("goldCrestFade: 790"), true, "the gold bloom must exhale by 790ms");
   assert.equal(ucsd.includes("settleStart: 670"), true, "the color settle must begin at 670ms");
+  assert.equal(ucsd.includes("navyPaintFade: 560"), true, "the navy wash must yield as gold covers");
   assert.equal(ucsd.includes("shimmerAt: 645"), true, "the completion bloom timing missing");
+  assert.equal(ucsd.includes("const DIM = 0.48"), true, "the thinking-style base dim missing");
+  assert.equal(ucsd.includes("const WASH = 0.72"), true, "the luminous paint wash missing");
   assert.equal(ucsd.includes("ACTUATION_MS"), true, "the post-release actuation beat missing");
   assert.equal(ucsd.includes("RAISE_CLEARANCE"), true, "the mobile paragraph-clearance raise missing");
   // position moves LINEARLY; only the light intensity eases
