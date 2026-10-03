@@ -235,13 +235,13 @@ test("polish pass: reveal, grain, plaque, affordance, autoplay", () => {
   // UCSD V2: one-time navy->gold double pass, trident pop + stage throw
   assert.equal(css.includes(".ucsd-rise"), true, "UCSD double pass missing");
   assert.equal(css.includes(".ucsd-letter"), true, "per-letter pass missing");
-  assert.equal(css.includes("calc(var(--i) * 34ms)"), true, "cascade stagger missing");
+  assert.equal(css.includes("calc(var(--i) * 34ms)"), false, "the sweep must read DOWN->UP: no left->right letter stagger");
   assert.equal(css.includes(".ucsd-fill .ucsd-letter"), true, "navy fill target missing");
   assert.equal(css.includes(".ucsd-gold .ucsd-letter"), true, "gold handoff target missing");
   assert.equal(css.includes(".ucsd-gold-rise .ucsd-letter"), true, "gold rise target missing");
-  assert.equal(css.includes("#182B49 58%"), true, "navy pass layer missing");
+  assert.equal(css.includes("#2D5596 58%"), true, "readable navy pass layer missing");
   assert.equal(css.includes("#C69214 58%"), true, "gold pass layer missing");
-  assert.equal(css.includes("#182B49 55%"), true, "gold pass must climb over navy (no white gap)");
+  assert.equal(css.includes("#2D5596 55%"), true, "gold pass must climb over navy (no white gap)");
   assert.equal(css.includes("0.4s cubic-bezier"), true, "pass timing missing");
   assert.equal(css.includes(".ucsd-staff"), true, "trident staff build missing");
   assert.equal(css.includes(".ucsd-head"), true, "trident head build missing");
@@ -252,12 +252,12 @@ test("polish pass: reveal, grain, plaque, affordance, autoplay", () => {
   assert.equal(css.includes("build-staff"), true, "staff build hook missing");
   assert.equal(css.includes("build-head"), true, "head build hook missing");
   assert.equal(css.includes("ucsd-fill-navy"), false, "old fill pass must be gone");
-  assert.equal(css.includes("#182B49"), true, "UCSD navy missing");
+  assert.equal(css.includes("#2D5596"), true, "UCSD navy missing");
   assert.equal(css.includes("#C69214"), true, "UCSD gold missing");
   assert.equal(css.includes(".ucsd-painted"), false, "old painted class must be gone");
   assert.equal(css.includes(".ucsd-navy"), false, "old navy segment class must be gone");
   assert.equal(css.includes(".ucsd-gold .ucsd-letter"), true, "gold must rise over the navy");
-  assert.equal(css.includes("#182B49"), true, "UCSD navy missing");
+  assert.equal(css.includes("#2D5596"), true, "UCSD navy missing");
   assert.equal(css.includes("#C69214"), true, "UCSD gold missing");
   assert.equal(css.includes(".ucsd-trident-fly"), true, "viewport trident flight missing");
   assert.equal(css.includes("ucsd-seg-fade"), false, "old fade-out animation must be gone");

@@ -101,7 +101,7 @@ export default function UCSDWord() {
   const throwTrident = useCallback(() => {
     const rect = wordRef.current?.getBoundingClientRect();
     if (!rect) return;
-    setOrigin({ x: rect.left + rect.width / 2, y: rect.top - 30 });
+    setOrigin({ x: rect.left + rect.width / 2, y: rect.top - 32 });
     setFlying(true);
     setFlightRun((r) => r + 1);
   }, []);
@@ -234,7 +234,7 @@ function TridentFlight({
         ref={ref}
         style={{ left: 0, top: 0 }}
       >
-        <TridentMark height={26} />
+        <TridentMark height={28} />
       </div>
     </div>,
     document.body
