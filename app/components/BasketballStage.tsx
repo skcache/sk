@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 
 /**
@@ -35,20 +35,12 @@ export default function BasketballStage({ onDone }: { onDone: () => void }) {
   const rotRef = useRef<HTMLDivElement>(null); // inner: rotation
   const sweepRef = useRef<HTMLSpanElement>(null); // clipped glow band
   const onDoneRef = useRef(onDone);
-  // the fixed overlay must live OUTSIDE any transformed ancestor, or
-  // "fixed" silently becomes relative to the stage - portal to body
-  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     onDoneRef.current = onDone;
   }, [onDone]);
 
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (!mounted) return;
     const el = ref.current;
     const rot = rotRef.current;
     const sweep = sweepRef.current;
@@ -141,7 +133,7 @@ export default function BasketballStage({ onDone }: { onDone: () => void }) {
 
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [mounted]);
+  }, []);
 
   const overlay = (
     <div className="bb-overlay" aria-hidden="true">
@@ -180,5 +172,9 @@ export default function BasketballStage({ onDone }: { onDone: () => void }) {
     </div>
   );
 
-  return mounted ? createPortal(overlay, document.body) : null;
+  // the fixed overlay must live OUTSIDE any transformed ancestor, or
+  // "fixed" silently becomes relative to the stage - portal to body.
+  // This component only spawns client-side (the stage opens on a
+  // click), so document.body is always available.
+  return createPortal(overlay, document.body);
 }
