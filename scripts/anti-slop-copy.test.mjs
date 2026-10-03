@@ -422,12 +422,21 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(inf.includes("state={orbState}"), true, "live orb must use the randomized state");
   assert.equal(inf.includes('size={32}'), true, "orb renders sharp at package size");
   assert.equal(inf.includes("orb-24"), true, "24px orb display wrapper missing");
+  // orb display quality: 28px box, NO overflow clipping on the orb
+  // itself (the canvas caps to the box via max-width/height), and the
+  // probe MUST mirror the live unit exactly (per-glyph spans + 4px
+  // gap) or the spring clips the orb's right edge
+  const orbBlock = css.slice(css.indexOf(".orb-24 {"), css.indexOf(".orb-24 canvas"));
+  assert.equal(orbBlock.includes("width: 28px"), true, "the orb must display at 28px");
+  assert.equal(orbBlock.includes("overflow"), false, "the orb box must never clip its canvas");
+  assert.equal(css.includes(".word-morph-probe-flex {\n  display: inline-flex;\n  align-items: center;\n  gap: 4px;"), true, "the probe gap must match the live unit exactly");
+  assert.equal(inf.includes("<span className=\"thinking-word\">\n            {\"thinking\".split(\"\")"), true, "the probe must mirror the live per-glyph spans (kerning parity)");
   assert.equal(inf.includes("word-morph"), true, "fixed morph slot missing");
   assert.equal(inf.includes("THINK_MS = 2500"), true, "2.5s inference hold missing");
   assert.equal(inf.includes("INFER_ORB_STATES"), true, "random orb states must exist");
   assert.equal(inf.includes("pickOrbState"), true, "per-run random orb selection missing");
   assert.equal(inf.includes("state={orbState}"), true, "live orb must use the randomized state");
-  assert.equal(inf.includes("thinking</span>"), true, "active word is lowercase thinking");
+  assert.equal(inf.includes('{\"thinking\".split(\"\")'), true, "active word is lowercase thinking (per-glyph wave)");
   assert.equal(inf.includes("thinking-word"), true, "native per-letter wave missing");
   assert.equal(inf.includes("tw-wave"), false, "overlay glow must be gone (native wave only)");
   assert.equal(inf.includes('data-text="thinking"'), false, "glow overlay attr must be gone");

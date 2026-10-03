@@ -16,8 +16,8 @@ const pickOrbState = (): OrbState => INFER_ORB_STATES[Math.floor(Math.random() *
  *
  * hard press -> the word becomes ONE inline status unit: a single
  * lowercase `thinking` word with a soft light glow sweeping left ->
- * right across the letters, plus a crisp 24px reasoning orb with a
- * 3px gap beside it. The text crossfades in place - a symmetric
+ * right across the letters, plus a crisp 28px reasoning orb with a
+ * 4px gap beside it. The text crossfades in place - a symmetric
  * 0.18s base-out + 0.18s unit-in crossing so there is no empty
  * window during the open - while the cell springs open, CLIPPING
  * the orb so it is revealed smoothly from behind the word's edge;
@@ -197,15 +197,19 @@ export default function InferenceWord() {
           className="word-morph-probe word-morph-probe-flex"
           aria-hidden="true"
         >
-          <span>thinking</span>
-          <span className="orb-24" aria-hidden="true">
-            <ThinkingOrb
-              state="solving"
-              size={32}
-              theme="dark"
-              paused={!!reduceMotion}
-            />
+          {/* EXACT mirror of the live unit: same per-glyph spans
+              (inline-blocks don't kern - plain text measures ~1.4px
+              short and the spring would clip the orb's right edge),
+              same 4px gap, same orb box + margin. animation:none =
+              the probe only measures, it never animates. */}
+          <span className="thinking-word">
+            {"thinking".split("").map((c, i) => (
+              <span key={i} className="tw" style={{ animation: "none" }}>
+                {c}
+              </span>
+            ))}
           </span>
+          <span className="orb-24" aria-hidden="true" />
         </span>
 
         {/* the live cell: width springs between the two measured widths,

@@ -137,7 +137,9 @@ body {
 .word-morph-probe-flex {
   display: inline-flex;
   align-items: center;
-  gap: 3px;
+  gap: 4px; /* MUST mirror the live unit exactly (gap + orb margin +
+                per-glyph spans) - the measured width is the cell's
+                spring target; any mismatch clips the orb's right edge */
 }
 
 /* the animated cell: inline-grid so both states share one cell and
@@ -209,24 +211,29 @@ body {
   }
 }
 
-/* the orb renders sharp at the package's 32px and DISPLAYS at 24px
-   (canvas CSS size) - the star of the interaction gets a little room
-   to breathe: 24px display plus a 3px gap before the following comma,
-   so the canvas never touches surrounding prose */
+/* the orb renders sharp at the package's 32px (canvas internal =
+   size * dpr, retina-crisp) and DISPLAYS at 28px: a 28px box with
+   flex centering and NO overflow clipping - the canvas (inline
+   32px) is capped to the box by max-width/height, so the FULL orb
+   (including its glow falloff) stays visible; the package's render
+   is supersampled into the 28px display. 4px margin before the
+   following comma (breathing), mirrored by the active unit's 4px
+   gap so the probe measures the exact live width. */
 .orb-24 {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: none;
-  overflow: hidden;
   margin-right: 4px; /* breathing before the following comma */
 }
 
 .orb-24 canvas {
-  width: 24px;
-  height: 24px;
+  display: block; /* kill the inline-baseline seam */
+  max-width: 100%;
+  max-height: 100%; /* the 32px inline canvas caps to the 28px box -
+                       no clipped edges, no resize bookkeeping */
 }
 
 /* ---------- uc san diego: the click-only double pass ---------- */
