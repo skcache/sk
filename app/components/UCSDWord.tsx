@@ -63,8 +63,8 @@ const PHRASE = "UC San Diego";
      letters keep their luminance under the brand color.
    - CREST: the bright tinted light rides the moving front with a
      thinking-scale glow (tight 7px + faint 14px halo). */
-const DIM = 0.48;
-const WASH = 0.72;
+const DIM = 0.5; // the quiet baseline - exactly the thinking letters' dim
+const WASH = 0.8; // the paints are luminous light washes, never dark fills
 
 /* BAND: the light-crest strip - 16% of the phrase box, centered on
    the moving paint front (about 24% of the glyph height - soft

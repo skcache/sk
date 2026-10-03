@@ -240,9 +240,10 @@ test("polish pass: reveal, grain, plaque, affordance, autoplay", () => {
   assert.equal(css.includes(".ucsd-gold"), true, "phrase gold overlay missing");
   assert.equal(css.includes(".ucsd-navy-crest"), true, "navy light crest missing in CSS");
   assert.equal(css.includes(".ucsd-gold-crest"), true, "gold light crest missing in CSS");
-  assert.equal(css.includes("color: #182B49"), true, "the branded navy paint fill missing");
-  assert.equal(css.includes("color: #C69214"), true, "the branded gold paint fill missing");
-  assert.equal(css.includes("#2D5596"), false, "the brightened fake-official navy must be gone (light belongs to the crest)");
+  assert.equal(css.includes("color: #5C87C6"), true, "the navy LIGHT wash missing");
+  assert.equal(css.includes("color: #E3B23C"), true, "the gold LIGHT wash missing");
+  assert.equal(css.includes("color: #8FBCEA"), true, "the navy crest light missing");
+  assert.equal(css.includes("#182B49"), false, "the dark navy fill must be gone (light, not blackout)");
   assert.equal(css.includes("mask-size"), false, "the CSS mask system must be gone");
   assert.equal(css.includes("mask-image"), false, "the CSS mask system must be gone");
   assert.equal(css.includes(".ucsd-navy, .ucsd-gold {"), false, "the old shared rest block must be gone");
@@ -326,8 +327,8 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(ucsd.includes("settleStart: 670"), true, "the color settle must begin at 670ms");
   assert.equal(ucsd.includes("navyPaintFade: 560"), true, "the navy wash must yield as gold covers");
   assert.equal(ucsd.includes("shimmerAt: 645"), true, "the completion bloom timing missing");
-  assert.equal(ucsd.includes("const DIM = 0.48"), true, "the thinking-style base dim missing");
-  assert.equal(ucsd.includes("const WASH = 0.72"), true, "the luminous paint wash missing");
+  assert.equal(ucsd.includes("const DIM = 0.5"), true, "the thinking-style base dim missing");
+  assert.equal(ucsd.includes("const WASH = 0.8"), true, "the luminous paint wash missing");
   assert.equal(ucsd.includes("ACTUATION_MS"), true, "the post-release actuation beat missing");
   assert.equal(ucsd.includes("RAISE_CLEARANCE"), true, "the mobile paragraph-clearance raise missing");
   // position moves LINEARLY; only the light intensity eases

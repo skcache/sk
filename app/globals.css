@@ -265,16 +265,19 @@ body {
 }
 
 .ucsd-navy {
-  color: #182B49; /* the branded UCSD navy - the paint fill */
+  /* the UCSD navy as LIGHT: a luminous blue wash, not a dark fill -
+     the letters stay readable (the thinking light principle) */
+  color: #5C87C6;
 }
 
 .ucsd-gold {
-  color: #C69214; /* the branded UCSD gold - the paint fill */
+  /* the UCSD gold as LIGHT: a luminous warm wash */
+  color: #E3B23C;
 }
 
 /* the LIGHT CRESTS: duplicates of the phrase, visible only inside a
-   narrow band (14% of the phrase box, centered on the moving paint
-   front). Their color is the bright LIGHT tint of the pass; the
+   narrow band (16% of the phrase box, centered on the moving paint
+   front). Their color is the BRIGHTEST light tone of the pass; the
    glow (text-shadow) and the band position are animated by WAAPI -
    nothing here at rest. */
 .ucsd-navy-crest,
@@ -282,17 +285,17 @@ body {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  clip-path: inset(86% 0 0 0); /* the band parked at the bottom */
+  clip-path: inset(84% 0 0 0); /* the band parked at the bottom */
   opacity: 0; /* the light is off at rest */
   transition: none;
 }
 
 .ucsd-navy-crest {
-  color: #5C87C6; /* the navy LIGHT tint (bright - the crest is the light) */
+  color: #8FBCEA; /* the navy crest - the brightest blue light */
 }
 
 .ucsd-gold-crest {
-  color: #E3B23C; /* the gold LIGHT tint */
+  color: #F5D98C; /* the gold crest - the brightest warm light */
 }
 
 /* the trident: a fixed-size HTML wrapper holding TWO perfectly
