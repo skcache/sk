@@ -17,22 +17,26 @@ import {
    press -> the seed is born at the word -> it moves toward the stage
    WHILE the shell begins widening -> the seed arrives as the finished
    Apple-style COMPACT island (235x44) -> ~2s hold with the live
-   waveform -> waveform fades -> art fades -> the shell shrinks AND
-   the seed travels home at the SAME beat (MOVE + SHRINK is one
-   gesture) -> it dissolves into the word -> idle.
-   One clock for the Cult states, the content beats, and the travel. */
+   waveform -> the waveform crossfades out -> the art follows a beat
+   later -> the shell shrinks AND the seed travels home at the SAME
+   beat (MOVE + SHRINK is one gesture) -> the seed dissolves into the
+   word -> idle. Every fade is long, eased in-out, and overlapped. */
 const MUSIC_TIMING = {
   expand: 70, // the shell starts widening while the seed is still moving
   skinFade: 110, // the seed skin fades out almost immediately (one shell)
-  artIn: 190, // album art fades/scale-forms as the shell reaches its width
-  waveIn: 230, // the waveform follows a beat later
-  waveOut: 2700, // the waveform fades (shell still full)
-  artOut: 2880, // the art fades
-  closing: 3000, // the seed skin re-forms under the shell
-  shrink: 3080, // COMPACT -> EMPTY: the shell begins shrinking
-  returnMs: 3080, // SAME beat: the seed travels home WHILE shrinking
-  done: 3400, // the seed dissolves at the word; unmount; idle
+  artIn: 200, // album art fades/scales in as the shell reaches its width
+  waveIn: 280, // the waveform follows a beat later
+  waveOut: 2700, // waveform crossfades out (300ms, eased in-out)
+  artOut: 2860, // art begins fading as the wave's tail settles (crossfade)
+  closing: 3180, // the seed skin re-forms under the shell
+  shrink: 3260, // COMPACT -> EMPTY: the shell begins shrinking
+  returnMs: 3260, // SAME beat: the seed travels home WHILE shrinking
+  dissolve: 3500, // the seed fades into the word (240ms) with a 20ms settled rest
+  done: 3760, // unmount AFTER the dissolve completes; idle
 } as const;
+
+/* the exit fade: long and eased in-out - never a cheap ease-in tail */
+const EXIT_EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
 
 /* The seed's travel spring: near-critical (damping ratio ~1.0) -
    magnetically pulled, no bounce, no float. Motion's ONLY job:
@@ -44,7 +48,7 @@ const SEED_SPRING = {
   mass: 0.8,
 };
 
-type Phase = "opening" | "open" | "closing" | "returning";
+type Phase = "opening" | "open" | "closing" | "returning" | "dissolve";
 
 /**
  * The music egg as Apple's COMPACT Now Playing Dynamic Island:
@@ -125,25 +129,30 @@ function MusicBody({ onDone }: { onDone: () => void }) {
   }, [reduce, schedule]);
 
   // the outer choreography on the SAME absolute clock: the skin fades
-  // as the shell covers it, the content exit fades, and the MOVE+SHRINK
-  // closing begins at the exact beat the shell contracts
+  // as the shell covers it, the content crossfades out (long, eased
+  // in-out, overlapping), and the MOVE+SHRINK closing begins at the
+  // exact beat the shell contracts - then the seed dissolves.
   useEffect(() => {
     if (!origin || !stage || reduce) return;
     schedule(MUSIC_TIMING.skinFade, () => setPhase("open"));
     schedule(MUSIC_TIMING.waveOut, () => {
       const wave = document.querySelector(".dynamic-island-wave");
       if (wave) {
-        wave.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, easing: "ease-in", fill: "forwards" });
+        wave.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, easing: EXIT_EASE, fill: "forwards" });
       }
     });
     schedule(MUSIC_TIMING.artOut, () => {
       const art = document.querySelector(".dynamic-island-art");
       if (art) {
-        art.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, easing: "ease-in", fill: "forwards" });
+        art.animate(
+          [{ opacity: 1, transform: "translateY(-50%) scale(1)" }, { opacity: 0, transform: "translateY(-50%) scale(0.94)" }],
+          { duration: 300, easing: EXIT_EASE, fill: "forwards" }
+        );
       }
     });
     schedule(MUSIC_TIMING.closing, () => setPhase("closing"));
     schedule(MUSIC_TIMING.returnMs, () => setPhase("returning")); // with the shrink
+    schedule(MUSIC_TIMING.dissolve, () => setPhase("dissolve"));
     schedule(MUSIC_TIMING.done, () => onDoneRef.current());
   }, [origin, stage, reduce, schedule]);
 
@@ -195,7 +204,7 @@ function MusicBody({ onDone }: { onDone: () => void }) {
       <span
         className="music-seed-skin"
         aria-hidden="true"
-        style={{ opacity: phase === "open" ? 0 : 1 }}
+        style={{ opacity: phase === "open" || phase === "dissolve" ? 0 : 1 }}
       />
       <span className="music-projectile-island">{island}</span>
     </motion.div>,

@@ -569,8 +569,11 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   // the state machine stays small: external phrase + the shell states
   assert.equal(music.includes('"opening"'), true, "the opening phase missing");
   assert.equal(music.includes('"returning"'), true, "the return phase missing");
+  assert.equal(music.includes('"dissolve"'), true, "the seed dissolve phase missing");
   assert.equal(music.includes("MUSIC_TIMING.shrink"), true, "the shrink beat missing");
-  assert.equal(music.includes("returnMs: 3080"), true, "the MOVE+SHRINK return beat missing");
+  assert.equal(music.includes("returnMs: 3260"), true, "the MOVE+SHRINK return beat missing");
+  assert.equal(music.includes("EXIT_EASE"), true, "the smooth exit curve missing");
+  assert.equal(music.includes("cubic-bezier(0.4, 0, 0.2, 1)"), true, "the eased in-out exit missing");
   assert.equal(music.includes("delay: 2650"), false, "the old cumulative schedule must be gone");
   assert.equal(music.includes("delay: 2920"), false, "the old cumulative schedule must be gone");
   // content leaves BEFORE the shell collapses (no metadata in compact)
