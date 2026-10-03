@@ -8,23 +8,23 @@ import TactileWord from "./TactileWord";
 import TridentMark from "./TridentMark";
 
 /* THE ONE TIMING CONTRACT. Every number of the choreography lives
-   here and nowhere else.
-   - navy paint front: 0 -> navyEnd, ONE straight linear rise
-   - gold paint front: goldStart -> goldEnd (linear), chasing navy
-     before it finishes - zero white gap
-   - goldEnd -> total: BOTH overlays fade to normal ink - no parked
-     gold, no pause at full color
-   - shimmerAt + shimmerDur: the trident completion bloom over the
-     settled ink; cleanBeat of clean fully-formed trident; then the
-     throw at total + cleanBeat. */
+   here and nowhere else:
+   - navy phrase sweep + trident staff reveal: navyStart -> navyEnd
+   - gold chase + trident head reveal: goldStart -> goldEnd
+   - settle: the overlays fade to reveal the ink base by settleEnd
+   - hold: the completion beat - the shimmer window and the gap
+     before the throw
+   - total: the phrase is fully ordinary ink by total
+   The component builds the whole WAAPI timeline from these values;
+   CSS knows only the rest states. No scattered durations anywhere. */
 const UCSD_TIMING = {
-  total: 860, // both overlays fully transparent - normal ink
-  navyEnd: 420, // navy fully painted
-  goldStart: 320, // the chase - well before navy finishes
-  goldEnd: 740, // gold reaches the top
-  shimmerAt: 740, // the trident completion bloom
-  shimmerDur: 80, // 740 -> 820, then neutral
-  cleanBeat: 60, // clean fully-formed trident over SETTLED ink
+  total: 900,
+  navyStart: 0,
+  navyEnd: 340,
+  goldStart: 250,
+  goldEnd: 640,
+  settleEnd: 800,
+  hold: 90,
 };
 
 /* The actuation beat: TactileWord calls onActivate on pointer-up,
@@ -37,6 +37,7 @@ const ACTUATION_MS = 50;
 const MARK_W = 84;
 const MARK_H = 26;
 const FLIGHT_SPEED = 1.1; // px/ms - perceived horizontal speed
+const RISE_EASE = "cubic-bezier(0.22, 1, 0.36, 1)"; // quick, graceful settle
 const THROW_EASE = "cubic-bezier(0.16, 0.8, 0.3, 1)"; // stored energy release
 const THROW_ROTATION = 2.5; // tiny nose-down tilt (deg) on the throw
 /* When the phrase sits mid-paragraph (mobile lines reach under the
@@ -47,29 +48,44 @@ const RAISE_CLEARANCE = 40;
 
 const PHRASE = "UC San Diego";
 
+/* The sweep glow: the bloom rides the reveal - hidden, then rising
+   with the color front, then softening as the layer fully lands.
+   NAVY and GOLD hand off; at settle the glow leaves with the fade. */
+const GLOW_NAVY = [
+  "0 1px 0 rgba(24, 43, 73, 0)",
+  "0 1px 10px rgba(24, 43, 73, 0.5)",
+  "0 1px 10px rgba(24, 43, 73, 0.22)",
+];
+const GLOW_GOLD = [
+  "0 1px 0 rgba(198, 146, 20, 0)",
+  "0 1px 10px rgba(198, 146, 20, 0.42)",
+  "0 1px 10px rgba(198, 146, 20, 0.18)",
+];
+const NO_GLOW = "0 1px 0 rgba(0, 0, 0, 0)";
+
 type UcsdState = "idle" | "building" | "flying";
 
 /**
  * UC San Diego - CLICK ONLY. No page-load animation: at load the
- * phrase is ordinary site ink.
+ * phrase is ordinary site ink and stays that way until the user
+ * clicks it.
  *
- * CLICK: PRESS -> SNAP (TactileWord) -> ACTUATION_MS beat -> the
- * WHOLE PHRASE sweeps NAVY bottom -> top with a restrained navy
- * glow riding the rise, then GOLD chases directly over it (before
- * navy finishes - zero white gap) with its own warm glow. The
- * lights hand off (navy glow yields as gold takes ownership), then
- * both overlays fade almost immediately after gold completes, and
- * the phrase is ordinary ink again by total.
+ * CLICK: PRESS -> SNAP (the TactileWord key) -> ACTUATION_MS beat ->
+ * the phrase sweeps NAVY bottom -> top with a soft navy bloom riding
+ * the reveal, GOLD chases directly over it (no white gap) with its
+ * own warm bloom handing off from the navy, then both fade to reveal
+ * the ink base. While the colors rise, the minimalist GOLD trident
+ * materializes above the phrase (staff with the navy timing, head
+ * with the gold timing - the passes set TIMING only). Once the
+ * phrase is fully back to ink the trident catches a tiny golden
+ * shimmer (construction complete), settles, and flies left -> right
+ * off the viewport. Then everything returns to IDLE.
  *
- * While the colors rise, the minimalist GOLD trident materializes
- * above the phrase as ONE unit (the whole mark reveals on the same
- * paint clock), catches one tiny warm completion bloom, holds
- * cleanly over the settled ink, then flies left -> right off the
- * viewport. Then everything returns to IDLE.
- *
- * The paint is TWO whole-phrase overlay spans: ONE clip reveal per
- * overlay (linear) + ONE glow envelope per overlay. No letters are
- * animated individually, no stagger, no masks, no crests.
+ * The paint + formation + glow + shimmer are ONE WAAPI timeline from
+ * UCSD_TIMING; the flight is ONE deterministic WAAPI transform
+ * (distance-based duration, translate3d, no per-frame physics). The
+ * overlays rest at opacity 0, so all resets are instant and
+ * invisible - a reverse wipe is structurally impossible.
  */
 export default function UCSDWord() {
   const reduceMotion = useReducedMotion();
@@ -78,6 +94,8 @@ export default function UCSDWord() {
   const wordRef = useRef<HTMLSpanElement>(null);
   const navyRef = useRef<HTMLSpanElement>(null);
   const goldRef = useRef<HTMLSpanElement>(null);
+  const staffRef = useRef<HTMLSpanElement>(null);
+  const headRef = useRef<HTMLSpanElement>(null);
   const markRef = useRef<HTMLSpanElement>(null);
   const flyRef = useRef<HTMLDivElement>(null);
   const anims = useRef<Animation[]>([]);
@@ -114,6 +132,8 @@ export default function UCSDWord() {
         pendingRef.current = false;
         const rect = wordRef.current?.getBoundingClientRect();
         if (!rect) return;
+        // SPAWN: mathematically centered above the phrase using the
+        // mark's actual rendered width/height - no eyeballed offsets.
         const left = rect.left + rect.width / 2 - MARK_W / 2;
         const top = rect.top - MARK_H - 6;
         // the trident must never render over the surrounding words:
@@ -154,15 +174,9 @@ export default function UCSDWord() {
     );
   }, [state]);
 
-  // BUILDING: the paint is TWO whole-phrase overlays, each with
-  // EXACTLY ONE WAAPI animation that owns ONLY clipPath + opacity.
-  // The fronts move at ONE CONSTANT SPEED (whole animation linear -
-  // no easing, no mid anchor, no glow keyframe: geometry is never
-  // controlled by glow timing). The visible luminosity comes from a
-  // constant subtle CSS text-shadow on each overlay - the glow
-  // appears to travel because only the REVEALED part of the glowing
-  // overlay is visible. The glow is never animated - it is a
-  // constant property of the painted layer.
+  // BUILDING: the phrase paint + glow + the trident formation - one
+  // WAAPI timeline from the ONE timing contract. The trident never
+  // moves here; only its reveal progresses.
   useEffect(() => {
     if (state !== "building" || !origin) return;
     const T = UCSD_TIMING;
@@ -173,92 +187,109 @@ export default function UCSDWord() {
       return;
     }
 
-    // NAVY - ONE animation, 0 -> 860, linear:
-    //   0:                 hidden
-    //   420/860:           fully painted
-    //   420-740:           stays under the gold (never fades early)
-    //   740/860 -> 1:      clean fade with the gold - normal ink
-    {
-      const el = navyRef.current;
-      if (el) {
-        runs.push(
-          el.animate(
-            [
-              { offset: 0, clipPath: "inset(100% 0 0 0)", opacity: 1 },
-              { offset: T.navyEnd / T.total, clipPath: "inset(0 0 0 0)", opacity: 1 },
-              { offset: T.goldEnd / T.total, clipPath: "inset(0 0 0 0)", opacity: 1 },
-              { offset: 1, clipPath: "inset(0 0 0 0)", opacity: 0 },
-            ],
-            { duration: T.total, easing: "linear", fill: "forwards" }
-          )
-        );
-      }
-    }
+    const clip = (el: HTMLElement | null, dur: number, delay: number) => {
+      if (!el) return;
+      runs.push(
+        el.animate(
+          [
+            { clipPath: "inset(100% 0 0 0)" },
+            { clipPath: "inset(0 0 0 0)" },
+          ],
+          { duration: dur, delay, fill: "forwards", easing: RISE_EASE }
+        )
+      );
+    };
 
-    // GOLD - ONE animation, 320 -> 860, linear:
-    //   0:                 hidden - chases navy before it finishes
-    //   420/540:           reaches the top (740 absolute)
-    //   420/540 -> 1:      clean fade with the navy (740 -> 860)
-    {
-      const el = goldRef.current;
-      if (el) {
-        runs.push(
-          el.animate(
-            [
-              { offset: 0, clipPath: "inset(100% 0 0 0)", opacity: 1 },
-              {
-                offset: (T.goldEnd - T.goldStart) / (T.total - T.goldStart),
-                clipPath: "inset(0 0 0 0)",
-                opacity: 1,
-              },
-              { offset: 1, clipPath: "inset(0 0 0 0)", opacity: 0 },
-            ],
-            {
-              duration: T.total - T.goldStart,
-              delay: T.goldStart,
-              easing: "linear",
-              fill: "forwards",
-            }
-          )
-        );
-      }
-    }
+    // phrase overlays: reveal + the glow riding the SAME clock
+    const paint = (
+      el: HTMLElement | null,
+      dur: number,
+      delay: number,
+      glow: string[]
+    ) => {
+      if (!el) return;
+      // the clip reveal: one clean two-keyframe rise
+      runs.push(
+        el.animate(
+          [
+            { clipPath: "inset(100% 0 0 0)", opacity: 1 },
+            { clipPath: "inset(0 0 0 0)", opacity: 1 },
+          ],
+          { duration: dur, delay, fill: "forwards", easing: RISE_EASE }
+        )
+      );
+      // the glow: hidden -> bloom peaks near the moving front ->
+      // softens as the layer lands (parallel, same clock)
+      runs.push(
+        el.animate(
+          [
+            { textShadow: glow[0] },
+            { offset: 0.55, textShadow: glow[1] },
+            { textShadow: glow[2] },
+          ],
+          { duration: dur, delay, fill: "forwards", easing: RISE_EASE }
+        )
+      );
+    };
 
-    // the trident MATERIALIZES AS ONE UNIT on the paint clock: the
-    // whole mark reveals bottom -> top and finishes exactly as the
-    // phrase finishes painting (then the completion bloom).
+    // navy phrase sweep + staff reveal: the same numbers
+    paint(navyRef.current, T.navyEnd - T.navyStart, T.navyStart, GLOW_NAVY);
+    clip(staffRef.current, T.navyEnd - T.navyStart, T.navyStart);
+    // gold chases + head reveal: the same numbers, the same delay
+    paint(goldRef.current, T.goldEnd - T.goldStart, T.goldStart, GLOW_GOLD);
+    clip(headRef.current, T.goldEnd - T.goldStart, T.goldStart);
+
+    // settle: both overlays fade - the glow leaves with them
+    const settle = (el: HTMLElement | null, shadow: string) => {
+      if (!el) return;
+      runs.push(
+        el.animate(
+          [
+            { opacity: 1, textShadow: shadow },
+            { opacity: 0, textShadow: NO_GLOW },
+          ],
+          {
+            duration: T.total - T.settleEnd,
+            delay: T.settleEnd,
+            fill: "forwards",
+            easing: "ease",
+          }
+        )
+      );
+    };
+    settle(navyRef.current, GLOW_NAVY[2]);
+    settle(goldRef.current, GLOW_GOLD[2]);
+
+    // phrases are fully ordinary ink by T.total. The trident then
+    // catches a tiny golden shimmer (construction complete), the
+    // shimmer settles, and the throw starts after the completion
+    // beat - never while the text is still fading.
     const mark = markRef.current;
     if (mark) {
       runs.push(
         mark.animate(
           [
-            { clipPath: "inset(100% 0 0 0)" },
-            { clipPath: "inset(0 0 0 0)" },
-          ],
-          { duration: T.goldEnd, delay: 0, fill: "forwards", easing: "linear" }
-        )
-      );
-      // the completion bloom: tiny warm glint (LOCKED, not
-      // POWER-UP); the filter is neutral before any flight frame
-      runs.push(
-        mark.animate(
-          [
-            { filter: "drop-shadow(0 0 0 rgba(242, 193, 78, 0)) brightness(1)" },
+            { filter: "drop-shadow(0 0 0 rgba(198, 146, 20, 0))", opacity: 1 },
             {
               offset: 0.5,
-              filter: "drop-shadow(0 0 6px rgba(242, 193, 78, 0.4)) brightness(1.08)",
+              filter: "drop-shadow(0 0 6px rgba(198, 146, 20, 0.55))",
+              opacity: 0.97,
             },
-            { filter: "drop-shadow(0 0 0 rgba(242, 193, 78, 0)) brightness(1)" },
+            { filter: "drop-shadow(0 0 0 rgba(198, 146, 20, 0))", opacity: 1 },
           ],
-          { duration: T.shimmerDur, delay: T.shimmerAt, fill: "forwards", easing: "ease-in-out" }
+          {
+            duration: T.hold - 20,
+            delay: T.total,
+            fill: "forwards",
+            easing: "ease-in-out",
+          }
         )
       );
     }
 
-    // the throw waits for the phrase to be FULLY settled ink plus a
-    // clean beat - the word is completely normal before the flight
+    // completion beat, then the throw
     timers.current.push(
-      setTimeout(() => setState("flying"), T.total + T.cleanBeat)
+      setTimeout(() => setState("flying"), T.total + T.hold)
     );
   }, [state, origin, reduceMotion]);
 
@@ -287,11 +318,10 @@ export default function UCSDWord() {
   return (
     <TactileWord label="UC San Diego" onActivate={activate} className="whitespace-nowrap">
       <span className="word-anchor" ref={wordRef}>
-        {/* the phrase-level stack: ONE base + TWO whole-phrase
-            overlays. The base is the untouched normal ink and
-            defines the dimensions. The navy overlay sweeps bottom ->
-            top; the gold overlay chases directly over it. No
-            per-letter spans, no stagger, no masks, no crests. */}
+        {/* the phrase-level paint stack: ONE base + TWO overlays.
+            The base defines the dimensions; the overlays are
+            absolute duplicates (aria-hidden) that animate their own
+            clip + glow - no layout shift, no per-glyph work. */}
         <span className="ucsd-word">
           <span className="ucsd-base">{PHRASE}</span>
           <span aria-hidden="true" className="ucsd-navy" ref={navyRef}>
@@ -305,6 +335,8 @@ export default function UCSDWord() {
           <TridentBuild
             origin={origin}
             state={state}
+            staffRef={staffRef}
+            headRef={headRef}
             markRef={markRef}
             flyRef={flyRef}
           />
@@ -316,20 +348,23 @@ export default function UCSDWord() {
 
 /**
  * The trident portal: mounted at click start, locked at its spawn
- * position (the formation moves NOTHING - only the reveal clip
- * progresses). Once the phrase has fully settled and the completion
- * beat passes, the wrapper's transform is animated by the parent's
- * WAAPI flight. Rendered via portal so the coordinates are
- * viewport-true.
+ * position (the formation moves NOTHING - only the reveal clips).
+ * Once the phrase has fully settled and the completion beat passes,
+ * the wrapper's transform is animated by the parent's WAAPI flight.
+ * Rendered via portal so the coordinates are viewport-true.
  */
 function TridentBuild({
   origin,
   state,
+  staffRef,
+  headRef,
   markRef,
   flyRef,
 }: {
   origin: { left: number; top: number };
   state: "building" | "flying";
+  staffRef: RefObject<HTMLSpanElement | null>;
+  headRef: RefObject<HTMLSpanElement | null>;
   markRef: RefObject<HTMLSpanElement | null>;
   flyRef: RefObject<HTMLDivElement | null>;
 }) {
@@ -341,7 +376,13 @@ function TridentBuild({
         style={{ left: origin.left, top: origin.top, width: MARK_W, height: MARK_H }}
         data-state={state}
       >
-        <TridentMark width={MARK_W} height={MARK_H} markRef={markRef} />
+        <TridentMark
+          width={MARK_W}
+          height={MARK_H}
+          staffRef={staffRef}
+          headRef={headRef}
+          markRef={markRef}
+        />
       </div>
     </div>,
     document.body

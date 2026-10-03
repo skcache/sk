@@ -10,15 +10,23 @@ const GOLD = "#C69214";
    (predictable on every browser/mobile), never SVG <g> elements.
    One solid gold color, five flat paths, flat minimal icon language.
    Horizontal, pointing right. ---- */
-function TridentMark({ width = 84, height = 26, markRef }: {
+function TridentMark({
+  width = 84,
+  height = 26,
+  staffRef,
+  headRef,
+  markRef,
+}: {
   width?: number;
   height?: number;
+  staffRef?: Ref<HTMLSpanElement>;
+  headRef?: Ref<HTMLSpanElement>;
   markRef?: Ref<HTMLSpanElement>;
 }) {
   const viewBox = "0 0 140 44";
   return (
     <span className="trident-mark" style={{ width, height }} aria-hidden="true" ref={markRef}>
-      <span className="trident-staff-layer">
+      <span className="trident-staff-layer" ref={staffRef}>
         <svg viewBox={viewBox} width={width} height={height}>
           {/* the long thin shaft, FLARING into the collar region so
               the shaft and the head read as ONE continuous object
@@ -26,7 +34,7 @@ function TridentMark({ width = 84, height = 26, markRef }: {
           <path d="M82 17.5 L82 30.5 L10 23.5 Q5 23.6 5 21.5 L10 19.5 Z" fill={GOLD} />
         </svg>
       </span>
-      <span className="trident-head-layer">
+      <span className="trident-head-layer" ref={headRef}>
         <svg viewBox={viewBox} width={width} height={height}>
           {/* the small collar */}
           <path d="M82 17.5 L92 19.5 L92 28.5 L82 30.5 Z" fill={GOLD} />
