@@ -496,28 +496,38 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(bb.includes("useStage"), true, "basketball must open the stage");
   assert.equal(bb.includes("word-ball"), false, "inline word ball must be gone");
   const bbStage = read("components/BasketballStage.tsx");
-  assert.equal(bbStage.includes("DUR_MS = 2850"), true, "the ~2.85s court crossing missing");
+  assert.equal(bbStage.includes("DUR_MS = 3200"), true, "the ~3.2s court crossing missing");
   // the OLD physics loop is gone: no gravity integration, no
-  // restitution decay, no spawn-at-the-word, no rolling
+  // restitution decay, no spawn-at-the-word, no rolling, no sine
   assert.equal(bbStage.includes("GRAVITY"), false, "real physics must be gone");
   assert.equal(bbStage.includes("RESTITUTION"), false, "the decaying bounce must be gone");
   assert.equal(bbStage.includes("DROP_IN"), false, "the word drop-in must be gone");
   assert.equal(bbStage.includes('button[aria-label="basketball"]'), false, "no word measurement");
-  // the divider line IS the court - zero viewport math
   assert.equal(bbStage.includes("window.innerWidth"), false, "viewport-based geometry must be gone - the divider line is the court");
-  // the ONE 3.5-arc sine path: impacts exactly at 2/7, 4/7, 6/7
-  assert.equal(bbStage.includes("APEX = 44"), true, "the uniform bounce apex missing");
+  assert.equal(bbStage.includes("Math.sin(3.5"), false, "the old sine path must be gone - deterministic parabolas only");
+  // the divider rect drives a VIEWPORT-FIXED overlay (exact ground)
   assert.equal(bbStage.includes("#things-done"), true, "the divider ground line measurement missing");
-  assert.equal(bbStage.includes("Math.abs(Math.sin(3.5 * Math.PI * u))"), true, "the 3.5-arc deterministic path missing");
-  assert.equal(bbStage.includes("rotate(${deg}deg)"), true, "continuous forward rotation missing");
-  assert.equal(bbStage.includes("FULL_TURNS = 3.5"), true, "~3.5 full rotations (1260 deg) missing");
-  assert.equal(bbStage.includes("u * 7"), true, "the grow-in while rising missing");
-  assert.equal(bbStage.includes("(1 - u) * 7"), true, "the shrink-out while rising missing");
-  assert.equal(bbStage.includes("bb-contact-glow"), true, "the soft contact glow missing");
+  assert.equal(bbStage.includes("bb-overlay"), true, "the viewport-fixed overlay missing");
+  assert.equal(bbStage.includes("lr.left"), true, "the court must use the divider's raw viewport coordinates");
+  // four deterministic PARABOLAS: three full equal arcs + final half-rise
+  assert.equal(bbStage.includes("APEX = 46"), true, "the equal 46px bounce apex missing");
+  assert.equal(bbStage.includes("4 * APEX * s * (1 - s)"), true, "the full arc parabolas missing");
+  assert.equal(bbStage.includes("APEX * (2 * s - s * s)"), true, "the final HALF-RISE parabola missing");
+  assert.equal(bbStage.includes("FULL_TURNS = 4.75"), true, "~4.75 full rotations (~1710 deg) missing");
+  assert.equal(bbStage.includes("u * 7"), false, "the old linear grow-in must be gone");
+  assert.equal(bbStage.includes("Math.min(1, s * 1.5)"), true, "the grow-into-first-rise missing");
+  assert.equal(bbStage.includes("1 - s"), true, "the shrink-through-final-rise missing");
+  // the impact is ONLY the in-ball light sweep - no ground dots
+  assert.equal(bbStage.includes("bb-sweep"), true, "the in-ball light sweep missing");
+  assert.equal(bbStage.includes("bb-contact-glow"), false, "the ground glow must be gone");
   assert.equal(bbStage.includes("bb-particle"), false, "pixel debris must be gone");
   assert.equal(bbStage.includes("bb-shadow"), false, "the old contact shadow must be gone");
+  // the ball: symmetric seams, NO vertical center line
+  assert.equal(bbStage.includes("M2.8 10 Q14 -3 25.2 10"), true, "the upper symmetric seam missing");
+  assert.equal(bbStage.includes("M2.8 18 Q14 31 25.2 18"), true, "the lower symmetric seam missing");
+  assert.equal(bbStage.includes("M2 14h24"), true, "the straight horizontal center seam missing");
+  assert.equal(bbStage.includes("v24.4"), false, "the vertical center line must be gone");
   assert.equal(bbStage.includes("PixelBall"), false, "the 8-bit sprite must be gone");
-  assert.equal(bbStage.includes("crispEdges"), false, "the pixel-sprite style hook must be gone");
   // the new ball ROTATES forward - the old no-spin assumption is gone
   assert.equal(bbStage.includes("SPINS"), false, "the no-rotation assumption must be gone");
   // chiba lab: the one-time letter cascade mini easter egg - NOT the
@@ -579,7 +589,7 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(music.includes("favoriteSong.artist"), true, "the artist must render in the expanded view");
   assert.equal(music.includes("favoriteSong.artwork"), true, "the album artwork must stay");
   assert.equal(music.includes("dynamic-island-wave"), true, "the waveform missing");
-  assert.equal(music.includes("~3.7s"), true, "3.7s lifecycle missing");
+  assert.equal(music.includes("~3.4s"), true, "3.4s lifecycle missing");
   // ONE visible object, absolute in the fixed stage: no flow, no shift
   assert.equal(music.includes("music-projectile"), true, "the absolute island home missing");
   assert.equal(music.includes("music-island-press-wrap"), true, "the press/fade wrapper missing");
@@ -606,11 +616,11 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(music.includes("pressStart: 650"), true, "the force-touch press missing");
   assert.equal(music.includes("pressRelease: 695"), true, "the brief stored hold (~40ms) then the release");
   assert.equal(music.includes("metaIn: 840"), true, "metadata must enter before the shell settles");
-  assert.equal(music.includes("collapse: 3050"), true, "the fast-collapse beat missing");
+  assert.equal(music.includes("collapse: 3035"), true, "the fast-collapse beat missing");
   assert.equal(music.includes("uiLeave: 3000"), true, "the long expanded hold beat missing");
-  assert.equal(music.includes("fadeShared: 3400"), true, "the shared-fade beat missing");
-  assert.equal(music.includes("close: 3460"), true, "the mirrored outro beat missing");
-  assert.equal(music.includes("done: 3700"), true, "the idle beat missing");
+  assert.equal(music.includes("fadeShared: 3125"), true, "the shared-fade beat missing");
+  assert.equal(music.includes("close: 3150"), true, "the mirrored outro beat missing");
+  assert.equal(music.includes("done: 3380"), true, "the idle beat missing");
   // intro mirrors outro: fade 0 -> 1 in, 1 -> 0 out + slight squash
   assert.equal(music.includes("initial={{ opacity: 0 }}"), true, "the intro fade-in missing");
   assert.equal(music.includes("opacity: closing ? 0 : 1"), true, "the outro fade-out missing");
@@ -631,10 +641,13 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(music.includes("island-skip-prev"), true, "the rounded skip-back silhouette missing");
   assert.equal(music.includes("island-skip-next"), true, "the rounded skip-forward silhouette missing");
   assert.equal(music.includes("island-control-play"), true, "the Pause control missing");
-  // the skip icons are FILLED rounded wedges + a slim end bar - never
-  // thick stroked chevrons
-  assert.equal(music.includes('d="M15.2 5.9 8.4 12l6.8 6.1"'), true, "the rounded backward wedge missing");
+  // the skip icons: TWO TOUCHING filled arrowheads - no end bars, no
+  // stroked chevrons
+  assert.equal(music.includes('d="M14.8 5.8 8.2 12l6.6 6.2"'), true, "the left arrowhead pair missing");
+  assert.equal(music.includes('d="M9.2 5.8 15.8 12 9.2 18.2"'), true, "the right arrowhead pair missing");
   assert.equal(music.includes('fill="currentColor"'), true, "the skip icons must be filled geometry");
+  assert.equal(music.includes('rect x="21.3"'), false, "the skip BACK end bar must be gone");
+  assert.equal(music.includes('rect x="0.5"'), false, "the skip FORWARD end bar must be gone");
   assert.equal(music.includes("EXIT_EASE"), true, "the smooth exit curve missing");
   assert.equal(music.includes("cubic-bezier(0.4, 0, 0.2, 1)"), true, "the eased in-out exit missing");
   assert.equal(music.includes("delay: 2650"), false, "the old cumulative schedule must be gone");

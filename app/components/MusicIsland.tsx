@@ -48,10 +48,10 @@ const MUSIC_TIMING = {
   progressIn: 900, //
   controlsIn: 960, //
   uiLeave: 3000, // expanded-only UI starts fading (200ms) after the
-  collapse: 3050, // ~1.9s fully-settled hold; ~50ms later the shell
-  fadeShared: 3400, // art + waveform begin fading (280ms) just before
-  close: 3460, // pill shrinks + fades + slight scaleY, mirrored outro
-  done: 3700, // unmount after the dissolve; idle. ~3.7s total.
+  collapse: 3035, // ~1.9s fully-settled hold; ~35ms later the shell
+  fadeShared: 3125, // art + waveform begin fading (280ms) - the shell
+  close: 3150, // is already mid-collapse: EMPTY + the mirrored fade
+  done: 3380, // unmount after the dissolve. ~3.4s total: expanded ->
 } as const;
 
 /* the exit curve: eased in-out (cubic-bezier(0.4, 0, 0.2, 1)) -
@@ -314,11 +314,11 @@ function IslandInner({ uiIn, shared, artOpacity, waveOpacity }: IslandProps) {
             transition={uiTransition(0.22)}
           >
             <span className="island-controls-main">
-              {/* previous: two soft ROUNDED filled wedges + a slim
-                  rounded end bar (iOS skip-back silhouette) */}
+              {/* previous: TWO TOUCHING filled arrowheads - soft
+                  rounded corners, no end bar, no stroked chevrons */}
               <svg className="island-skip-prev" width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
                 <path
-                  d="M15.2 5.9 8.4 12l6.8 6.1"
+                  d="M14.8 5.8 8.2 12l6.6 6.2"
                   fill="currentColor"
                   stroke="currentColor"
                   strokeWidth="1.6"
@@ -326,23 +326,22 @@ function IslandInner({ uiIn, shared, artOpacity, waveOpacity }: IslandProps) {
                   strokeLinecap="round"
                 />
                 <path
-                  d="M20.8 5.9 14 12l6.8 6.1"
+                  d="M21.2 5.8 14.6 12l6.6 6.2"
                   fill="currentColor"
                   stroke="currentColor"
                   strokeWidth="1.6"
                   strokeLinejoin="round"
                   strokeLinecap="round"
                 />
-                <rect x="21.3" y="5.4" width="2.2" height="13.2" rx="1.1" fill="currentColor" />
               </svg>
               <svg className="island-control-play" width="30" height="30" viewBox="0 0 24 24" aria-hidden="true">
                 <rect x="3.5" y="2.5" width="6.5" height="19" rx="2.6" fill="currentColor" />
                 <rect x="14" y="2.5" width="6.5" height="19" rx="2.6" fill="currentColor" />
               </svg>
-              {/* next: mirror - rounded wedges pointing right, bar left */}
+              {/* next: TWO TOUCHING filled arrowheads, mirrored */}
               <svg className="island-skip-next" width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
                 <path
-                  d="M8.8 5.9 15.6 12l-6.8 6.1"
+                  d="M9.2 5.8 15.8 12 9.2 18.2"
                   fill="currentColor"
                   stroke="currentColor"
                   strokeWidth="1.6"
@@ -350,14 +349,13 @@ function IslandInner({ uiIn, shared, artOpacity, waveOpacity }: IslandProps) {
                   strokeLinecap="round"
                 />
                 <path
-                  d="M3.2 5.9 10 12l-6.8 6.1"
+                  d="M2.8 5.8 9.4 12 2.8 18.2"
                   fill="currentColor"
                   stroke="currentColor"
                   strokeWidth="1.6"
                   strokeLinejoin="round"
                   strokeLinecap="round"
                 />
-                <rect x="0.5" y="5.4" width="2.2" height="13.2" rx="1.1" fill="currentColor" />
               </svg>
             </span>
           </motion.span>

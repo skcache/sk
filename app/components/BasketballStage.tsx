@@ -1,60 +1,66 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 /**
- * The basketball egg, FINAL: the separator line above
- * "some things i've done" IS the court. The ball travels from the
- * line's LEFT end to its RIGHT end at constant horizontal speed along
- * one deterministic 3.5-arc sine path:
+ * The basketball egg, POLISHED: the divider line above
+ * "some things i've done" IS the court, used EXACTLY - the divider's
+ * own getBoundingClientRect() drives a viewport-FIXED overlay, so the
+ * ball bounces on that exact line at every viewport (no stage-local
+ * conversion, no monitor/laptop difference).
  *
- *   height = APEX * |sin(3.5 * PI * u)|      u: 0 -> 1
+ * Motion is four deterministic PARABOLAS (no sine, no physics):
+ * the first three arcs are full, equal bounces (apex 46, ground at
+ * both ends); the fourth is the final HALF-RISE that ends exactly at
+ * the right endpoint's apex, where the ball has already shrunk to
+ * nothing. Impacts at 25% / 50% / 75% of the line.
  *
- * which puts the impacts exactly at u = 2/7, 4/7, 6/7 and the apexes
- * at 1/7, 3/7, 5/7 - three identical bounces, then the final rising
- * half-arc ends AT the right endpoint's apex, where the ball has
- * already shrunk to nothing. No real physics, no viewport math, no
- * offscreen travel, no particles: each impact is only a brief squash
- * + one tiny soft orange glow on the divider that vanishes.
- *
- * The ball grows while rising from the left endpoint (scale 0 -> 1 by
- * the first apex) and shrinks while rising away after the last impact
- * (scale 1 -> 0 by the final apex). Rotation tracks the travel
- * continuously: ~3.5 full clockwise turns (~1260 deg) across the path,
- * never pausing at impacts.
- *
- * All coordinates come from the divider's own getBoundingClientRect()
- * converted into stage-local space, so the performance is identical on
- * any viewport.
+ * The ball grows 0->1 while rising into the first arc and shrinks
+ * 1->0 while rising away on the final half-arc. Rotation is ~4.75
+ * full clockwise turns across the whole animation (never pausing at
+ * impacts). Each impact is ONLY a brief squash + a fast bottom->top
+ * light sweep INSIDE the ball (clipped to the circle, NOT rotated
+ * with the seams, peaking with a subtle warm drop-shadow). There are
+ * no particles, no ground dots, nothing remains after contact.
  */
-const DUR_MS = 2850; // the complete court crossing (2.7-3.0s target)
-const APEX = 44; // one bounce height, px (42-48)
-const FULL_TURNS = 3.5; // 1260 deg of continuous clockwise rotation
-const BALL = 28; // the svg ball size, px (26-28)
+const DUR_MS = 3200; // the complete court crossing (3.1-3.3s target)
+const APEX = 46; // equal apex for every full bounce arc (px)
+const FULL_TURNS = 4.75; // ~1710 deg of continuous clockwise rotation
+const BALL = 28; // the svg ball size, px
 const SQUASH_MS = 60; // brief contact squash window
 
 export default function BasketballStage({ onDone }: { onDone: () => void }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const glowRef = useRef<HTMLDivElement>(null);
+  const ref = useRef<HTMLDivElement>(null); // outer: translate + squash
+  const rotRef = useRef<HTMLDivElement>(null); // inner: rotation
+  const sweepRef = useRef<HTMLSpanElement>(null); // clipped glow band
   const onDoneRef = useRef(onDone);
+  // the fixed overlay must live OUTSIDE any transformed ancestor, or
+  // "fixed" silently becomes relative to the stage - portal to body
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     onDoneRef.current = onDone;
   }, [onDone]);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
     const el = ref.current;
-    const glowHost = glowRef.current;
-    if (!el || !glowHost) return;
-    const stage = el.parentElement as HTMLElement | null;
-    const sr = stage?.getBoundingClientRect() ?? { left: 0, top: 0 };
-    // the court: the divider's own rect, converted to stage-local
+    const rot = rotRef.current;
+    const sweep = sweepRef.current;
+    if (!el || !rot || !sweep) return;
+
+    // the court, in VIEWPORT coordinates, straight from the divider
     const line = document.querySelector<HTMLElement>("#things-done");
     const lr = line?.getBoundingClientRect();
     if (!lr) return;
-    const lineLeft = lr.left - sr.left;
-    const lineRight = lr.right - sr.left;
-    const groundY = lr.top - sr.top;
+    const lineLeft = lr.left;
+    const lineRight = lr.right;
+    const groundY = lr.top;
 
     const span = lineRight - lineLeft;
     let raf = 0;
@@ -63,17 +69,25 @@ export default function BasketballStage({ onDone }: { onDone: () => void }) {
     let squash = 0; // contact squash countdown (ms)
     let doneSent = false;
 
-    // one soft glow at the contact point; 90ms fade, then removed
-    const glow = (x: number) => {
-      const g = document.createElement("span");
-      g.className = "bb-contact-glow";
-      g.style.left = x - 10 + "px";
-      g.style.top = groundY - 4 + "px";
-      glowHost.appendChild(g);
-      requestAnimationFrame(() => {
-        g.style.opacity = "0";
-      });
-      setTimeout(() => g.remove(), 120);
+    // one fast bottom->top light sweep inside the ball, clipped to the
+    // circle - peaks with a subtle warm glow, fades completely
+    const sweepUp = () => {
+      sweep.style.transition = "none";
+      sweep.style.opacity = "1";
+      sweep.style.transform = "translateY(104%)";
+      // force a reflow so the transition below animates from here
+      void sweep.offsetHeight;
+      sweep.style.transition = "transform 135ms ease-out, opacity 135ms ease-out";
+      sweep.style.transform = "translateY(-104%)";
+      // subtle brightness peak mid-sweep, then nothing remains
+      el.style.filter = "drop-shadow(0 0 3px rgba(255, 150, 70, 0.55))";
+      setTimeout(() => {
+        el.style.filter = "none";
+      }, 60);
+      setTimeout(() => {
+        sweep.style.opacity = "0";
+        sweep.style.transform = "translateY(104%)";
+      }, 150);
     };
 
     const tick = (now: number) => {
@@ -82,36 +96,43 @@ export default function BasketballStage({ onDone }: { onDone: () => void }) {
       if (prev) {
         const u0 = Math.min(1, (prev - started) / DUR_MS);
         const u = Math.min(1, t / DUR_MS);
-        // the three impacts: exactly at 2/7, 4/7, 6/7 (one each)
-        for (const k of [2, 4, 6]) {
-          if (u0 < k / 7 && u >= k / 7) {
+        // the four segments end at 1/4, 1/2, 3/4, 1 -> the three
+        // impacts happen EXACTLY at the inside boundaries
+        for (const k of [1, 2, 3]) {
+          if (u0 < k / 4 && u >= k / 4) {
             squash = SQUASH_MS;
-            glow(lineLeft + (k / 7) * span);
+            sweepUp();
           }
         }
-        // stop the loop once the court is fully crossed
         if (u >= 1) {
-          el.style.opacity = "0";
+          // the ball is already invisible (shrink completed at the
+          // final apex); stop the loop and unmount shortly after
           if (!doneSent) {
             doneSent = true;
-            setTimeout(() => onDoneRef.current(), 140);
+            setTimeout(() => onDoneRef.current(), 120);
           }
           return;
         }
-        const height = APEX * Math.abs(Math.sin(3.5 * Math.PI * u));
+        // segment-local progress for the deterministic parabolas
+        const seg = Math.min(3, Math.floor(u * 4));
+        const s = u * 4 - seg;
         const x = lineLeft + u * span;
+        const height =
+          seg < 3 ? 4 * APEX * s * (1 - s) : APEX * (2 * s - s * s); // final HALF-RISE
         const y = groundY - BALL - height;
         const deg = FULL_TURNS * 360 * u;
-        // grow while rising from the left; shrink while rising away
-        const grow = u < 1 / 7 ? u * 7 : u > 6 / 7 ? (1 - u) * 7 : 1;
+        // grow while rising into the first arc; shrink through the
+        // final rise (gone exactly at the right endpoint's apex)
+        const grow = seg === 0 ? Math.min(1, s * 1.5) : seg === 3 ? 1 - s : 1;
+        rot.style.transform = `rotate(${deg}deg)`;
         if (squash > 0) {
           squash -= 16;
           const d = Math.sin(Math.PI * (1 - Math.max(0, squash) / SQUASH_MS));
           const sx = 1 + 0.08 * d;
           const sy = 1 - 0.12 * d;
-          el.style.transform = `translate(${x}px, ${y}px) rotate(${deg}deg) scale(${grow * sx}, ${grow * sy})`;
+          el.style.transform = `translate(${x}px, ${y}px) scale(${grow * sx}, ${grow * sy})`;
         } else {
-          el.style.transform = `translate(${x}px, ${y}px) rotate(${deg}deg) scale(${grow}, ${grow})`;
+          el.style.transform = `translate(${x}px, ${y}px) scale(${grow}, ${grow})`;
         }
       }
       prev = now;
@@ -120,22 +141,44 @@ export default function BasketballStage({ onDone }: { onDone: () => void }) {
 
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [mounted]);
 
-  return (
-    <>
-      <div className="stage-basketball" ref={ref} aria-hidden="true">
-        {/* a simple, recognizable 2D basketball: orange circle, dark
-            stroke, rounded black seams - reads as a ball without the
-            label */}
-        <svg width={BALL} height={BALL} viewBox="0 0 28 28">
-          <circle cx="14" cy="14" r="12.2" fill="#E2620F" stroke="#221200" strokeWidth="2" />
-          <path d="M14 1.8v24.4" stroke="#221200" strokeWidth="1.4" strokeLinecap="round" fill="none" opacity="0.85" />
-          <path d="M3.6 7.2c7 2.6 13.8 2.6 20.8 0" stroke="#221200" strokeWidth="1.4" strokeLinecap="round" fill="none" opacity="0.85" />
-          <path d="M3.6 20.8c7-2.6 13.8-2.6 20.8 0" stroke="#221200" strokeWidth="1.4" strokeLinecap="round" fill="none" opacity="0.85" />
-        </svg>
+  const overlay = (
+    <div className="bb-overlay" aria-hidden="true">
+      {/* OUTER: translate + squash only */}
+      <div className="stage-basketball" ref={ref}>
+        {/* the clipping circle: keeps the sweep inside the ball and
+            independent from the seam rotation */}
+        <div className="bb-clip">
+          {/* INNER: seams rotate; the glow overlay does not */}
+          <div className="bb-rotate" ref={rotRef}>
+            <svg width={BALL} height={BALL} viewBox="0 0 28 28">
+              <circle cx="14" cy="14" r="13" fill="#E2620F" stroke="#221200" strokeWidth="1.6" />
+              <path
+                d="M2.8 10 Q14 -3 25.2 10"
+                stroke="#221200"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+                fill="none"
+                opacity="0.85"
+              />
+              <path d="M2 14h24" stroke="#221200" strokeWidth="1.4" strokeLinecap="round" fill="none" opacity="0.85" />
+              <path
+                d="M2.8 18 Q14 31 25.2 18"
+                stroke="#221200"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+                fill="none"
+                opacity="0.85"
+              />
+            </svg>
+          </div>
+          {/* the fast bottom->top light sweep, clipped, not rotated */}
+          <span className="bb-sweep" ref={sweepRef} />
+        </div>
       </div>
-      <div className="bb-contact-glows" ref={glowRef} aria-hidden="true" />
-    </>
+    </div>
   );
+
+  return mounted ? createPortal(overlay, document.body) : null;
 }
