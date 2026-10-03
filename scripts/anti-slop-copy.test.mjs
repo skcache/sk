@@ -316,8 +316,8 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(ucsd.includes("LETTERS"), true, "per-letter wave split missing");
   assert.equal(ucsd.includes("ucsd-fill"), true, "navy fill phase missing");
     assert.equal(ucsd.includes("ucsd-gold"), true, "gold pass phase missing");
-    assert.equal(ucsd.includes("1560"), true, "melt timing missing");
-    assert.equal(ucsd.includes("750"), true, "gold handoff must wait for the navy");
+    assert.equal(ucsd.includes("900"), true, "melt timing missing");
+    assert.equal(ucsd.includes("460"), true, "gold handoff must follow the navy immediately (no blocker)");
     assert.equal(ucsd.includes("500"), true, "trident must mount as the navy fills");
   assert.equal(ucsd.includes("onAnimationComplete"), false, "no child unmounts the badge");
   assert.equal(ucsd.includes("badge-plaque"), false, "the plaque box is gone");

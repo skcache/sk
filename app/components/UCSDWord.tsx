@@ -42,15 +42,15 @@ export default function UCSDWord() {
     timers.current = [];
   }, []);
 
-  // The double pass: setup -> the navy fill target lands a frame
-  // later so the CSS transition fires (each letter rises on its 34ms
-  // stagger, 0.4s fill - the navy's LAST letter completes at ~756ms),
-  // the gold handoff at 750ms re-arms the sweep right as the navy's
-  // cascade ends - NO gap - and the GOLD pass climbs right behind it
-  // (its parked edge is navy-colored, so the rewind is invisible).
-  // Then the melt washes ink back. Whole choreography <= 2s. Every
-  // rAF handoff gets a 64ms setTimeout twin: a backgrounded tab can
-  // never stall the phrase half-painted.
+  // The double pass, NO dead time (the thinking animation's lesson):
+  // setup -> the navy fill target lands a frame later, each letter's
+  // glyph rises 0.4s and COMPLETES at ~432ms; the gold handoff fires
+  // at 460ms the instant the tide is navy - the rewind is invisible
+  // (its parked edge is navy-colored) and the GOLD pass climbs
+  // immediately; the melt starts at 900ms right as the gold's tide
+  // completes. One continuous motion: navy up, gold up, wash to ink.
+  // Every rAF handoff gets a 64ms setTimeout twin: a backgrounded
+  // tab can never stall the phrase half-painted.
   const runPaint = useCallback(() => {
     if (reduceMotion) return;
     clearTimers();
@@ -68,17 +68,17 @@ export default function UCSDWord() {
     next(() => {
       setPhase(1); // rise setup: pass parked below, transitions armed
       next(() => {
-        setPhase(2); // NAVY pass: every letter fills up (full cascade)
+        setPhase(2); // NAVY pass: the whole phrase rises together
       });
     });
     timers.current.push(
       setTimeout(() => {
         setPhase(3); // gold handoff: invisible rewind, navy above
         next(() => setPhase(4)); // GOLD pass climbs right behind
-      }, 750)
+      }, 460)
     );
-    timers.current.push(setTimeout(() => setPhase(5), 1560)); // melt
-    timers.current.push(setTimeout(() => setPhase(0), 2150)); // idle
+    timers.current.push(setTimeout(() => setPhase(5), 900)); // melt
+    timers.current.push(setTimeout(() => setPhase(0), 1600)); // idle
   }, [reduceMotion, clearTimers]);
 
   // LOAD: the double pass runs once after the reveal settles -
@@ -115,7 +115,7 @@ export default function UCSDWord() {
       // mounts as the navy starts; the clips build it in sync
       timers.current.push(setTimeout(throwTrident, 500));
     }
-    timers.current.push(setTimeout(clearFlight, 2400));
+    timers.current.push(setTimeout(clearFlight, 1800));
   }, [runPaint, flying, throwTrident, clearFlight, reduceMotion]);
 
   useEffect(() => clearFlight, [clearFlight]);
@@ -188,7 +188,7 @@ function TridentFlight({
     const el = ref.current;
     if (!el) return;
     const vw = window.innerWidth;
-    const FORM_MS = fast ? 100 : 1000; // hold while the staff+head build
+    const FORM_MS = fast ? 100 : 420; // hold while the staff+head build
     const HOVER_MS = FORM_MS; // no bob - straight into the throw
     const VX = fast ? 2200 : 980; // px/s left -> right
     const G = fast ? 160 : 260; // gentle droop on the shot
