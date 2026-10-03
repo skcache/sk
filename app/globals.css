@@ -271,10 +271,16 @@ body {
 
 .ucsd-navy {
   color: #182B49; /* the official UCSD navy - the paint fill */
+  /* the constant subtle luminosity: the overlay is revealed by the
+     clip, so only the REVEALED part of this glowing layer shows -
+     the light appears to travel with the front without any glow
+     animation. */
+  text-shadow: 0 0 8px rgba(80, 125, 190, 0.3);
 }
 
 .ucsd-gold {
   color: #C69214; /* the official UCSD gold - the paint fill */
+  text-shadow: 0 0 8px rgba(240, 202, 103, 0.34);
 }
 
 /* the trident: a fixed-size HTML wrapper holding TWO perfectly
