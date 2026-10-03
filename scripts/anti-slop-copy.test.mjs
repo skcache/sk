@@ -232,21 +232,23 @@ test("polish pass: reveal, grain, plaque, affordance, autoplay", () => {
   // grain is SVG feTurbulence fixed overlay
   assert.equal(css.includes("feTurbulence"), true, "grain turbulence missing");
   assert.equal(css.includes("pointer-events: none"), true, "overlay must not block clicks");
-  // UCSD final: click-only phrase-level sweep, WAAPI-owned, no per-glyph work
+  // UCSD final: click-only whole-phrase sweep - ONE clip + ONE glow per overlay
   assert.equal((css.match(/uc san diego: the click-only double pass/g) || []).length, 1, "the UCSD CSS block must exist exactly once (no duplicate)");
   assert.equal(css.includes(".ucsd-glyph"), false, "per-glyph layers must be gone");
   assert.equal(css.includes(".ucsd-base"), true, "ink base span missing");
   assert.equal(css.includes(".ucsd-navy"), true, "phrase navy overlay missing");
   assert.equal(css.includes(".ucsd-gold"), true, "phrase gold overlay missing");
-  assert.equal(css.includes(".ucsd-navy-crest"), true, "navy light crest missing in CSS");
-  assert.equal(css.includes(".ucsd-gold-crest"), true, "gold light crest missing in CSS");
-  assert.equal(css.includes("color: #5C87C6"), true, "the navy LIGHT wash missing");
-  assert.equal(css.includes("color: #E3B23C"), true, "the gold LIGHT wash missing");
-  assert.equal(css.includes("color: #8FBCEA"), true, "the navy crest light missing");
-  assert.equal(css.includes("#182B49"), false, "the dark navy fill must be gone (light, not blackout)");
-  assert.equal(css.includes("mask-size: 100% 30%"), true, "the crest soft-hump envelope missing");
-  assert.equal(css.includes("mask-image"), true, "the crest hump mask missing");
-  assert.equal(css.includes(".ucsd-navy, .ucsd-gold {"), false, "the old shared rest block must be gone");
+  assert.equal(css.includes("color: #182B49"), true, "the official navy paint missing");
+  assert.equal(css.includes("color: #C69214"), true, "the official gold paint missing");
+  assert.equal(css.includes("#5C87C6"), false, "the brightened navy wash must be gone");
+  assert.equal(css.includes("#E3B23C"), false, "the brightened gold wash must be gone");
+  assert.equal(css.includes(".ucsd-navy-crest"), false, "the crest layers must be gone");
+  assert.equal(css.includes(".ucsd-gold-crest"), false, "the crest layers must be gone");
+  assert.equal(css.includes(".ucsd-pl"), false, "the per-letter paint spans must be gone");
+  assert.equal(css.includes(".ucsd-cl"), false, "the per-letter crest spans must be gone");
+  assert.equal(css.includes("mask-size"), false, "any mask system must be gone");
+  assert.equal(css.includes("mask-image"), false, "any mask system must be gone");
+  assert.equal(css.includes("white-space: pre"), false, "the per-letter layout hack must be gone");
   assert.equal(css.includes("ucsd-gap"), false, "the per-word gap must be gone");
   assert.equal(css.includes("opacity: 0"), true, "overlays must be invisible at rest (invisible reset)");
   assert.equal(css.includes("transition: clip-path"), false, "clip transitions must be gone (WAAPI owns the paint)");
@@ -315,58 +317,59 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   ]) {
     assert.equal(all.includes(stale), false, `stale system present: ${stale}`);
   }
-  // UCSD: click-only phrase-level sweep + one WAAPI timing contract
+  // UCSD: click-only whole-phrase sweep + one WAAPI timing contract
   const ucsd = read("components/UCSDWord.tsx");
   assert.equal(ucsd.includes("TridentMark"), true, "trident asset missing");
   assert.equal(ucsd.includes("UCSD_TIMING"), true, "the one timing contract missing");
-  assert.equal(ucsd.includes("navyEnd: 360"), true, "navy front must end at 360ms");
+  assert.equal(ucsd.includes("navyEnd: 340"), true, "navy front must end at 340ms");
   assert.equal(ucsd.includes("goldStart: 230"), true, "gold chase must begin at 230ms");
   assert.equal(ucsd.includes("goldEnd: 640"), true, "gold front must end at 640ms");
-  assert.equal(ucsd.includes("navyCrestFade: 540"), true, "the navy light must hand off by 540ms");
-  assert.equal(ucsd.includes("goldCrestFade: 790"), true, "the gold bloom must exhale by 790ms");
-  assert.equal(ucsd.includes("settleStart: 670"), true, "the color settle must begin at 670ms");
-  assert.equal(ucsd.includes("navyPaintFade: 560"), true, "the navy wash must yield as gold covers");
+  assert.equal(ucsd.includes("settleStart: 650"), true, "the color settle must begin at 650ms");
+  assert.equal(ucsd.includes("total: 800"), true, "the phrase must be ink by 800ms");
+  assert.equal(ucsd.includes("navyGlowFade: 560"), true, "the navy light must yield as gold takes over");
   assert.equal(ucsd.includes("shimmerAt: 645"), true, "the completion bloom timing missing");
-  assert.equal(ucsd.includes("const DIM = 0.5"), true, "the thinking-style base dim missing");
-  assert.equal(ucsd.includes("const WASH = 0.8"), true, "the luminous paint wash missing");
+  assert.equal(ucsd.includes("const DIM"), false, "the base dim must be gone - ink stays untouched");
+  assert.equal(ucsd.includes("const WASH"), false, "the brightness washes must be gone");
   assert.equal(ucsd.includes("ACTUATION_MS"), true, "the post-release actuation beat missing");
   assert.equal(ucsd.includes("RAISE_CLEARANCE"), true, "the mobile paragraph-clearance raise missing");
-  // one geometry mechanism for the PAINT (clip only) - and the
-  // crest light rides a smooth hump (mask-position, no hard edges)
+  // the simple architecture: ONE clip + ONE glow envelope per overlay
   assert.equal(ucsd.includes("easing: \"linear\""), true, "the paint fronts must move at constant speed");
   assert.equal(ucsd.includes("cubic-bezier(0.22, 1, 0.36, 1)"), false, "the decelerating reveal ease must be gone");
+  assert.equal(ucsd.includes("PAINT_STAGGER"), false, "the per-letter paint wave must be gone");
+  assert.equal(ucsd.includes("GLOW_STAGGER"), false, "the per-letter glow wave must be gone");
+  assert.equal(ucsd.includes("CREST_LETTER_MS"), false, "the crest letter envelope must be gone");
+  assert.equal(ucsd.includes("ucsd-pl"), false, "the per-letter paint spans must be gone");
+  assert.equal(ucsd.includes("ucsd-cl"), false, "the per-letter crest spans must be gone");
+  assert.equal(ucsd.includes("crestWrap"), false, "the crest wrapper animation must be gone");
+  assert.equal(ucsd.includes("crestLetters"), false, "the per-letter crest animation must be gone");
+  assert.equal(ucsd.includes("navyCrestRef"), false, "the navy crest ref must be gone");
+  assert.equal(ucsd.includes("goldCrestRef"), false, "the gold crest ref must be gone");
+  assert.equal(ucsd.includes("maskPosition"), false, "the mask-position ride must be gone");
+  assert.equal(ucsd.includes("WebkitMaskPosition"), false, "the webkit mask ride must be gone");
   assert.equal(ucsd.includes("maskSize"), false, "the animated mask-size must be gone");
   assert.equal(ucsd.includes("WebkitMaskSize"), false, "the webkit mask feather must be gone");
-  assert.equal(ucsd.includes("PAINT_STAGGER"), true, "the per-letter paint wave missing");
-  assert.equal(ucsd.includes("GLOW_STAGGER"), true, "the per-letter glow wave missing");
-  assert.equal(ucsd.includes("ucsd-pl"), true, "the per-letter paint spans missing");
-  assert.equal(ucsd.includes("ucsd-cl"), true, "the per-letter crest spans missing");
   assert.equal(ucsd.includes('duration: T.goldEnd, delay: 0'), true, "the trident must materialize as ONE unit");
   assert.equal(ucsd.includes("staffRef"), false, "the two-phase trident refs must be gone");
-  assert.equal(ucsd.includes("maskPosition"), true, "the crest light hump must ride mask-position");
-  assert.equal(ucsd.includes("WebkitMaskPosition"), true, "the webkit hump ride missing");
-  // the moving light crests: a narrow band per pass, riding the front
-  assert.equal(ucsd.includes("ucsd-navy-crest"), true, "the navy light crest layer missing");
-  assert.equal(ucsd.includes("ucsd-gold-crest"), true, "the gold light crest layer missing");
-  assert.equal(ucsd.includes("NAVY_CREST_GLOW"), true, "the navy crest glow missing");
-  assert.equal(ucsd.includes("GOLD_CREST_GLOW"), true, "the gold crest glow missing");
-  assert.equal(ucsd.includes("textShadow"), true, "the crest light must ride the WAAPI envelope");
-  // the completion light is restrained: small bloom, no translucency
+  // the restrained glow envelopes (the paint is official; glow provides light)
+  assert.equal(ucsd.includes("textShadow"), true, "the glow must ride ONE WAAPI envelope");
+  assert.equal(ucsd.includes("0 0 8px rgba(80, 125, 190, 0.35)"), true, "the navy soft peak glow missing");
+  assert.equal(ucsd.includes("0 0 8px rgba(240, 202, 103, 0.38)"), true, "the gold soft peak glow missing");
+  assert.equal(ucsd.includes("0 0 14px"), false, "the big halos must be gone - restrained 8px glow only");
   assert.equal(ucsd.includes("drop-shadow(0 0 6px"), true, "the restrained completion bloom missing");
   assert.equal(ucsd.includes("brightness(1.25)"), false, "the giant completion brightness must be gone");
   assert.equal(ucsd.includes("opacity: 0.92"), false, "the trident must never go translucent during the glint");
   assert.equal(ucsd.includes("brightness(1.08)"), true, "the restrained completion brightness missing");
-  assert.equal(ucsd.includes("T.shimmerAt + T.shimmerDur + T.cleanBeat"), true, "the throw must wait for bloom + clean beat");
+  assert.equal(ucsd.includes("T.total + T.cleanBeat"), true, "the throw must wait for the phrase to be FULLY settled");
   assert.equal(ucsd.includes("rotate("), true, "the throw rotation missing");
   assert.equal(ucsd.includes("const t = timers.current"), false, "cleanup must read the CURRENT refs (no stale array capture)");
-  // the phrase-level stack: ONE base + TWO absolute overlays, no per-glyph work
+  // the phrase-level stack: ONE base + TWO whole-phrase overlays, no per-glyph work
   assert.equal(ucsd.includes("LETTERS"), false, "the per-character split must be gone");
   assert.equal(ucsd.includes('"UC San Diego".split("")'), false, "per-glyph spans must be gone");
   assert.equal(ucsd.includes("ucsd-base"), true, "the ink base span missing");
   assert.equal(ucsd.includes("ucsd-navy"), true, "the phrase navy overlay missing");
   assert.equal(ucsd.includes("ucsd-gold"), true, "the phrase gold overlay missing");
-  assert.equal(ucsd.includes("ucsd-navy-crest"), true, "the navy light crest span missing");
-  assert.equal(ucsd.includes("ucsd-gold-crest"), true, "the gold light crest span missing");
+  assert.equal(ucsd.includes("ucsd-navy-crest"), false, "the navy crest span must be gone");
+  assert.equal(ucsd.includes("ucsd-gold-crest"), false, "the gold crest span must be gone");
   // no page-load animation of any kind - click only
   assert.equal(ucsd.includes("WIPE_DELAY"), false, "the load delay must be gone");
   assert.equal(ucsd.includes("LOAD_MS"), false, "the load tempo must be gone");

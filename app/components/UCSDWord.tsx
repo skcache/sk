@@ -7,32 +7,24 @@ import { useReducedMotion } from "motion/react";
 import TactileWord from "./TactileWord";
 import TridentMark from "./TridentMark";
 
-/* THE ONE TIMING CONTRACT. Every number of the choreography lives
-   here and nowhere else.
-   - The PAINT FRONTS (navy phrase + trident staff, gold phrase +
-     trident head) travel LINEARLY: navy 0 -> navyEnd as gold chases
-     goldStart -> goldEnd. Position moves at one constant velocity.
-   - The LIGHT crests ride the same fronts and EASE (intensity
-     breathes ease-in-out, like the thinking wave): the navy light
-     decays by navyCrestFade as the gold crest takes ownership; the
-     gold bloom exhales into the ink by goldCrestFade.
-   - settleStart -> total: the color overlays fade, revealing the
-     ink base (gold fades slightly before navy so the navy color
-     stays beneath - zero white gap).
-   - shimmerAt + shimmerDur: one tiny warm bloom on the completed
-     trident; cleanBeat of solid, fully-formed trident; then throw. */
+/* THE ONE TIMING CONTRACT.
+   - navy paint front: 0 -> navyEnd (linear, whole phrase)
+   - gold paint front: goldStart -> goldEnd (linear, whole phrase),
+     chasing navy before it finishes - zero white gap
+   - navyGlowFade: the navy light yields as gold takes ownership
+   - settleStart -> total: the overlays fade to the normal ink
+   - shimmerAt/Dur: the trident completion bloom; cleanBeat of clean
+     fully-formed trident over SETTLED ink; then the throw */
 const UCSD_TIMING = {
-  total: 830, // the phrase is fully ordinary ink again
-  navyEnd: 360, // navy paint + staff front (linear)
-  goldStart: 230, // gold chases - clearly before navy finishes
-  goldEnd: 640, // gold paint + head front (linear)
-  navyCrestFade: 540, // navy light hands off to gold
-  navyPaintFade: 560, // the navy wash yields as the gold covers
-  goldCrestFade: 790, // gold bloom exhales into the ink
-  settleStart: 670, // paint colors begin fading (gold first)
-  shimmerAt: 645, // trident completion bloom (head done at 640)
+  total: 800, // the phrase is fully ordinary ink again
+  navyEnd: 340,
+  goldStart: 230,
+  goldEnd: 640,
+  navyGlowFade: 560,
+  settleStart: 650,
+  shimmerAt: 645,
   shimmerDur: 65,
-  cleanBeat: 60, // solid, fully-formed trident before the throw
+  cleanBeat: 40,
 };
 
 /* The actuation beat: TactileWord calls onActivate on pointer-up,
@@ -55,31 +47,15 @@ const RAISE_CLEARANCE = 40;
 
 const PHRASE = "UC San Diego";
 
-/* PREMIUM LIGHT MODEL (the thinking principle):
-   - DIM: like the thinking letters (rgba(243,241,234,.5)), the
-     whole phrase goes QUIET during the run - the base ink breathes
-     down to DIM and back, so the light reads against darkness.
-   - WASH: the paints are luminous washes, not solid fills - the
-     letters keep their luminance under the brand color.
-   - CREST: the bright tinted light rides the moving front with a
-     thinking-scale glow (tight 7px + faint 14px halo). */
-const DIM = 0.5; // the quiet baseline - exactly the thinking letters' dim
-const WASH = 0.8; // the paints are luminous light washes, never dark fills
-
-/* PER-LETTER LIFE (the thinking wave): the letters are never
-   perfectly in sync - each glyph lights and fades on its own beat.
-   The paint fronts stagger by PAINT_STAGGER (a gentle L->R wave);
-   the glow envelopes stagger by GLOW_STAGGER (like .tw's 70ms), so
-   the light travels through the letters while the tide rises. */
-const PAINT_STAGGER = 22;
-const GLOW_STAGGER = 38;
-const CREST_LETTER_MS = 360; // one letter's glow window
-
-/* The crest light colors: brighter than the branded paint fills -
-   PAINT stays branded, LIGHT makes it luminous. */
-const NAVY_CREST_GLOW = `0 0 7px rgba(80, 125, 190, 0.6), 0 0 14px rgba(80, 125, 190, 0.28)`;
-const GOLD_CREST_GLOW = `0 0 7px rgba(240, 202, 103, 0.6), 0 0 14px rgba(240, 202, 103, 0.28)`;
+/* The restrained glow envelopes: the paint is official
+   (#182B49 / #C69214) - GLOW provides brightness. Each overlay
+   carries ONE text-shadow envelope on the same clock as its pass:
+   0 -> soft peak -> soft lower -> 0. No halos, no second geometry. */
 const NO_GLOW = "0 0 0 rgba(0, 0, 0, 0)";
+const NAVY_GLOW = "0 0 8px rgba(80, 125, 190, 0.35)";
+const NAVY_GLOW_SOFT = "0 0 8px rgba(80, 125, 190, 0.18)";
+const GOLD_GLOW = "0 0 8px rgba(240, 202, 103, 0.38)";
+const GOLD_GLOW_SOFT = "0 0 8px rgba(240, 202, 103, 0.2)";
 
 type UcsdState = "idle" | "building" | "flying";
 
@@ -88,37 +64,30 @@ type UcsdState = "idle" | "building" | "flying";
  * phrase is ordinary site ink.
  *
  * CLICK: PRESS -> SNAP (TactileWord) -> ACTUATION_MS beat -> the
- * phrase sweeps NAVY bottom -> top, GOLD chases directly over it
- * (no white gap), then the colors fade to the ink base. The paint
- * fronts travel at CONSTANT speed (linear clip); the LIGHT is a
- * separate crest per pass - a narrow band with a soft glow riding
- * the same front, its intensity breathing ease-in-out like the
- * thinking wave. The navy light hands off to the gold light before
- * the gold front reaches the top, so the effect never stacks two
- * halos. By total the phrase is ordinary ink again.
+ * WHOLE PHRASE sweeps NAVY bottom -> top with a restrained navy
+ * glow riding the rise, then GOLD chases directly over it (before
+ * navy finishes - zero white gap) with its own warm glow. The
+ * lights hand off (navy glow yields as gold takes ownership), then
+ * both overlays fade almost immediately after gold completes, and
+ * the phrase is ordinary ink again by total.
  *
  * While the colors rise, the minimalist GOLD trident materializes
- * above the phrase (staff with the navy front, head with the gold
- * front). When the head finishes it catches ONE tiny warm bloom
- * (LOCKED, not POWER-UP - the filter is neutral again before the
- * first flight frame), holds solid ~60ms, then flies left -> right
- * off the viewport. Then everything returns to IDLE.
+ * above the phrase as ONE unit (the whole mark reveals on the same
+ * paint clock), catches one tiny warm completion bloom, holds
+ * cleanly over the settled ink, then flies left -> right off the
+ * viewport. Then everything returns to IDLE.
  *
- * All geometry: ONE WAAPI timeline from UCSD_TIMING (linear fronts,
- * eased light). The flight is ONE deterministic WAAPI transform.
- * The overlays rest at opacity 0, so every reset is instant and
- * invisible - a reverse wipe is structurally impossible.
+ * The paint is TWO whole-phrase overlay spans: ONE clip reveal per
+ * overlay (linear) + ONE glow envelope per overlay. No letters are
+ * animated individually, no stagger, no masks, no crests.
  */
 export default function UCSDWord() {
   const reduceMotion = useReducedMotion();
   const [state, setState] = useState<UcsdState>("idle");
   const [origin, setOrigin] = useState<{ left: number; top: number } | null>(null);
   const wordRef = useRef<HTMLSpanElement>(null);
-  const baseRef = useRef<HTMLSpanElement>(null);
   const navyRef = useRef<HTMLSpanElement>(null);
-  const navyCrestRef = useRef<HTMLSpanElement>(null);
   const goldRef = useRef<HTMLSpanElement>(null);
-  const goldCrestRef = useRef<HTMLSpanElement>(null);
   const markRef = useRef<HTMLSpanElement>(null);
   const flyRef = useRef<HTMLDivElement>(null);
   const anims = useRef<Animation[]>([]);
@@ -195,8 +164,8 @@ export default function UCSDWord() {
     );
   }, [state]);
 
-  // BUILDING: the phrase paint + the light crests + the formation -
-  // ONE WAAPI timeline from the ONE timing contract.
+  // BUILDING: ONE clip reveal + ONE glow envelope per overlay -
+  // whole-phrase surfaces, linear fronts, eased light.
   useEffect(() => {
     if (state !== "building" || !origin) return;
     const T = UCSD_TIMING;
@@ -207,145 +176,85 @@ export default function UCSDWord() {
       return;
     }
 
-    /* ---- THE DIM: like the thinking letters, the whole phrase
-       goes quiet while the energy runs - the base ink breathes down
-       and back, so the light crest reads against darkness. */
-    const base = baseRef.current;
-    if (base) {
-      runs.push(
-        base.animate(
-          [
-            { opacity: 1 },
-            { offset: 0.1, opacity: DIM },
-            { offset: 0.72, opacity: DIM },
-            { opacity: 1 },
-          ],
-          {
-            duration: T.total,
-            fill: "forwards",
-            easing: "ease-in-out",
-          }
-        )
-      );
-    }
-
-    /* ---- PAINT WASHES: the layers carry the luminous brand color
-       (WASH presence on the wrapper). The REVEAL is PER LETTER:
-       each glyph's front rises on its own slight beat
-       (PAINT_STAGGER) - never perfectly in sync, the thinking
-       wave. clip-path is the ONLY geometry mechanism. */
-    const wash = (
+    const pass = (
       el: HTMLElement | null,
-      revealDur: number,
-      revealDelay: number,
+      dur: number,
+      delay: number,
       settleStart: number,
-      settleEnd: number
+      settleEnd: number,
+      glowDur: number,
+      glowEnvelope: Keyframe[]
     ) => {
       if (!el) return;
-      runs.push(
-        el.animate([{ opacity: 0 }, { opacity: WASH }], {
-          duration: 40,
-          delay: revealDelay,
-          fill: "forwards",
-          easing: "linear",
-        })
-      );
-      const kids = el.querySelectorAll<HTMLElement>(".ucsd-pl");
-      for (let i = 0; i < kids.length; i++) {
-        runs.push(
-          kids[i].animate(
-            [
-              { clipPath: "inset(100% 0 0 0)" },
-              { clipPath: "inset(0 0 0 0)" },
-            ],
-            {
-              duration: revealDur,
-              delay: revealDelay + i * PAINT_STAGGER,
-              fill: "forwards",
-              easing: "linear",
-            }
-          )
-        );
-      }
-      // the settle: the colors fade into the ink base (gold first)
-      if (settleEnd > settleStart) {
-        runs.push(
-          el.animate([{ opacity: WASH }, { opacity: 0 }], {
-            duration: settleEnd - settleStart,
-            delay: settleStart,
-            fill: "forwards",
-            easing: "ease",
-          })
-        );
-      }
-    };
-    // the navy's exit is its yield below (it must not also run a
-    // later settle anim that could re-open it)
-    wash(navyRef.current, T.navyEnd, 0, 0, 0);
-    wash(goldRef.current, T.goldEnd - T.goldStart, T.goldStart, T.settleStart, T.total - 20);
-
-    // the navy WASH yields as the gold covers it (no muddy stack)
-    const navy = navyRef.current;
-    if (navy) {
-      runs.push(
-        navy.animate([{ opacity: WASH }, { opacity: 0 }], {
-          duration: T.navyPaintFade - T.navyEnd,
-          delay: T.navyEnd,
-          fill: "forwards",
-          easing: "ease-out",
-        })
-      );
-    }
-
-    /* ---- LIGHT CRESTS, PER LETTER: the vertical hump
-       (mask-position on the wrapper, linear with the paint clock)
-       shapes the envelope with no hard edges; each LETTER's glow
-       (opacity + text-shadow) breathes on its own staggered beat
-       (GLOW_STAGGER) - the light travels through the glyphs like
-       the thinking wave, rising and fading per letter. */
-    const crestWrap = (el: HTMLElement | null, posDur: number, posDelay: number) => {
-      if (!el) return;
+      // ONE clip reveal: the whole phrase surface, bottom -> top,
+      // constant velocity
       runs.push(
         el.animate(
           [
-            { maskPosition: "50% 100%", WebkitMaskPosition: "50% 100%" },
-            { maskPosition: "50% 0%", WebkitMaskPosition: "50% 0%" },
+            { clipPath: "inset(100% 0 0 0)", opacity: 1 },
+            { clipPath: "inset(0 0 0 0)", opacity: 1 },
           ],
-          { duration: posDur, delay: posDelay, fill: "forwards", easing: "linear" }
+          { duration: dur, delay, fill: "forwards", easing: "linear" }
         )
       );
+      // ONE glow envelope: 0 -> soft peak -> soft lower -> 0, on the
+      // same clock as the pass (the glow belongs to its color)
+      runs.push(
+        el.animate(glowEnvelope, {
+          duration: glowDur,
+          delay,
+          fill: "forwards",
+          easing: "ease-in-out",
+        })
+      );
+      // the settle: the overlay fades to the untouched ink
+      runs.push(
+        el.animate([{ opacity: 1 }, { opacity: 0 }], {
+          duration: settleEnd - settleStart,
+          delay: settleStart,
+          fill: "forwards",
+          easing: "ease",
+        })
+      );
     };
-    const crestLetters = (el: HTMLElement | null, baseDelay: number, glow: string) => {
-      if (!el) return;
-      const kids = el.querySelectorAll<HTMLElement>(".ucsd-cl");
-      for (let i = 0; i < kids.length; i++) {
-        runs.push(
-          kids[i].animate(
-            [
-              { opacity: 0, textShadow: NO_GLOW },
-              { offset: 0.12, opacity: 1, textShadow: glow },
-              { offset: 0.74, opacity: 1, textShadow: glow },
-              { opacity: 0, textShadow: NO_GLOW },
-            ],
-            {
-              duration: CREST_LETTER_MS,
-              delay: baseDelay + i * GLOW_STAGGER,
-              fill: "forwards",
-              easing: "ease-in-out",
-            }
-          )
-        );
-      }
-    };
-    crestWrap(navyCrestRef.current, T.navyEnd, 0);
-    crestLetters(navyCrestRef.current, 0, NAVY_CREST_GLOW);
-    crestWrap(goldCrestRef.current, T.goldEnd - T.goldStart, T.goldStart);
-    crestLetters(goldCrestRef.current, T.goldStart, GOLD_CREST_GLOW);
 
-    // the trident MATERIALIZES AS ONE UNIT (never a broken
-    // two-phase split): the whole mark reveals bottom -> top on the
-    // combined paint clock - it finishes assembling exactly as the
-    // phrase finishes painting, then the completion glint.
+    // NAVY: 0 -> 340, glow peaks while it rises, softens, yields by
+    // navyGlowFade (560) as the gold takes ownership; the overlay
+    // fades 670 -> 800
+    pass(
+      navyRef.current,
+      T.navyEnd,
+      0,
+      T.settleStart + 20,
+      T.total,
+      T.navyGlowFade,
+      [
+        { textShadow: NO_GLOW },
+        { offset: 0.2, textShadow: NAVY_GLOW },
+        { offset: 0.55, textShadow: NAVY_GLOW_SOFT },
+        { textShadow: NO_GLOW },
+      ]
+    );
+    // GOLD: 230 -> 640, chases before navy finishes (zero gap),
+    // glow peaks mid-pass, exhales into the settle 650 -> 800
+    pass(
+      goldRef.current,
+      T.goldEnd - T.goldStart,
+      T.goldStart,
+      T.settleStart,
+      T.total,
+      T.total - T.goldStart,
+      [
+        { textShadow: NO_GLOW },
+        { offset: 0.22, textShadow: GOLD_GLOW },
+        { offset: 0.6, textShadow: GOLD_GLOW_SOFT },
+        { textShadow: NO_GLOW },
+      ]
+    );
+
+    // the trident MATERIALIZES AS ONE UNIT on the paint clock: the
+    // whole mark reveals bottom -> top and finishes exactly as the
+    // phrase finishes painting (then the completion bloom).
     const mark = markRef.current;
     if (mark) {
       runs.push(
@@ -357,13 +266,8 @@ export default function UCSDWord() {
           { duration: T.goldEnd, delay: 0, fill: "forwards", easing: "linear" }
         )
       );
-    }
-
-    // the trident completion: ONE tiny warm bloom (LOCKED, not
-    // POWER-UP) - restrained drop-shadow + brightness, opacity stays
-    // 1 (the object just finished assembling; it is MORE solid, not
-    // translucent). The filter is already neutral by the throw.
-    if (mark) {
+      // the completion bloom: tiny warm glint (LOCKED, not
+      // POWER-UP); the filter is neutral before any flight frame
       runs.push(
         mark.animate(
           [
@@ -379,12 +283,10 @@ export default function UCSDWord() {
       );
     }
 
-    // the completion beat, then the throw
+    // the throw waits for the phrase to be FULLY settled ink plus a
+    // clean beat - the word is completely normal before the flight
     timers.current.push(
-      setTimeout(
-        () => setState("flying"),
-        T.shimmerAt + T.shimmerDur + T.cleanBeat
-      )
+      setTimeout(() => setState("flying"), T.total + T.cleanBeat)
     );
   }, [state, origin, reduceMotion]);
 
@@ -413,33 +315,18 @@ export default function UCSDWord() {
   return (
     <TactileWord label="UC San Diego" onActivate={activate} className="whitespace-nowrap">
       <span className="word-anchor" ref={wordRef}>
-        {/* the phrase-level stack: base + navy paint + navy light
-            crest + gold paint + gold light crest. The base defines
-            the dimensions; every other layer is an absolute
-            aria-hidden duplicate. The paints own COLOR (branded
-            fills); the crests own LIGHT (a narrow glowing band
-            riding the moving front). No layout shift. */}
+        {/* the phrase-level stack: ONE base + TWO whole-phrase
+            overlays. The base is the untouched normal ink and
+            defines the dimensions. The navy overlay sweeps bottom ->
+            top; the gold overlay chases directly over it. No
+            per-letter spans, no stagger, no masks, no crests. */}
         <span className="ucsd-word">
-          <span className="ucsd-base" ref={baseRef}>{PHRASE}</span>
+          <span className="ucsd-base">{PHRASE}</span>
           <span aria-hidden="true" className="ucsd-navy" ref={navyRef}>
-            {PHRASE.split("").map((c, i) => (
-              <span key={i} className="ucsd-pl">{c}</span>
-            ))}
-          </span>
-          <span aria-hidden="true" className="ucsd-navy-crest" ref={navyCrestRef}>
-            {PHRASE.split("").map((c, i) => (
-              <span key={i} className="ucsd-cl">{c}</span>
-            ))}
+            {PHRASE}
           </span>
           <span aria-hidden="true" className="ucsd-gold" ref={goldRef}>
-            {PHRASE.split("").map((c, i) => (
-              <span key={i} className="ucsd-pl">{c}</span>
-            ))}
-          </span>
-          <span aria-hidden="true" className="ucsd-gold-crest" ref={goldCrestRef}>
-            {PHRASE.split("").map((c, i) => (
-              <span key={i} className="ucsd-cl">{c}</span>
-            ))}
+            {PHRASE}
           </span>
         </span>
         {origin && state !== "idle" && (
@@ -457,10 +344,11 @@ export default function UCSDWord() {
 
 /**
  * The trident portal: mounted at click start, locked at its spawn
- * position (the formation moves NOTHING - only the reveal clips).
- * Once the completion beat passes, the wrapper's transform is
- * animated by the parent's WAAPI flight. Rendered via portal so the
- * coordinates are viewport-true.
+ * position (the formation moves NOTHING - only the reveal clip
+ * progresses). Once the phrase has fully settled and the completion
+ * beat passes, the wrapper's transform is animated by the parent's
+ * WAAPI flight. Rendered via portal so the coordinates are
+ * viewport-true.
  */
 function TridentBuild({
   origin,
