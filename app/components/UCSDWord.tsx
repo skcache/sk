@@ -9,146 +9,190 @@ import TridentMark from "./TridentMark";
 const WIPE_DELAY = 1100; // after the page reveal settles
 
 /**
- * UC San Diego - the all-in-one double pass.
+ * THE ONE MASTER TIMELINE (normalized to 1000ms). Every piece of
+ * the choreography - the navy text sweep, the staff formation, the
+ * gold text sweep, the head formation, the hold beat, and the throw
+ * - is driven from THIS single clock. No setTimeout handoff chains,
+ * no per-widget timers; the frame clock crosses thresholds and the
+ * classes flip once:
  *
- * LOAD: one beat after the reveal settles, the phrase runs the TWO
- * QUICK UPWARD PASSES - navy bottom -> top, then IMMEDIATELY gold
- * bottom -> top (no gap - the gold climbs over the navy), each
- * letter on its own 34ms stagger, like the thinking light. Then it
- * settles back to ink. That is the whole load experience.
+ *   0.00  start (load paint / click)
+ *   0.05  NAVY begins rising through the letters   + staff begins
+ *   0.34  GOLD chases (navy nearly done)           + head begins
+ *   0.66  gold completes, letters fully gold
+ *   0.74  trident fully formed (all parts revealed)
+ *   0.84  [click only] THROW begins - after a short readable beat
+ *   1.00  master completes; letters have returned to ink
  *
- * CLICK: the same double pass, and THIS time the trident is created
- * in sync - the NAVY pass builds the STAFF (revealed bottom -> up),
- * the GOLD pass builds the HEAD (revealed bottom -> up), so the
- * trident materializes from nothing exactly as the colors climb.
- * The moment the double pass completes, the trident is THROWN left
- * -> right and exits the right edge with a gentle droop, while the
- * letters melt back to ink.
- * Reduced motion: instant ink, fast horizontal throw.
+ * LOAD: the paint timeline only - navy -> gold -> ink, once, no
+ * trident. CLICK: the same paint timeline + the trident mounts at
+ * t=0 (fully hidden, above the phrase) and its formation rides the
+ * exact same pass thresholds, then it is thrown left -> right.
+ *
+ * The letters are LAYERED glyphs (the thinking lesson, vertical):
+ * every character is a base ink glyph + a navy glyph + a gold glyph.
+ * The navy layer is clip-hidden below the baseline and revealed
+ * bottom -> top; the gold layer chases and reveals bottom -> top
+ * OVER the navy. No background rewinds, no transition:none handoff -
+ * a white seam is structurally impossible because the gold paints
+ * over the navy.
+ *
+ * Reduced motion: no paint, instant ink; click still throws the
+ * trident fast and horizontal.
  */
 const LETTERS = "UC San Diego".split("");
 
+const T = {
+  NAVY: 50, //  0.05 - navy text sweep + staff formation begin
+  GOLD: 340, //  0.34 - gold text sweep + head formation chase
+  MELT: 700, //  0.70 - the letters wash back to ink
+  THROW: 840, // 0.84 - the fully-formed trident is thrown
+  END: 1000, //  1.00 - master completes
+};
+
 export default function UCSDWord() {
   const reduceMotion = useReducedMotion();
-  const [phase, setPhase] = useState(0); // 0 idle | 1 rise | 2 fill(navy) | 3 gold-handoff | 4 gold-rise | 5 melt
-  const [flying, setFlying] = useState(false);
-  const [flightRun, setFlightRun] = useState(0); // fresh element per throw
-  const [origin, setOrigin] = useState<{ x: number; y: number } | null>(null);
+  const [pass, setPass] = useState(0); // 0 idle | 1 navy | 2 gold | 3 melt
+  const [trident, setTrident] = useState<{
+    origin: { x: number; y: number };
+    thrown: boolean;
+    run: number;
+  } | null>(null);
   const wordRef = useRef<HTMLSpanElement>(null);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const runningRef = useRef(false);
+  const runRef = useRef(0);
+  const guards = useRef<ReturnType<typeof setTimeout>[]>([]);
 
-  const clearTimers = useCallback(() => {
-    timers.current.forEach(clearTimeout);
-    timers.current = [];
+  const finish = useCallback(() => {
+    runningRef.current = false;
+    setPass(0);
+    setTrident(null);
   }, []);
 
-  // The double pass, NO dead time (the thinking animation's lesson):
-  // setup -> the navy fill target lands a frame later, each letter's
-  // glyph rises 0.4s and COMPLETES at ~432ms; the gold handoff fires
-  // at 460ms the instant the tide is navy - the rewind is invisible
-  // (its parked edge is navy-colored) and the GOLD pass climbs
-  // immediately; the melt starts at 900ms right as the gold's tide
-  // completes. One continuous motion: navy up, gold up, wash to ink.
-  // Every rAF handoff gets a 64ms setTimeout twin: a backgrounded
-  // tab can never stall the phrase half-painted.
-  const runPaint = useCallback(() => {
-    if (reduceMotion) return;
-    clearTimers();
-    setPhase(0);
-    const next = (fn: () => void) => {
-      let done = false;
-      const run = () => {
-        if (done) return;
-        done = true;
-        fn();
+  // ONE replayable master clock. `withTrident` distinguishes the
+  // load paint from the click (paint + trident + throw).
+  const play = useCallback(
+    (withTrident: boolean) => {
+      if (runningRef.current) return; // an animation is running: ignore
+      runningRef.current = true;
+      const id = ++runRef.current;
+      setPass(0);
+      setTrident(null);
+
+      if (withTrident) {
+        const rect = wordRef.current?.getBoundingClientRect();
+        if (!rect) return;
+        // mounts IMMEDIATELY at timeline start, fully hidden
+        setTrident({
+          origin: { x: rect.left + rect.width / 2, y: rect.top - 32 },
+          thrown: false,
+          run: id,
+        });
+      }
+
+      if (reduceMotion) {
+        setPass(3); // instant ink
+        if (withTrident) {
+          const t = setTimeout(() => {
+            setTrident((cur) => (cur && cur.run === id ? { ...cur, thrown: true } : cur));
+          }, 120);
+          guards.current.push(t);
+        }
+        const g = setTimeout(finish, 900);
+        guards.current.push(g);
+        return;
+      }
+
+      const t0 = performance.now();
+      let last = -1;
+      let raf = 0;
+      const tick = (now: number) => {
+        if (runRef.current !== id) return; // superseded
+        const t = now - t0;
+        if (t >= T.NAVY && last < 1) {
+          setPass(1);
+          last = 1;
+        }
+        if (t >= T.GOLD && last < 2) {
+          setPass(2);
+          last = 2;
+        }
+        if (t >= T.MELT && last < 3) {
+          setPass(3);
+          last = 3;
+        }
+        if (withTrident && t >= T.THROW && last < 4) {
+          last = 4;
+          setTrident((cur) => (cur && cur.run === id ? { ...cur, thrown: true } : cur));
+        }
+        if (t < T.END) {
+          raf = requestAnimationFrame(tick);
+        } else {
+          finish();
+        }
       };
-      requestAnimationFrame(run);
-      timers.current.push(setTimeout(run, 64)); // rAF stall fallback
-    };
-    next(() => {
-      setPhase(1); // rise setup: pass parked below, transitions armed
-      next(() => {
-        setPhase(2); // NAVY pass: the whole phrase rises together
-      });
-    });
-    timers.current.push(
-      setTimeout(() => {
-        setPhase(3); // gold handoff: invisible rewind, navy above
-        next(() => setPhase(4)); // GOLD pass climbs right behind
-      }, 460)
-    );
-    timers.current.push(setTimeout(() => setPhase(5), 900)); // melt
-    timers.current.push(setTimeout(() => setPhase(0), 1600)); // idle
-  }, [reduceMotion, clearTimers]);
+      raf = requestAnimationFrame(tick);
+      // ONE safety net (not a timeline): if rAF stalls (backgrounded
+      // tab) the run still force-completes to clean ink.
+      const guard = setTimeout(finish, T.END + 150);
+      guards.current.push(guard);
+    },
+    [reduceMotion, finish]
+  );
 
-  // LOAD: the double pass runs once after the reveal settles -
-  // clean, quick, and done. No trident on load: the trident is the
-  // click's reward.
+  // LOAD: the paint timeline runs once after the reveal settles.
   useEffect(() => {
-    const t = setTimeout(runPaint, WIPE_DELAY);
+    const t = setTimeout(() => play(false), WIPE_DELAY);
     return () => clearTimeout(t);
-  }, [runPaint]);
+  }, [play]);
 
-  const clearFlight = useCallback(() => {
-    clearTimers();
-    setFlying(false);
-  }, [clearTimers]);
-
-  // The trident: mounts as the navy pass begins; the STAFF builds
-  // during the navy, the HEAD during the gold (both bottom -> up via
-  // CSS clips on the flight wrapper), then the moment the double pass
-  // completes it SHOOTS left -> right.
-  const throwTrident = useCallback(() => {
-    const rect = wordRef.current?.getBoundingClientRect();
-    if (!rect) return;
-    setOrigin({ x: rect.left + rect.width / 2, y: rect.top - 32 });
-    setFlying(true);
-    setFlightRun((r) => r + 1);
+  // cleanup guards on unmount
+  useEffect(() => {
+    const g = guards.current;
+    return () => g.forEach(clearTimeout);
   }, []);
 
   const activate = useCallback(() => {
-    runPaint(); // every click replays the double pass
-    if (flying) return; // one throw at a time
-    if (reduceMotion) {
-      throwTrident();
-    } else {
-      // mounts as the navy starts; the clips build it in sync
-      timers.current.push(setTimeout(throwTrident, 500));
-    }
-    timers.current.push(setTimeout(clearFlight, 1800));
-  }, [runPaint, flying, throwTrident, clearFlight, reduceMotion]);
+    play(true);
+  }, [play]);
 
-  useEffect(() => clearFlight, [clearFlight]);
+  const endFlight = useCallback(() => {
+    setTrident((cur) => (cur ? { ...cur, thrown: false } : cur));
+    finish();
+  }, [finish]);
 
   return (
     <TactileWord label="UC San Diego" onActivate={activate} className="whitespace-nowrap">
       <span className="word-anchor" ref={wordRef}>
-        {/* the DOUBLE PASS lives in every glyph: each letter fills
-            bottom -> up with navy, then the gold climbs right over
-            it - no white gap - cascading left -> right on its own
-            stagger. explicit \u00A0 keeps the word gaps (JSX would
-            eat real spaces) */}
+        {/* layered glyphs: base ink + navy + gold, each character own
+            its reveal (bottom -> top). The gold chases the navy over
+            the same baseline - no gap is structurally possible. */}
         <span
-          className={`ucsd-word${phase >= 1 ? " ucsd-rise" : ""}${phase >= 2 ? " ucsd-fill" : ""}${phase >= 3 ? " ucsd-gold" : ""}${phase >= 4 ? " ucsd-gold-rise" : ""}${phase >= 5 ? " ucsd-melt" : ""}`}
+          aria-hidden="true"
+          className={`ucsd-word${pass >= 1 ? " pass-navy" : ""}${pass >= 2 ? " pass-gold" : ""}${pass >= 3 ? " pass-melt" : ""}`}
         >
-          {LETTERS.map((c, i) => (
-            <span
-              key={i}
-              className="ucsd-letter"
-              style={{ "--i": i } as React.CSSProperties}
-            >
-              {c === " " ? "\u00A0" : c}
-            </span>
-          ))}
+          {LETTERS.map((c, i) =>
+            c === " " ? (
+              <span key={i} className="ucsd-gap">
+                {"\u00A0"}
+              </span>
+            ) : (
+              <span key={i} className="ucsd-glyph">
+                <span className="base">{c}</span>
+                <span className="navy">{c}</span>
+                <span className="gold">{c}</span>
+              </span>
+            )
+          )}
         </span>
-        {flying && origin && (
-          <TridentFlight
-            key={`fly-${flightRun}`}
-            origin={origin}
+        {trident && (
+          <TridentBuild
+            key={`run-${trident.run}`}
+            origin={trident.origin}
+            pass={pass}
+            thrown={trident.thrown}
             fast={!!reduceMotion}
-            buildStaff={phase >= 2}
-            buildHead={phase >= 4}
-            onEnd={() => setFlying(false)}
+            onEnd={endFlight}
           />
         )}
       </span>
@@ -157,25 +201,27 @@ export default function UCSDWord() {
 }
 
 /**
- * The throw: the golden trident is BUILT above the word while the
- * double pass runs (the wrapper's build-staff/build-head classes
- * reveal the staff during the navy and the head during the gold,
- * bottom -> up, synced with the letters), and the moment the double
- * pass completes it SHOOTS left -> right with a gentle droop and
- * exits the right edge of the viewport. Rendered via portal so the
- * coordinates are viewport-true.
+ * The trident: mounted at timeline start (fully hidden), built by
+ * the same pass classes the letters use (build-staff during the
+ * navy pass, build-head during the gold pass - every part clipped
+ * below the baseline, revealed bottom -> up), and once the master
+ * timeline flips `thrown` it receives a FULLY FORMED trident and
+ * only FLIES it: quick horizontal acceleration, a very subtle
+ * droop, exit beyond the viewport right. It does NOT decide when
+ * construction is complete - the master clock does.
+ * Rendered via portal so the coordinates are viewport-true.
  */
-function TridentFlight({
+function TridentBuild({
   origin,
+  pass,
+  thrown,
   fast,
-  buildStaff,
-  buildHead,
   onEnd,
 }: {
   origin: { x: number; y: number };
+  pass: number;
+  thrown: boolean;
   fast: boolean;
-  buildStaff: boolean;
-  buildHead: boolean;
   onEnd: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -184,54 +230,38 @@ function TridentFlight({
     onEndRef.current = onEnd;
   }, [onEnd]);
 
+  // FLIGHT ONLY. The formation is already complete before this
+  // runs: the master timeline decided `thrown`.
   useEffect(() => {
+    if (!thrown) return;
     const el = ref.current;
     if (!el) return;
     const vw = window.innerWidth;
-    const FORM_MS = fast ? 100 : 420; // hold while the staff+head build
-    const HOVER_MS = FORM_MS; // no bob - straight into the throw
-    const VX = fast ? 2200 : 980; // px/s left -> right
-    const G = fast ? 160 : 260; // gentle droop on the shot
+    const V0 = fast ? 2200 : 950; // px/s - decisive snap
+    const A = fast ? 200 : 1500; // px/s^2 - quick acceleration
+    const G = fast ? 160 : 300; // very subtle droop
     let raf = 0;
     const t0 = performance.now();
-
     const tick = (now: number) => {
-      const t = now - t0;
-      let x: number;
-      let y: number;
-
-      if (t < FORM_MS) {
-        // the build runs via the CSS clips - hold in place above the
-        // word, fully opaque, no drift, no bounce
-        x = origin.x;
-        y = origin.y;
-      } else {
-        // SHOOT: straight right, slight droop, exits the right edge
-        const s = t - HOVER_MS;
-        x = origin.x + (VX * s) / 1000;
-        y = origin.y + (0.5 * G * (s / 1000) * (s / 1000));
-        if (x > vw + 60) {
-          onEndRef.current();
-          return;
-        }
+      const s = (now - t0) / 1000;
+      const x = origin.x + V0 * s + 0.5 * A * s * s;
+      const y = origin.y + 0.5 * G * s * s;
+      if (x > vw + 60) {
+        onEndRef.current();
+        return;
       }
-      el.style.opacity = "1";
       el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px)`;
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [origin, fast]);
+  }, [thrown, origin, fast]);
 
-  // PORTAL to document.body: the tactile button is a transformed
-  // ancestor - fixed positioning resolves against it, double-counting
-  // coordinates. At the body root the flight uses true viewport
-  // coordinates: build above the word, shoot right, exit right.
   return createPortal(
     <div className="ucsd-trident-wrap" aria-hidden="true">
       <div
-        className={`ucsd-trident-fly${buildStaff ? " build-staff" : ""}${buildHead ? " build-head" : ""}`}
         ref={ref}
+        className={`ucsd-trident-fly${pass >= 1 ? " build-staff" : ""}${pass >= 2 ? " build-head" : ""}`}
         style={{ left: 0, top: 0 }}
       >
         <TridentMark height={28} />

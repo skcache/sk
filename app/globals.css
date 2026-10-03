@@ -229,87 +229,74 @@ body {
   height: 24px;
 }
 
-/* ---------- uc san diego: local identity ---------- */
+/* ---------- uc san diego: the double pass ---------- */
 
 .ucsd-word {
   position: relative;
   display: inline-block;
 }
 
-.ucsd-letter {
+.ucsd-gap {
   display: inline-block;
 }
 
-/* the DOUBLE PASS, DOWN -> UP, one motion: every letter's glyph
-   fills from its baseline upward at the SAME time - the whole phrase
-   rises as one tide (NO left->right letter stagger; the motion is
-   strictly vertical). NAVY pass (0.4s), then IMMEDIATELY the GOLD
-   pass re-arms from the baseline and climbs right behind it. The
-   gold pass's own 'ink' above its rising edge is the NAVY color (the
-   letter's current state), so the letter reads navy-then-gold bottom
-   to top with NO white gap and NO stacked layers. Each letter ends
-   clean gold, then the paper color washes back over the glyphs. */
-.ucsd-word.ucsd-rise .ucsd-letter {
-  color: transparent;
-  background-size: 100% 200%;
-  background-repeat: no-repeat;
-  -webkit-background-clip: text;
-  background-clip: text;
-  background-image: linear-gradient(
-    180deg,
-    #f3f1ea 55%,
-    #2D5596 58%,
-    #2D5596 100%
-  );
-  background-position: 0% -10%; /* the pass parked below the glyphs */
-  transition: background-position 0.4s cubic-bezier(0.45, 0, 0.55, 1);
+/* LAYERED GLYPHS (the thinking lesson, vertical): every character =
+   a base ink glyph + a navy glyph + a gold glyph, stacked in one
+   box. The navy layer is clip-hidden below the baseline and revealed
+   bottom -> top (0.32s); the gold layer chases it and reveals
+   bottom -> top OVER the navy (0.32s). No rewinds, no handoff hacks:
+   a white gap is structurally impossible because the gold paints
+   over the navy. The layers carry a restrained moving glow: the
+   text-shadow only exists on the revealed paint, so the bloom rises
+   with the front and is covered once the next layer passes. */
+.ucsd-glyph {
+  position: relative;
+  display: inline-block;
 }
 
-.ucsd-word.ucsd-fill .ucsd-letter {
-  background-position: 0% 150%; /* NAVY pass risen: full navy */
-  /* the thinking-animation glow: the letters bloom as they color */
-  text-shadow: 0 1px 16px rgba(45, 85, 150, 0.45);
-  transition: background-position 0.4s cubic-bezier(0.45, 0, 0.55, 1),
-    text-shadow 0.4s ease;
+.ucsd-glyph .base {
+  color: inherit; /* the resting ink */
 }
 
-/* the gold handoff: the sweep swaps to GOLD with the paint parked
-   below the glyphs and the transition off - the instant rewind is
-   invisible because the letter above the parked edge is the navy it
-   already is (no white flash) - then ucsd-gold-rise re-arms the
-   transition a frame later and the GOLD pass climbs right behind
-   the navy */
-.ucsd-word.ucsd-gold .ucsd-letter {
-  background-image: linear-gradient(
-    180deg,
-    #2D5596 55%,
-    #C69214 58%,
-    #C69214 100%
-  );
-  background-position: 0% -10%;
-  transition: none;
+.ucsd-glyph .navy,
+.ucsd-glyph .gold {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  clip-path: inset(100% 0 0 0); /* hidden below the baseline */
+  transition: clip-path 0.32s cubic-bezier(0.45, 0, 0.55, 1),
+    opacity 0.28s ease;
 }
 
-.ucsd-word.ucsd-gold-rise .ucsd-letter {
-  background-position: 0% 150%; /* GOLD pass risen: full gold */
-  /* the glow follows the pass: navy bloom hands to the gold bloom */
-  text-shadow: 0 1px 18px rgba(198, 146, 20, 0.4);
-  transition: background-position 0.4s cubic-bezier(0.45, 0, 0.55, 1),
-    text-shadow 0.4s ease;
+.ucsd-glyph .navy {
+  color: #182B49; /* the official UCSD navy */
+  text-shadow: 0 1px 14px rgba(24, 43, 73, 0.4);
 }
 
-.ucsd-word.ucsd-melt .ucsd-letter {
-  color: #f3f1ea;
-  text-shadow: none;
-  transition: color 0.32s ease, text-shadow 0.32s ease;
+.ucsd-glyph .gold {
+  color: #C69214; /* the official UCSD gold */
+  text-shadow: 0 1px 14px rgba(198, 146, 20, 0.36);
 }
 
-/* the trident BUILD - the STAFF forms during the NAVY pass, the
-   HEAD during the GOLD pass, and each assembles PART BY PART bottom
-   -> up like the color sweeps: the shaft line rises, then the
-   pommel; then the lower blade, the collar+center blade, and the
-   upper blade. Every frame shows a recognizable piece of the
-   weapon, not a clipped smear. */
+.ucsd-word.pass-navy .navy {
+  clip-path: inset(0 0 0 0); /* navy reveals bottom -> top */
+}
+
+.ucsd-word.pass-gold .navy,
+.ucsd-word.pass-gold .gold {
+  clip-path: inset(0 0 0 0); /* gold chases over the navy */
+}
+
+.ucsd-word.pass-melt .navy,
+.ucsd-word.pass-melt .gold {
+  opacity: 0; /* the layers fade; the ink base returns */
+}
+
+/* the trident BUILD - driven by the SAME pass classes as the
+   letters: the STAFF forms during the navy pass, the HEAD during
+   the gold pass, each part clipped below the baseline and revealed
+   bottom -> up (shaft line first, pommel after; crown+lower blade,
+   then center blade, then upper blade) */
 .ucsd-trident-fly .ucsd-staff-shaft,
 .ucsd-trident-fly .ucsd-staff-pommel,
 .ucsd-trident-fly .ucsd-head-part1,
@@ -318,13 +305,20 @@ body {
   clip-path: inset(100% 0 0 0); /* hidden below the baseline */
 }
 
+.ucsd-trident-fly .ucsd-staff-shaft,
+.ucsd-trident-fly .ucsd-staff-pommel,
+.ucsd-trident-fly .ucsd-head-part1,
+.ucsd-trident-fly .ucsd-head-part2,
+.ucsd-trident-fly .ucsd-head-part3 {
+  transition: clip-path 0.28s cubic-bezier(0.45, 0, 0.55, 1);
+}
+
 .ucsd-trident-fly.build-staff .ucsd-staff-shaft,
 .ucsd-trident-fly.build-staff .ucsd-staff-pommel,
 .ucsd-trident-fly.build-head .ucsd-head-part1,
 .ucsd-trident-fly.build-head .ucsd-head-part2,
 .ucsd-trident-fly.build-head .ucsd-head-part3 {
   clip-path: inset(0 0 0 0);
-  transition: clip-path 0.3s cubic-bezier(0.45, 0, 0.55, 1);
 }
 
 .ucsd-trident-fly.build-staff .ucsd-staff-pommel {
@@ -336,7 +330,7 @@ body {
 }
 
 .ucsd-trident-fly.build-head .ucsd-head-part3 {
-  transition-delay: 130ms;
+  transition-delay: 120ms;
 }
 
 /* the trident throw: built above the word, then shoots right
