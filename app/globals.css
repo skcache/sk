@@ -280,12 +280,15 @@ body {
 }
 
 /* THE LIGHT FRONTS: whole-phrase duplicates revealed through a
-   NARROW FEATHERED BAND. The mask is STATIC (fixed in the wrapper's
-   own box - ~10px tall, soft edges, centered). The wrapper
-   translates vertically while the copy inside translates inversely,
-   so the glyphs never move - only the band of light scans the
-   phrase. The light tints are brighter than the paints on purpose;
-   the halos are restrained so the glyphs stay sharp. */
+   feathered LIGHT TIDE. The mask is STATIC (fixed in the wrapper's
+   own box): TRANSPARENT above the front, a bright ~10px ramp AT the
+   front - the travelling light itself - then a SUSTAINED full band
+   below it, so the recently-revealed region stays luminous like a
+   liquid tide instead of showing a thin slice that cuts the
+   letterforms. The wrapper translates vertically while the copy
+   inside translates inversely, so the glyphs never move - only the
+   light sweeps. The light tints are brighter than the paints on
+   purpose; the halos are restrained so the glyphs stay sharp. */
 .ucsd-navy-glow,
 .ucsd-gold-glow {
   position: absolute;
@@ -293,26 +296,25 @@ body {
   pointer-events: none;
   opacity: 0; /* invisible at rest */
   will-change: transform, opacity;
-  /* the fixed feathered band: transparent -> soft -> full -> soft ->
-     transparent (never animated: the mask shape stays put; ONLY the
-     wrapper translates) */
+  /* the fixed light-tide mask: transparent -> ramp -> sustained full
+     (never animated: the mask shape stays put; ONLY the wrapper
+     translates - the ramp's ~34% position is what bandScan's +0.66h
+     -> -0.34h travel is built around) */
   mask-image: linear-gradient(
     to bottom,
     transparent 0%,
-    transparent 40%,
-    black 46%,
-    black 54%,
-    transparent 60%,
-    transparent 100%
+    transparent 24%,
+    rgba(0, 0, 0, 0.35) 30%,
+    black 40%,
+    black 100%
   );
   -webkit-mask-image: linear-gradient(
     to bottom,
     transparent 0%,
-    transparent 40%,
-    black 46%,
-    black 54%,
-    transparent 60%,
-    transparent 100%
+    transparent 24%,
+    rgba(0, 0, 0, 0.35) 30%,
+    black 40%,
+    black 100%
   );
 }
 

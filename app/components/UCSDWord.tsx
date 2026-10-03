@@ -212,27 +212,37 @@ export default function UCSDWord() {
       );
     };
 
-    /* LIGHT FRONTS: the phrase-level luminous bands. The wrapper
-       carries a STATIC feathered mask (a ~10px horizontal band - the
-       middle of the box) and translates vertically; the copy inside
-       translates INVERSELY, so the glyphs never move - only the band
-       of light scans the phrase. Position: linear, same duration and
-       delay as its paint pass - the band tracks the color boundary
-       continuously. Amplitude: ease-in-out (0 -> full -> full -> 0)
-       - Thinking's softness lives HERE, not in the wave. */
+    /* LIGHT FRONTS: the phrase-level luminous tides. The wrapper
+       carries a STATIC feathered mask: TRANSPARENT above the front,
+       a bright ramp at the front (the light front itself), then a
+       sustained FULL band below it - so the light FILLS the revealed
+       region like a tide, brightest at its top edge, instead of
+       showing a thin slice that cuts through letterforms. The
+       wrapper translates; the copy translates INVERSELY, so the
+       glyphs never move - only the light sweeps. Position: linear,
+       same duration and delay as its paint pass - the front tracks
+       the color boundary continuously. Amplitude (the ease-in-out
+       envelopes below): Thinking's softness lives HERE, not in the
+       wave. */
     const bandScan = (
       front: HTMLElement | null,
       dur: number,
       delay: number,
-      D: number
+      boxH: number
     ) => {
       if (!front) return;
       const copy = front.firstElementChild as HTMLElement | null;
+      // the ramp sits at ~34% of the box; for it to ride the paint
+      // boundary the wrapper travels from +0.66*boxH (front just
+      // below the baseline) to -0.34*boxH (front just above the
+      // caps) - linear, so the light and the color share velocity.
+      const DS = 0.66 * boxH + 4;
+      const DE = -0.34 * boxH - 4;
       runs.push(
         front.animate(
           [
-            { transform: `translateY(${D}px)` },
-            { transform: `translateY(${-D}px)` },
+            { transform: `translateY(${DS}px)` },
+            { transform: `translateY(${DE}px)` },
           ],
           { duration: dur, delay, fill: "forwards", easing: "linear" }
         )
@@ -241,23 +251,34 @@ export default function UCSDWord() {
         runs.push(
           copy.animate(
             [
-              { transform: `translateY(${-D}px)` },
-              { transform: `translateY(${D}px)` },
+              { transform: `translateY(${-DS}px)` },
+              { transform: `translateY(${-DE}px)` },
             ],
             { duration: dur, delay, fill: "forwards", easing: "linear" }
           )
         );
       }
+    };
+
+    /* LIGHT AMPLITUDE: the tides breathe ease-in-out. Navy enters
+       bright, holds ~40% while gold is dominant (the handoff - one
+       light, not two stacked halos), then fades WITH the settle.
+       Gold enters bright and resolves with the settle. This is where
+       Thinking's softness lives. */
+    const breathe = (
+      front: HTMLElement | null,
+      duration: number,
+      delay: number,
+      keyframes: ({ offset?: number; opacity: string })[]
+    ) => {
+      if (!front) return;
       runs.push(
-        front.animate(
-          [
-            { opacity: "0" },
-            { offset: 0.5, opacity: "1" },
-            { offset: 0.75, opacity: "1" },
-            { opacity: "0" },
-          ],
-          { duration: dur, delay, fill: "forwards", easing: "ease-in-out" }
-        )
+        front.animate(keyframes, {
+          duration,
+          delay,
+          fill: "forwards",
+          easing: "ease-in-out",
+        })
       );
     };
 
@@ -269,23 +290,30 @@ export default function UCSDWord() {
     reveal(staffRef.current, T.navyEnd - T.navyStart, T.navyStart, false);
     reveal(headRef.current, T.goldEnd - T.goldStart, T.goldStart, false);
 
-    // the light fronts ride the same linear windows; the band must
-    // track the paint boundary: D = half the box + a small overshoot,
-    // so the band starts just below the glyphs and ends just above
+    // the light fronts ride the same linear windows; the ramp must
+    // track the paint boundary: the wrapper travels +0.66h -> -0.34h
+    // (the mask ramp sits at ~34% of the box)
     const boxH = navyRef.current?.offsetHeight ?? 44;
-    const D = boxH / 2 + 8;
-    bandScan(
-      navyGlowRef.current,
-      T.navyEnd - T.navyStart,
-      T.navyStart,
-      D
-    );
-    bandScan(
-      goldGlowRef.current,
-      T.goldEnd - T.goldStart,
-      T.goldStart,
-      D
-    );
+    bandScan(navyGlowRef.current, T.navyEnd - T.navyStart, T.navyStart, boxH);
+    bandScan(goldGlowRef.current, T.goldEnd - T.goldStart, T.goldStart, boxH);
+
+    // the light amplitudes: navy enters bright, holds ~80% while gold
+    // is dominant (the handoff - one light, not two stacked halos),
+    // then fades WITH the settle; gold fades with it too. Position is
+    // linear; this ease-in-out breathing is Thinking's softness.
+    breathe(navyGlowRef.current, T.total, T.navyStart, [
+      { opacity: "0" },
+      { offset: 0.25, opacity: "1" },
+      { offset: 0.5, opacity: "0.8" },
+      { offset: 0.75, opacity: "0.7" },
+      { opacity: "0" },
+    ]);
+    breathe(goldGlowRef.current, T.total - T.goldStart, T.goldStart, [
+      { opacity: "0" },
+      { offset: 0.3, opacity: "1" },
+      { offset: 0.7, opacity: "0.8" },
+      { opacity: "0" },
+    ]);
 
     // settle: the paint overlaps both fade to reveal the untouched
     // ink base by T.total - no gold pause, no reverse, no third pass

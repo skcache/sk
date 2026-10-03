@@ -340,9 +340,13 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(ucsd.includes("ucsd-navy-glow"), true, "the navy light front missing");
   assert.equal(ucsd.includes("ucsd-gold-glow"), true, "the gold light front missing");
   assert.equal(ucsd.includes("ucsd-glow-copy"), true, "the inverse-translate copy missing");
-  assert.equal(ucsd.includes("translateY(${D}px)"), true, "the light front scan missing");
-  assert.equal(ucsd.includes("translateY(${-D}px)"), true, "the copy inverse scan missing");
-  assert.equal(ucsd.includes("offset: 0.5, opacity"), true, "the ease-in-out light amplitude envelope missing");
+  assert.equal(ucsd.includes("translateY(${DS}px)"), true, "the light tide scan missing");
+  assert.equal(ucsd.includes("translateY(${DE}px)"), true, "the light tide travel missing");
+  assert.equal(ucsd.includes("translateY(${-DS}px)"), true, "the copy inverse scan missing");
+  assert.equal(ucsd.includes("translateY(${-DE}px)"), true, "the copy inverse travel missing");
+  assert.equal(ucsd.includes("const breathe"), true, "the light amplitude envelope missing");
+  assert.equal(ucsd.includes("offset: 0.25, opacity"), true, "the navy light entrance envelope missing");
+  assert.equal(ucsd.includes("offset: 0.3, opacity"), true, "the gold light entrance envelope missing");
   assert.equal(ucsd.includes("const light = ("), false, "the whole-word glow knob must be gone");
   assert.equal(ucsd.includes("NO_GLOW"), false, "the glow-knob constants must be gone");
   assert.equal(ucsd.includes("GLOW_EASE"), false, "the glow-knob ease must be gone");
@@ -354,7 +358,9 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(css.includes("0 0 14px rgba(80, 125, 190, 0.18)"), true, "the navy second halo missing");
   assert.equal(css.includes("0 0 9px rgba(245, 217, 140, 0.48)"), true, "the gold light-front halo missing");
   assert.equal(css.includes("0 0 14px rgba(240, 202, 103, 0.18)"), true, "the gold second halo missing");
-  assert.equal(css.includes("mask-image:"), true, "the static feathered band mask missing");
+  assert.equal(css.includes("mask-image:"), true, "the static light-tide mask missing");
+  assert.equal(css.includes("black 40%,"), true, "the sustained full tide fill missing");
+  assert.equal(css.includes("rgba(0, 0, 0, 0.35)"), true, "the ramp feather missing");
   assert.equal(ucsd.includes("maskPosition"), false, "the mask must stay static - transform only");
   assert.equal(ucsd.includes("maskSize"), false, "the mask must stay static - transform only");
   assert.equal(css.includes("text-shadow: 0 0 5px"), false, "the paint overlays must own color only - glow lives in the light fronts");
