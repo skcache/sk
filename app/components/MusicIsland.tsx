@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { RefObject } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { motion, useReducedMotion } from "motion/react";
@@ -10,37 +9,34 @@ import {
   DynamicIsland,
   DynamicIslandProvider,
   DynamicContainer,
-  DynamicTitle,
-  DynamicDescription,
   useDynamicIslandSize,
   SIZE_PRESETS,
 } from "./kit/dynamic-island";
 
-/* THE ONE absolute clock. Every beat of the performance lives here:
-   press -> seed appears -> the shell starts expanding WHILE the seed
-   is still gliding -> COMPACT_LONG flows on -> the metadata resolves
-   -> ~2s hold -> metadata fades -> art + EQ fade -> the shell
-   contracts -> the seed returns -> idle.
-   This table drives BOTH the Cult shell states (setSize) and the
-   outer choreography (phases, fades, return) - ONE clock, no
-   cumulative queue, no second schedule. */
+/* THE ONE absolute clock. The whole performance lives here:
+   press -> the seed is born at the word -> it moves toward the stage
+   WHILE the shell begins widening -> the seed arrives as the finished
+   Apple-style COMPACT island (235x44) -> ~2s hold with the live
+   waveform -> waveform fades -> art fades -> the shell shrinks AND
+   the seed travels home at the SAME beat (MOVE + SHRINK is one
+   gesture) -> it dissolves into the word -> idle.
+   One clock for the Cult states, the content beats, and the travel. */
 const MUSIC_TIMING = {
-  compact: 120, // the shell starts expanding while the seed is mid-flight
-  full: 320, // the shell flows fluidly into COMPACT_LONG
-  metaMount: 400, // the metadata mounts once the shell has the room
-  skinFade: 150, // the seed skin fades as the shell grows over it
-  metaExit: 2340, // the metadata fades out (240ms) - shell still full
-  rowExit: 2580, // the art + EQ fade (220ms) - shell still full
-  contract: 2720, // the shell narrows to COMPACT (content invisible)
-  closing: 2900, // the seed skin re-forms under the nearly-empty shell
-  empty: 2940, // EMPTY - the shell contracts down to the seed
-  returnMs: 3060, // the seed glides back toward the word
-  done: 3300, // the seed dissolves at the word; unmount; idle
+  expand: 70, // the shell starts widening while the seed is still moving
+  skinFade: 110, // the seed skin fades out almost immediately (one shell)
+  artIn: 190, // album art fades/scale-forms as the shell reaches its width
+  waveIn: 230, // the waveform follows a beat later
+  waveOut: 2700, // the waveform fades (shell still full)
+  artOut: 2880, // the art fades
+  closing: 3000, // the seed skin re-forms under the shell
+  shrink: 3080, // COMPACT -> EMPTY: the shell begins shrinking
+  returnMs: 3080, // SAME beat: the seed travels home WHILE shrinking
+  done: 3400, // the seed dissolves at the word; unmount; idle
 } as const;
 
 /* The seed's travel spring: near-critical (damping ratio ~1.0) -
    magnetically pulled, no bounce, no float. Motion's ONLY job:
-   POSITION. The Cult island owns the shell dimensions. */
+   POSITION. The Cult shell owns SIZE (its official 400/30 spring). */
 const SEED_SPRING = {
   type: "spring" as const,
   stiffness: 500,
@@ -51,23 +47,18 @@ const SEED_SPRING = {
 type Phase = "opening" | "open" | "closing" | "returning";
 
 /**
- * The music egg on the official Cult UI Dynamic Island machinery,
- * with ONE visible object and ONE clock:
- *  - Motion animates ONLY the position (word -> stage -> word).
- *  - The Cult shell animates ONLY its dimensions (EMPTY -> COMPACT ->
- *    COMPACT_LONG -> ...), driven by setSize on the SAME absolute
- *    MUSIC_TIMING table - no cumulative queue.
- *  - The seed skin is the visible object during the travel; the shell
- *    (same near-black skin) grows over it, so the traveling object IS
- *    the island being born.
+ * The music egg as Apple's COMPACT Now Playing Dynamic Island:
+ * a tiny pure-black pill (235x44) with album art at the LEADING edge,
+ * a live waveform at the TRAILING edge, and intentional black void in
+ * the center - the island wraps around the "camera region", it is NOT
+ * a media card. No title, no artist, no expanded state in this pass.
  *
- * Lifecycle (~3.3s, one deterministic performance per click):
- * seed leaves the word at once -> mid-flight the shell begins
- * expanding -> art + EQ appear -> Kick/Future resolve -> ~2s hold
- * with the equalizer alive -> metadata fades -> art + EQ fade ->
- * shell contracts -> seed skin re-forms -> the seed glides home and
- * dissolves. Repeat clicks are ignored by the stage; every run
- * returns to an identical idle.
+ * One visible object: the seed born at `music` IS the shell being
+ * born - Motion carries the position while the Cult shell stretches
+ * around the traveler, and the seed skin fades within ~110ms so there
+ * is never a second black capsule underneath. Closing mirrors the
+ * opening: the seed begins moving home at the exact beat the shell
+ * starts shrinking. Lifecycle ~3.4s, one deterministic performance.
  */
 export default function MusicIsland({ onDone }: { onDone: () => void }) {
   return (
@@ -103,7 +94,6 @@ function MusicBody({ onDone }: { onDone: () => void }) {
   const [phase, setPhase] = useState<Phase>("opening");
   const onDoneRef = useRef(onDone);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const rowRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     onDoneRef.current = onDone;
@@ -135,34 +125,25 @@ function MusicBody({ onDone }: { onDone: () => void }) {
   }, [reduce, schedule]);
 
   // the outer choreography on the SAME absolute clock: the skin fades
-  // as the shell covers it, the content exit fades, then the phases
-  // that drive the seed's return. The shell states are driven by the
-  // same table inside IslandInner - one clock, two owners.
+  // as the shell covers it, the content exit fades, and the MOVE+SHRINK
+  // closing begins at the exact beat the shell contracts
   useEffect(() => {
     if (!origin || !stage || reduce) return;
     schedule(MUSIC_TIMING.skinFade, () => setPhase("open"));
-    schedule(MUSIC_TIMING.metaExit, () => {
-      const meta = document.querySelector(".dynamic-island-meta");
-      if (meta) {
-        meta.animate(
-          [{ opacity: 1 }, { opacity: 0 }],
-          { duration: 240, easing: "ease-in", fill: "forwards" }
-        );
+    schedule(MUSIC_TIMING.waveOut, () => {
+      const wave = document.querySelector(".dynamic-island-wave");
+      if (wave) {
+        wave.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 220, easing: "ease-in", fill: "forwards" });
       }
     });
-    schedule(MUSIC_TIMING.rowExit, () => {
-      const el = rowRef.current;
-      if (!el) return;
-      el.animate(
-        [
-          { opacity: 1, transform: "scale(1)" },
-          { opacity: 0, transform: "scale(0.94)" },
-        ],
-        { duration: 220, easing: "ease-in", fill: "forwards" }
-      );
+    schedule(MUSIC_TIMING.artOut, () => {
+      const art = document.querySelector(".dynamic-island-art");
+      if (art) {
+        art.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, easing: "ease-in", fill: "forwards" });
+      }
     });
     schedule(MUSIC_TIMING.closing, () => setPhase("closing"));
-    schedule(MUSIC_TIMING.returnMs, () => setPhase("returning"));
+    schedule(MUSIC_TIMING.returnMs, () => setPhase("returning")); // with the shrink
     schedule(MUSIC_TIMING.done, () => onDoneRef.current());
   }, [origin, stage, reduce, schedule]);
 
@@ -173,7 +154,7 @@ function MusicBody({ onDone }: { onDone: () => void }) {
     return { x: stage.x - origin.x, y: stage.y - origin.y };
   }, [origin, stage]);
 
-  const island = <IslandInner onDone={onDone} rowRef={rowRef} />;
+  const island = <IslandInner onDone={onDone} />;
 
   // reduced motion: the island simply appears at the stage center and
   // lives its schedule in place - no travel, no skin
@@ -191,8 +172,9 @@ function MusicBody({ onDone }: { onDone: () => void }) {
   // PORTAL to the body: the page's reveal wrappers carry transforms,
   // which would turn position:fixed into a stage-relative offset -
   // the seed must live in TRUE viewport coordinates (the same reason
-  // the trident portals). Inside: the seed skin (the visible object)
-  // + the Cult island (it expands centered on the seed).
+  // the trident portals). The Cult shell is mounted from the START:
+  // Motion carries its position, Cult stretches its dimensions, and
+  // the skin fades within ~110ms so only ONE black object exists.
   return createPortal(
     <motion.div
       className="music-projectile"
@@ -222,21 +204,15 @@ function MusicBody({ onDone }: { onDone: () => void }) {
 }
 
 /**
- * The island itself: the official size machine driven by setSize on
- * THE SAME absolute clock as the outer choreography (never the
- * cumulative queue). The shell is the SAME dark object the seed
- * became - only its internal width/height/radius animate (Cult's
- * job), while the content mounts progressively.
+ * The island itself: the official size machine driven by the reducer's
+ * STABLE dispatch on the same absolute clock (never the cumulative
+ * queue). ONE size transition in this pass: EMPTY -> COMPACT (the
+ * Apple compact Now Playing form), then EMPTY again at the close.
+ * Content is edge-aligned: art at the leading edge, waveform at the
+ * trailing edge, intentful black void between them.
  */
-function IslandInner({
-  onDone,
-  rowRef,
-}: {
-  onDone: () => void;
-  rowRef: RefObject<HTMLSpanElement | null>;
-}) {
+function IslandInner({ onDone }: { onDone: () => void }) {
   const { state, dispatch } = useDynamicIslandSize();
-  const [metaIn, setMetaIn] = useState(false);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const onDoneRef = useRef(onDone);
   useEffect(() => {
@@ -244,18 +220,13 @@ function IslandInner({
   }, [onDone]);
   void state.isAnimating;
 
-  /* ONE absolute clock: the shell states are dispatched directly with
-     the reducer's STABLE dispatch (setSize would be re-created on
-     every state change and re-run this effect, shifting the later
-     beats out of sync with the outer choreography). The Cult queue is
-     NOT used - its delays are cumulative. */
+  /* ONE absolute clock. The Cult queue's delays are cumulative and
+     setSize gets re-created on every state change - so the reducer's
+     stable dispatch drives the shell, exactly like the outer beats. */
   useEffect(() => {
     const at = (ms: number, fn: () => void) => timers.current.push(setTimeout(fn, ms));
-    at(MUSIC_TIMING.compact, () => dispatch({ type: "SET_SIZE", newSize: SIZE_PRESETS.COMPACT }));
-    at(MUSIC_TIMING.full, () => dispatch({ type: "SET_SIZE", newSize: SIZE_PRESETS.COMPACT_LONG }));
-    at(MUSIC_TIMING.metaMount, () => setMetaIn(true));
-    at(MUSIC_TIMING.contract, () => dispatch({ type: "SET_SIZE", newSize: SIZE_PRESETS.COMPACT }));
-    at(MUSIC_TIMING.empty, () => dispatch({ type: "SET_SIZE", newSize: SIZE_PRESETS.EMPTY }));
+    at(MUSIC_TIMING.expand, () => dispatch({ type: "SET_SIZE", newSize: SIZE_PRESETS.COMPACT }));
+    at(MUSIC_TIMING.shrink, () => dispatch({ type: "SET_SIZE", newSize: SIZE_PRESETS.EMPTY }));
     return () => {
       timers.current.forEach(clearTimeout);
       timers.current = [];
@@ -268,26 +239,20 @@ function IslandInner({
       className="music-island-shell mx-auto h-0 w-0 shrink-0 items-center justify-center border text-center text-ink"
     >
       <DynamicContainer className="dynamic-island-row">
-        <span className="island-row-content" ref={rowRef}>
+        <span className="island-row-content">
           <Image
             className="dynamic-island-art"
             src={favoriteSong.artwork}
             alt=""
-            width={36}
-            height={36}
+            width={28}
+            height={28}
             unoptimized
           />
-          {metaIn && (
-            <span className="dynamic-island-meta">
-              <DynamicTitle className="dynamic-island-title">
-                {favoriteSong.title}
-              </DynamicTitle>
-              <DynamicDescription className="dynamic-island-description">
-                {favoriteSong.artist}
-              </DynamicDescription>
-            </span>
-          )}
-          <span className="dynamic-island-eq" aria-hidden="true">
+          <span className="dynamic-island-wave" aria-hidden="true">
+            <i />
+            <i />
+            <i />
+            <i />
             <i />
             <i />
             <i />

@@ -535,16 +535,25 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(music.includes("buildFrames"), false, "island must not hand-roll a frame table");
   const rAFCount = (music.match(/requestAnimationFrame/g) || []).length;
   assert.equal(rAFCount <= 1, true, "at most ONE deferred measurement frame is allowed - no rAF engine");
-  // ONE absolute clock: the shell states are dispatched via setSize on
-  // the SAME MUSIC_TIMING table as the outer choreography. The Cult
-  // queue is BANNED here - its delays are cumulative, which desyncs
-  // the shell from the seed/return timeline.
+  // ONE absolute clock: the shell states are dispatched via the
+  // reducer's STABLE dispatch on the SAME MUSIC_TIMING table. The
+  // Cult queue is BANNED here - its delays are cumulative, which
+  // desyncs the shell from the seed/return timeline.
   assert.equal(music.includes("useScheduledAnimations"), false, "the cumulative queue must be gone - ONE absolute clock only");
   assert.equal(music.includes('dispatch({ type: "SET_SIZE"'), true, "the shell states must be driven by the stable dispatch");
-  assert.equal(music.includes('newSize: SIZE_PRESETS.COMPACT }'), true, "the absolute compact dispatch missing");
-  assert.equal(music.includes('newSize: SIZE_PRESETS.COMPACT_LONG }'), true, "the absolute full dispatch missing");
-  assert.equal(music.includes('newSize: SIZE_PRESETS.EMPTY }'), true, "the absolute empty dispatch missing");
-  assert.equal(music.includes("~3.3s"), true, "3.3s lifecycle missing");
+  assert.equal(music.includes('newSize: SIZE_PRESETS.COMPACT }'), true, "the compact dispatch missing");
+  assert.equal(music.includes('newSize: SIZE_PRESETS.EMPTY }'), true, "the empty dispatch missing");
+  // THIS PASS IS APPLE'S COMPACT NOW PLAYING ISLAND: one size
+  // transition (EMPTY -> COMPACT -> EMPTY), no expanded state
+  assert.equal(music.includes("COMPACT_LONG"), false, "COMPACT_LONG must be gone from the choreography");
+  assert.equal(music.includes("metaMount"), false, "the metadata mount must be gone");
+  assert.equal(music.includes("metaExit"), false, "the metadata exit must be gone");
+  assert.equal(music.includes("dynamic-island-meta"), false, "the metadata DOM must be gone");
+  assert.equal(music.includes("favoriteSong.title"), false, "the title must not render in compact mode");
+  assert.equal(music.includes("favoriteSong.artist"), false, "the artist must not render in compact mode");
+  assert.equal(music.includes("favoriteSong.artwork"), true, "the album artwork must stay");
+  assert.equal(music.includes("dynamic-island-wave"), true, "the waveform missing");
+  assert.equal(music.includes("~3.4s"), true, "3.4s lifecycle missing");
   // ONE visible object: Motion owns POSITION (the seed travel), the
   // Cult shell owns DIMENSIONS - no invisible anchors, no layoutId
   assert.equal(music.includes("layoutId"), false, "the invisible-anchor layoutId hack must be gone");
@@ -554,23 +563,22 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(music.includes("stiffness: 500"), true, "the near-critical seed spring missing");
   assert.equal(music.includes('type: "spring"'), true, "the seed travel must be a spring");
   // the dead 300ms wait is gone: the shell starts expanding while the
-  // seed is still gliding (120ms)
-  assert.equal(music.includes("at(MUSIC_TIMING.compact, () => dispatch({ type: \"SET_SIZE\", newSize: SIZE_PRESETS.COMPACT }))"), true, "the mid-flight expansion missing");
+  // seed is still gliding (70ms)
+  assert.equal(music.includes("at(MUSIC_TIMING.expand, () => dispatch({ type: \"SET_SIZE\", newSize: SIZE_PRESETS.COMPACT }))"), true, "the mid-flight expansion missing");
   assert.equal(music.includes("delay: 300"), false, "the dead 300ms opening wait must be gone");
   // the state machine stays small: external phrase + the shell states
   assert.equal(music.includes('"opening"'), true, "the opening phase missing");
   assert.equal(music.includes('"returning"'), true, "the return phase missing");
-  assert.equal(music.includes("metaMount"), true, "the metadata mount beat missing");
-  assert.equal(music.includes("MUSIC_TIMING.empty"), true, "the empty dispatch missing");
+  assert.equal(music.includes("MUSIC_TIMING.shrink"), true, "the shrink beat missing");
+  assert.equal(music.includes("returnMs: 3080"), true, "the MOVE+SHRINK return beat missing");
   assert.equal(music.includes("delay: 2650"), false, "the old cumulative schedule must be gone");
   assert.equal(music.includes("delay: 2920"), false, "the old cumulative schedule must be gone");
-  // content leaves BEFORE the shell collapses
-  assert.equal(music.includes("rowExit"), true, "the content-exit beat missing");
-  assert.equal(music.includes("el.animate"), true, "the content exit WAAPI missing");
+  // content leaves BEFORE the shell collapses (no metadata in compact)
+  assert.equal(music.includes("waveOut"), true, "the waveform exit beat missing");
+  assert.equal(music.includes("artOut"), true, "the art exit beat missing");
+  assert.equal(music.includes("el.animate"), false, "the row WAAPI must be gone (edge-aligned content only)");
   assert.equal(music.includes("DynamicIslandProvider"), true, "island must use the official provider");
-  assert.equal(music.includes("SIZE_PRESETS.COMPACT_LONG"), true, "island must use the official preset");
-  assert.equal(music.includes("favoriteSong.title"), true, "the song title missing");
-  assert.equal(music.includes("favoriteSong.artist"), true, "the artist missing");
+  assert.equal(music.includes("SIZE_PRESETS.COMPACT"), true, "the compact preset missing");
   assert.equal(music.includes("favoriteSong.artwork"), true, "the album art missing");
   assert.equal(music.includes("ThinkingOrb"), false, "music must have zero ThinkingOrb");
   assert.equal(music.includes("MUSIC_ORB_STATES"), false, "music orb states must be gone");
@@ -592,22 +600,27 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(css.includes(".music-island-anchor"), false, "the invisible anchor CSS must be gone");
   assert.equal(css.includes(".music-projectile"), true, "the traveling seed CSS missing");
   assert.equal(css.includes(".music-seed-skin"), true, "the seed skin CSS missing");
-  assert.equal(css.includes("rgba(5, 5, 6, 0.96)"), true, "the near-black shell missing");
-  assert.equal(css.includes("rgba(255, 255, 255, 0.08)"), true, "the faint hairline border missing");
+  assert.equal(css.includes("background: #000000"), true, "the PURE BLACK shell missing");
+  assert.equal(css.includes("rgba(255, 255, 255, 0.035)"), true, "the invisible hairline missing");
+  assert.equal(css.includes("box-shadow: none"), true, "the shell must not float like a card");
   assert.equal(css.includes("max-width: calc(100vw - 56px)"), true, "the mobile viewport guard missing");
   // the OLD generic glass block is DELETED - nothing may override the
-  // near-black surface (specular insets + white gradient + blur)
+  // black surface (specular insets + white gradient + blur)
   assert.equal(css.includes(".dynamic-island-shell {"), false, "the old glass card block must be gone");
   assert.equal(css.includes("backdrop-filter: blur(18px) saturate(1.4)"), false, "the glass blur must be gone");
-  // the media row: ONE horizontal line - art | meta | eq (eq right)
-  assert.equal(css.includes("display: inline-flex"), true, "the horizontal media row missing");
-  assert.equal(css.includes("margin-left: auto"), true, "the EQ must sit at the right side");
-  assert.equal(css.includes("island-meta-in"), true, "the metadata entrance animation missing");
+  // the Apple COMPACT anatomy: edge-aligned art + waveform, NO metadata
+  assert.equal(css.includes("left: 8px"), true, "the art must cling to the leading edge");
+  assert.equal(css.includes("width: 28px"), true, "the intimate 28px artwork missing");
+  assert.equal(css.includes(".dynamic-island-wave"), true, "the waveform CSS missing");
+  assert.equal(css.includes("wave-pulse"), true, "the waveform pulse missing");
+  assert.equal(css.includes(".dynamic-island-eq"), false, "the generic 4-bar equalizer must be gone");
+  assert.equal(css.includes("eq-bounce"), false, "the equalizer bounce must be gone");
+  assert.equal(css.includes(".dynamic-island-meta"), false, "the metadata CSS must be gone");
+  assert.equal(css.includes("island-meta-in"), false, "the metadata animation must be gone");
   assert.equal(css.includes("island-art-in"), true, "the album art entrance animation missing");
   // reduced motion renders the island (the display:none bug is gone)
   assert.equal(css.includes(".music-projectile.is-reduced"), true, "the reduced-motion stage missing");
   assert.equal(/\.music-projectile\.is-reduced\s*\{[^}]*display: none/.test(css), false, "reduced motion must NOT be hidden");
-  assert.equal(css.includes("eq-bounce"), true, "the equalizer heartbeat missing");
   // the stage is a FIXED-height playground - it never breathes for an
   // animation, so the old 26px rest + active-expansion rules are gone
   const stageRule = css.match(/\.interaction-stage\s*\{([^}]+)\}/)?.[1] ?? "";
@@ -617,9 +630,11 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(css.includes("height: 72px"), true, "mobile stage height missing");
   assert.equal(css.includes("height: 88px"), true, "desktop stage height missing");
   assert.equal(css.includes(".dynamic-island-row"), true, "island row CSS missing");
-  assert.equal(css.includes(".dynamic-island-shell"), true, "island shell CSS missing");
-  assert.equal(css.includes(".dynamic-island-eq"), true, "equalizer bars CSS missing");
-  assert.equal(css.includes(".dynamic-island-title"), true, "island typography CSS missing");
+  assert.equal(css.includes(".music-island-shell"), true, "island shell CSS missing");
+  assert.equal(css.includes(".dynamic-island-wave"), true, "waveform bars CSS missing");
+  assert.equal(css.includes(".dynamic-island-eq"), false, "the old equalizer CSS must be gone");
+  assert.equal(css.includes(".dynamic-island-title"), false, "the metadata typography must be gone");
+  assert.equal(css.includes(".dynamic-island-description"), false, "the metadata typography must be gone");
   assert.equal(css.includes("underline dotted"), false, "dotted underline affordance must be gone");
   for (const stale of ["word-ball", "badge-rule", "badge-trident-wrap", "badge-type", "badge-identity", "dynamic-island-progress", "word-notch", "word-morph-resolve", "dynamic-island-dot", ".dynamic-island-content", ".dynamic-island-container", "buildFrames", "STEP_MS", "MUSIC_ORB_STATES"]) {
     assert.equal(source.includes(stale), false, `stale class present: ${stale}`);
