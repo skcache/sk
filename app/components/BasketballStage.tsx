@@ -4,37 +4,42 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 /**
- * The basketball egg, INTERACTIVE: a two-motion interaction.
+ * The basketball egg, MOTION-QUALITY PASS: deterministic, refresh-rate
+ * independent, one mathematical story per motion.
  *
- * STATE 1 - DISPENSE: the basketball word is clicked. The ball
- * appears directly below the word's center and drops STRAIGHT DOWN
- * onto the divider line: one ease-in fall, one medium rebound
- * (apex 22), one tiny rebound (apex 7) - the existing in-ball glow +
- * squash fire at both impacts - then it settles and STAYS.
+ * DISPENSE (word click): the ball appears below the word's center and
+ * falls ~420ms (ease-in) to the divider; then THREE rebounds, each ONE
+ * full parabola h = 4*H*s*(1-s) (ground -> smooth apex -> ground, no
+ * stitched rise/fall easing): 24px/380ms, 12px/260ms, 5px/180ms.
+ * The existing in-ball glow + squash fire at the fall landing and the
+ * first two rebound landings; the third rebound settles quietly.
+ * The ball then rests EXACTLY on the divider and STAYS (clickable).
  *
- * STATE 2 - SETTLED: the ball becomes clickable; the word ignores
- * repeat clicks while the ball exists. Clicking the ball
- * acknowledges with the existing glow + a tiny tactile squash, then
- * launches the exit.
+ * DISPATCH (ball click): the existing glow fires once as the
+ * acknowledgment + a tiny 1.05/0.94 squash, and the exit begins while
+ * the acknowledgment is still finishing.
  *
- * STATE 3 - EXIT: three flicked rightward arcs (apexes 36 / 20 / 10,
- * ground impacts with glow + squash at the first two landings), the
- * final low arc leaves past the divider's right end mid-air, then
- * onDone. Continuous clockwise rotation (~2 turns), speed increasing
- * slightly through the exit.
+ * EXIT: three rightward arcs on normalized windows 0->.42 (H=34 full
+ * parabola), .42->.72 (H=18 full parabola), .72->1 (H=12 smooth
+ * half-rise). x progresses continuously; rotation runs the whole
+ * exit (~2 turns, never frozen); during the final ~28% the ball
+ * scales 1->0 smoothly WHILE x/y/rotation keep moving - no static
+ * frame, no opacity pop, no frozen ball. Leaves past the line's
+ * right end and only then calls onDone.
  *
- * No particles, no ground dots, no trails, no fade. The divider rect
- * is measured directly in viewport coordinates and the fixed overlay
- * is portaled to body (fixed positioning silently becomes relative
- * under transformed ancestors).
+ * All squash/ack envelopes are driven by REAL elapsed time (no
+ * per-frame decrements), so 60Hz and 120Hz displays look identical.
  */
-const FALL_MS = 380; // the straight drop (ease-in)
-const REBOUND_1_APEX = 22; // medium rebound
-const REBOUND_2_APEX = 7; // tiny rebound
-const SETTLE_MS = 1000; // fully settled on the divider by ~1s
-const EXIT_MS = 1400; // the flicked exit, ~1.4s
-const EXIT_APEXES = [36, 20, 10]; // strong -> medium -> low arc
-const SPANS = [0.3, 0.36, 0.46]; // arc distances, growing speed
+const FALL_MS = 420; // the straight drop (ease-in)
+const REBOUNDS = [
+  { apex: 24, dur: 380 }, // rebound 1
+  { apex: 12, dur: 260 }, // rebound 2
+  { apex: 5, dur: 180 }, // rebound 3
+] as const;
+const SETTLE_MS = FALL_MS + REBOUNDS[0].dur + REBOUNDS[1].dur + REBOUNDS[2].dur; // 1240
+const EXIT_MS = 1400; // the flicked exit
+const EXIT_APEXES = [34, 18, 12]; // full parabola / full parabola / half-rise
+const EXIT_WINDOWS = [0.42, 0.72, 1]; // u boundaries for the three arcs
 const BALL = 28; // the svg ball size, px
 const SQUASH_MS = 60; // brief contact squash window
 
@@ -82,9 +87,9 @@ export default function BasketballStage({ onDone }: { onDone: () => void }) {
     let started = 0; // mount time (drop timeline)
     let exitT = 0; // ball-click time (exit timeline)
     let prevExitU = 0;
-    let squash = 0; // contact squash countdown
-    let ackSquash = 0; // click-acknowledgment squash countdown
-    let dropped = 0; // drop impacts fired (2 max)
+    let squashStart = 0; // the timestamp the impact squash began (ms)
+    let ackStart = 0; // the timestamp the acknowledgment began (ms)
+    let dropImpacts = 0; // drop impacts fired (3 max: fall + 2 landings)
     let exitImpacts = 0; // exit impacts fired (2 max)
     let doneSent = false;
 
@@ -112,13 +117,18 @@ export default function BasketballStage({ onDone }: { onDone: () => void }) {
       }, 150);
     };
 
+    const impact = (now: number) => {
+      squashStart = now;
+      sweepUp();
+    };
+
     // THE CLICK: only meaningful once settled - acknowledge with the
-    // existing glow + a tiny squash, then launch the exit
+    // existing glow + a tiny squash, then launch the exit immediately
     el.onclick = () => {
       if (phaseRef.current !== "settled") return;
       sweepUp();
-      ackSquash = SQUASH_MS;
-      exitT = performance.now();
+      ackStart = performance.now();
+      exitT = ackStart;
       prevExitU = 0;
       exitImpacts = 0;
       setPhaseBoth("exiting");
@@ -133,38 +143,40 @@ export default function BasketballStage({ onDone }: { onDone: () => void }) {
       let x = settleX;
       let y = groundY - BALL;
       let deg = 0;
+      let scale = 1;
 
       if (p === "dropping") {
-        // ---- STATE 1: the dispense - ease-in falls, ease-out rises
+        // ---- STATE 1: the dispense - ease-in fall, then single full
+        // parabolas for every rebound (one continuous curve each)
         if (t < FALL_MS) {
           const u = t / FALL_MS;
           y = dropY0 + dropDist * u * u; // ease-IN fall
-        } else if (t < FALL_MS + 190) {
-          if (dropped === 0) {
-            dropped = 1;
-            squash = SQUASH_MS;
-            sweepUp(); // FIRST ground impact
+        } else if (t < FALL_MS + REBOUNDS[0].dur) {
+          if (dropImpacts === 0) {
+            dropImpacts = 1;
+            impact(now); // FIRST ground impact
           }
-          const u = (t - FALL_MS) / 190;
-          y = groundY - BALL - REBOUND_1_APEX * (1 - (1 - u) * (1 - u)); // ease-OUT rise
-        } else if (t < FALL_MS + 380) {
-          const u = (t - FALL_MS - 190) / 190;
-          y = groundY - BALL - REBOUND_1_APEX * (1 - u) * (1 - u); // ease-IN fall
-        } else if (t < FALL_MS + 500) {
-          if (dropped === 1) {
-            dropped = 2;
-            squash = SQUASH_MS;
-            sweepUp(); // SECOND (tiny) impact
+          const s = (t - FALL_MS) / REBOUNDS[0].dur;
+          y = groundY - BALL - 4 * REBOUNDS[0].apex * s * (1 - s);
+        } else if (t < FALL_MS + REBOUNDS[0].dur + REBOUNDS[1].dur) {
+          if (dropImpacts === 1) {
+            dropImpacts = 2;
+            impact(now); // SECOND impact
           }
-          const u = (t - FALL_MS - 380) / 120;
-          y = groundY - BALL - REBOUND_2_APEX * (1 - (1 - u) * (1 - u)); // ease-OUT rise
+          const s = (t - FALL_MS - REBOUNDS[0].dur) / REBOUNDS[1].dur;
+          y = groundY - BALL - 4 * REBOUNDS[1].apex * s * (1 - s);
         } else if (t < SETTLE_MS) {
-          const u = (t - FALL_MS - 500) / 120;
-          y = groundY - BALL - REBOUND_2_APEX * (1 - u) * (1 - u); // ease-IN fall to rest
+          if (dropImpacts === 2) {
+            dropImpacts = 3;
+            impact(now); // THIRD impact
+          }
+          const s = (t - FALL_MS - REBOUNDS[0].dur - REBOUNDS[1].dur) / REBOUNDS[2].dur;
+          y = groundY - BALL - 4 * REBOUNDS[2].apex * s * (1 - s);
         } else {
           y = groundY - BALL;
           if (phaseRef.current === "dropping") {
-            // ---- STATE 2: settled - the ball STAYS and waits
+            // ---- STATE 2: settled - the ball rests EXACTLY on the
+            // divider, perfectly still, and waits for the click
             setPhaseBoth("settled");
             el.style.pointerEvents = "auto";
             el.style.cursor = "pointer";
@@ -173,31 +185,32 @@ export default function BasketballStage({ onDone }: { onDone: () => void }) {
       } else if (p === "settled") {
         y = groundY - BALL; // the ball rests on the divider
       } else {
-        // ---- STATE 3: the flicked exit - three arcs, growing speed,
-        // continuous clockwise rotation (~2 turns)
+        // ---- STATE 3: the flicked exit - windows on real elapsed
+        // time, continuous x + rotation, scale-out at the end
         const u = Math.min(1, (now - exitT) / EXIT_MS);
-        if (prevExitU < 0.3 && u >= 0.3 && exitImpacts === 0) {
+        if (prevExitU < EXIT_WINDOWS[0] && u >= EXIT_WINDOWS[0] && exitImpacts === 0) {
           exitImpacts = 1;
-          squash = SQUASH_MS;
-          sweepUp();
+          impact(now);
         }
-        if (prevExitU < 0.66 && u >= 0.66 && exitImpacts === 1) {
+        if (prevExitU < EXIT_WINDOWS[1] && u >= EXIT_WINDOWS[1] && exitImpacts === 1) {
           exitImpacts = 2;
-          squash = SQUASH_MS;
-          sweepUp();
+          impact(now);
         }
         prevExitU = u;
-        const arc = u < 0.3 ? 0 : u < 0.66 ? 1 : 2;
-        const arcStart = arc === 0 ? 0 : arc === 1 ? SPANS[0] : SPANS[0] + SPANS[1];
-        const s = Math.max(0, Math.min(1, (u - arcStart) / SPANS[arc]));
-        const height = 4 * EXIT_APEXES[arc] * s * (1 - s);
+        const arc = u < EXIT_WINDOWS[0] ? 0 : u < EXIT_WINDOWS[1] ? 1 : 2;
+        const arcStart = arc === 0 ? 0 : arc === 1 ? EXIT_WINDOWS[0] : EXIT_WINDOWS[1];
+        const arcSpan = arc === 0 ? EXIT_WINDOWS[0] : arc === 1 ? EXIT_WINDOWS[1] - EXIT_WINDOWS[0] : 1 - EXIT_WINDOWS[1];
+        const s = Math.max(0, Math.min(1, (u - arcStart) / arcSpan));
+        const h = arc < 2 ? 4 * EXIT_APEXES[arc] * s * (1 - s) : EXIT_APEXES[2] * (2 * s - s * s); // final half-rise
         x = settleX + u * R;
-        y = groundY - BALL - height;
-        deg = 720 * u; // two full forward turns across the exit
+        y = groundY - BALL - h;
+        deg = 720 * u; // continuous rotation, never frozen
+        // during the final ~28% the ball shrinks smoothly to zero
+        // WHILE x/y/rotation keep moving - no static final frame
+        scale = u >= EXIT_WINDOWS[1] ? 1 - (u - EXIT_WINDOWS[1]) / (1 - EXIT_WINDOWS[1]) : 1;
         if (x >= dividerRight + BALL / 2) {
-          // the final low arc leaves mid-air, past the line's right end
           rot.style.transform = `rotate(${deg}deg)`;
-          el.style.transform = `translate(${x}px, ${y}px) scale(1, 1)`;
+          el.style.transform = `translate(${x}px, ${y}px) scale(${scale}, ${scale})`;
           if (!doneSent) {
             doneSent = true;
             setTimeout(() => onDoneRef.current(), 120);
@@ -207,18 +220,18 @@ export default function BasketballStage({ onDone }: { onDone: () => void }) {
       }
 
       rot.style.transform = `rotate(${deg}deg)`;
-      if (ackSquash > 0) {
-        // the click acknowledgment: a tiny 1.05/0.94 squeeze
-        ackSquash -= 16;
-        const d = Math.sin(Math.PI * (1 - Math.max(0, ackSquash) / SQUASH_MS));
-        el.style.transform = `translate(${x}px, ${y}px) scale(${1 + 0.05 * d}, ${1 - 0.06 * d})`;
-      } else if (squash > 0) {
-        // the ground-impact squash: 1.08 / 0.88, ~60ms
-        squash -= 16;
-        const d = Math.sin(Math.PI * (1 - Math.max(0, squash) / SQUASH_MS));
-        el.style.transform = `translate(${x}px, ${y}px) scale(${1 + 0.08 * d}, ${1 - 0.12 * d})`;
+      // the squash envelopes run off REAL elapsed time - identical on
+      // 60Hz and 120Hz displays
+      const squashElapsed = now - squashStart;
+      const ackElapsed = now - ackStart;
+      if (ackElapsed < SQUASH_MS) {
+        const d = Math.sin(Math.PI * (1 - ackElapsed / SQUASH_MS));
+        el.style.transform = `translate(${x}px, ${y}px) scale(${scale * (1 + 0.05 * d)}, ${scale * (1 - 0.06 * d)})`;
+      } else if (squashElapsed < SQUASH_MS) {
+        const d = Math.sin(Math.PI * (1 - squashElapsed / SQUASH_MS));
+        el.style.transform = `translate(${x}px, ${y}px) scale(${scale * (1 + 0.08 * d)}, ${scale * (1 - 0.12 * d)})`;
       } else {
-        el.style.transform = `translate(${x}px, ${y}px) scale(1, 1)`;
+        el.style.transform = `translate(${x}px, ${y}px) scale(${scale}, ${scale})`;
       }
       raf = requestAnimationFrame(tick);
     };

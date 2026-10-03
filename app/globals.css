@@ -592,6 +592,16 @@ body {
   .music-island-shell {
     max-height: 112px;
   }
+  /* the 112px mobile cap is tight: pull the progress row up and the
+     controls down a touch so the rail/timestamps never collide with
+     the transport row (stage/divider untouched). Higher specificity -
+     the base rules come later in the file. */
+  .music-island-shell .island-progress-row {
+    top: 58px;
+  }
+  .music-island-shell .island-controls {
+    bottom: 10px;
+  }
 }
 
 /* island content: the COMPACT anatomy lives in a full-bleed
@@ -687,8 +697,8 @@ body {
 .island-progress {
   position: relative;
   flex: 1;
-  height: 2px;
-  border-radius: 1px;
+  height: 3px;
+  border-radius: 999px;
   background: rgba(255, 255, 255, 0.2);
 }
 
@@ -698,7 +708,7 @@ body {
   top: 0;
   width: 35%;
   height: 100%;
-  border-radius: 1px;
+  border-radius: 999px;
   background: rgba(255, 255, 255, 0.85);
 }
 
@@ -706,8 +716,8 @@ body {
   position: absolute;
   left: 35%;
   top: 50%;
-  width: 4px;
-  height: 4px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.9);
   transform: translate(-50%, -50%);

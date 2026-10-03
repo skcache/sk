@@ -47,12 +47,11 @@ const MUSIC_TIMING = {
   metaIn: 840, // metadata begins before the shell is fully expanded
   progressIn: 900, //
   controlsIn: 960, //
-  uiLeave: 3000, // expanded-only UI starts fading (200ms) after the
-  exitStart: 3025, // ~1.9s fully-settled hold; ~25ms later the shell
-  fadeShared: 3080, // shrinks DIRECTLY toward EMPTY while the shared
-  done: 3310, // art/wave move inward + fade and the wrapper fades -
-  // ~3.3s total: ONE exit gesture - the compact geometry is only
-  // passed through mid-flight, never settled.
+  uiLeave: 3500, // expanded-only UI starts fading (200ms) after the
+  exitStart: 3525, // ~2.4s fully-settled hold; ~25ms later the shell
+  fadeShared: 3580, // shrinks DIRECTLY toward EMPTY while the shared
+  done: 3820, // art/wave fade IN PLACE (expanded geometry, never
+  // compact) and the wrapper fades - ONE ~300ms collapse/dissolve.
 } as const;
 
 /* the exit curve: eased in-out (cubic-bezier(0.4, 0, 0.2, 1)) -
@@ -171,7 +170,7 @@ function MusicBody({ onDone }: { onDone: () => void }) {
   }, [reduce, schedule]);
 
   // derived motion signals - plain booleans, no per-beat state
-  const shared = phase === "expanded"; // art + waveform at the expanded placement
+  const shared = phase === "expanded" || phase === "closing"; // art + waveform STAY in the expanded placement through the whole close - they fade in place, never retarget compact
   const sharedGone = phase === "closing"; // art/wave fade with the outro
   const artOpacity = sharedGone ? 0 : artIn ? 1 : 0;
   const waveOpacity = sharedGone ? 0 : waveIn ? 1 : 0;
@@ -315,32 +314,19 @@ function IslandInner({ uiIn, shared, artOpacity, waveOpacity }: IslandProps) {
             transition={uiTransition(0.22)}
           >
             <span className="island-controls-main">
-              {/* previous: TWO SOLID TOUCHING ARROWHEADS - pure fill,
-                  gently rounded vertices, no stroke, no end bar */}
+              {/* previous: TWO PLAIN FILLED TRIANGLES, touching */}
               <svg className="island-skip-prev" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M13.6 6.4 Q14.9 6.4 14.5 7.6 L8.9 11.2 Q8 12 8.9 12.8 L14.5 16.4 Q14.9 17.6 13.6 17.6 Z"
-                  fill="currentColor"
-                />
-                <path
-                  d="M20.6 6.4 Q21.9 6.4 21.5 7.6 L15.9 11.2 Q15 12 15.9 12.8 L21.5 16.4 Q21.9 17.6 20.6 17.6 Z"
-                  fill="currentColor"
-                />
+                <polygon points="11,6 3,12 11,18" fill="currentColor" />
+                <polygon points="19,6 11,12 19,18" fill="currentColor" />
               </svg>
               <svg className="island-control-play" width="30" height="30" viewBox="0 0 24 24" aria-hidden="true">
                 <rect x="3.5" y="2.5" width="6.5" height="19" rx="2.6" fill="currentColor" />
                 <rect x="14" y="2.5" width="6.5" height="19" rx="2.6" fill="currentColor" />
               </svg>
-              {/* next: TWO SOLID TOUCHING ARROWHEADS, mirrored */}
+              {/* next: TWO PLAIN FILLED TRIANGLES, touching */}
               <svg className="island-skip-next" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
-                <path
-                  d="M10.4 6.4 Q9.1 6.4 9.5 7.6 L15.1 11.2 Q16 12 15.1 12.8 L9.5 16.4 Q9.1 17.6 10.4 17.6 Z"
-                  fill="currentColor"
-                />
-                <path
-                  d="M3.4 6.4 Q2.1 6.4 2.5 7.6 L8.1 11.2 Q9 12 8.1 12.8 L2.5 16.4 Q2.1 17.6 3.4 17.6 Z"
-                  fill="currentColor"
-                />
+                <polygon points="5,6 13,12 5,18" fill="currentColor" />
+                <polygon points="13,6 21,12 13,18" fill="currentColor" />
               </svg>
             </span>
           </motion.span>
