@@ -359,8 +359,8 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(css.includes("0 0 9px rgba(245, 217, 140, 0.48)"), true, "the gold light-front halo missing");
   assert.equal(css.includes("0 0 14px rgba(240, 202, 103, 0.18)"), true, "the gold second halo missing");
   assert.equal(css.includes("mask-image:"), true, "the static light-tide mask missing");
-  assert.equal(css.includes("black 40%,"), true, "the sustained full tide fill missing");
-  assert.equal(css.includes("rgba(0, 0, 0, 0.35)"), true, "the ramp feather missing");
+  assert.equal(css.includes("black 55%,"), true, "the front-bright plateau missing");
+  assert.equal(css.includes("rgba(0, 0, 0, 0.35)") && css.includes("rgba(0, 0, 0, 0.85)"), true, "the ramp feather + tide tail missing");
   assert.equal(ucsd.includes("maskPosition"), false, "the mask must stay static - transform only");
   assert.equal(ucsd.includes("maskSize"), false, "the mask must stay static - transform only");
   assert.equal(css.includes("text-shadow: 0 0 5px"), false, "the paint overlays must own color only - glow lives in the light fronts");
