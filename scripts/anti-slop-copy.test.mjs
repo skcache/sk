@@ -535,24 +535,35 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(music.includes("buildFrames"), false, "island must not hand-roll a frame table");
   const rAFCount = (music.match(/requestAnimationFrame/g) || []).length;
   assert.equal(rAFCount <= 1, true, "at most ONE deferred measurement frame is allowed - no rAF engine");
-  assert.equal(music.includes("useScheduledAnimations"), true, "island must use the official animation queue");
-  assert.equal(music.includes("~3.4s"), true, "3.4s lifecycle missing");
+  // ONE absolute clock: the shell states are dispatched via setSize on
+  // the SAME MUSIC_TIMING table as the outer choreography. The Cult
+  // queue is BANNED here - its delays are cumulative, which desyncs
+  // the shell from the seed/return timeline.
+  assert.equal(music.includes("useScheduledAnimations"), false, "the cumulative queue must be gone - ONE absolute clock only");
+  assert.equal(music.includes('dispatch({ type: "SET_SIZE"'), true, "the shell states must be driven by the stable dispatch");
+  assert.equal(music.includes('newSize: SIZE_PRESETS.COMPACT }'), true, "the absolute compact dispatch missing");
+  assert.equal(music.includes('newSize: SIZE_PRESETS.COMPACT_LONG }'), true, "the absolute full dispatch missing");
+  assert.equal(music.includes('newSize: SIZE_PRESETS.EMPTY }'), true, "the absolute empty dispatch missing");
+  assert.equal(music.includes("~3.3s"), true, "3.3s lifecycle missing");
   // ONE visible object: Motion owns POSITION (the seed travel), the
   // Cult shell owns DIMENSIONS - no invisible anchors, no layoutId
   assert.equal(music.includes("layoutId"), false, "the invisible-anchor layoutId hack must be gone");
   assert.equal(music.includes("music-island-anchor"), false, "the invisible 300x56 anchor must be gone");
   assert.equal(music.includes("music-projectile"), true, "the visible traveling seed missing");
   assert.equal(music.includes("music-seed-skin"), true, "the seed skin missing");
-  assert.equal(music.includes("stiffness: 460"), true, "the near-critical seed spring missing");
+  assert.equal(music.includes("stiffness: 500"), true, "the near-critical seed spring missing");
   assert.equal(music.includes('type: "spring"'), true, "the seed travel must be a spring");
-  // the dead 300ms wait is gone: the shell expands as the seed settles
-  assert.equal(music.includes("delay: MUSIC_TIMING.compact"), true, "the arrival expansion missing (240ms)");
+  // the dead 300ms wait is gone: the shell starts expanding while the
+  // seed is still gliding (120ms)
+  assert.equal(music.includes("at(MUSIC_TIMING.compact, () => dispatch({ type: \"SET_SIZE\", newSize: SIZE_PRESETS.COMPACT }))"), true, "the mid-flight expansion missing");
   assert.equal(music.includes("delay: 300"), false, "the dead 300ms opening wait must be gone");
-  // the state machine stays small: external phrase + the official queue
+  // the state machine stays small: external phrase + the shell states
   assert.equal(music.includes('"opening"'), true, "the opening phase missing");
   assert.equal(music.includes('"returning"'), true, "the return phase missing");
-  assert.equal(music.includes("delay: MUSIC_TIMING.collapse"), true, "the collapse schedule missing");
-  assert.equal(music.includes("delay: 2650"), false, "the old contract schedule must be gone");
+  assert.equal(music.includes("metaMount"), true, "the metadata mount beat missing");
+  assert.equal(music.includes("MUSIC_TIMING.empty"), true, "the empty dispatch missing");
+  assert.equal(music.includes("delay: 2650"), false, "the old cumulative schedule must be gone");
+  assert.equal(music.includes("delay: 2920"), false, "the old cumulative schedule must be gone");
   // content leaves BEFORE the shell collapses
   assert.equal(music.includes("rowExit"), true, "the content-exit beat missing");
   assert.equal(music.includes("el.animate"), true, "the content exit WAAPI missing");
@@ -581,9 +592,21 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(css.includes(".music-island-anchor"), false, "the invisible anchor CSS must be gone");
   assert.equal(css.includes(".music-projectile"), true, "the traveling seed CSS missing");
   assert.equal(css.includes(".music-seed-skin"), true, "the seed skin CSS missing");
-  assert.equal(css.includes("rgba(8, 8, 10, 0.92)"), true, "the near-black shell missing");
+  assert.equal(css.includes("rgba(5, 5, 6, 0.96)"), true, "the near-black shell missing");
   assert.equal(css.includes("rgba(255, 255, 255, 0.08)"), true, "the faint hairline border missing");
   assert.equal(css.includes("max-width: calc(100vw - 56px)"), true, "the mobile viewport guard missing");
+  // the OLD generic glass block is DELETED - nothing may override the
+  // near-black surface (specular insets + white gradient + blur)
+  assert.equal(css.includes(".dynamic-island-shell {"), false, "the old glass card block must be gone");
+  assert.equal(css.includes("backdrop-filter: blur(18px) saturate(1.4)"), false, "the glass blur must be gone");
+  // the media row: ONE horizontal line - art | meta | eq (eq right)
+  assert.equal(css.includes("display: inline-flex"), true, "the horizontal media row missing");
+  assert.equal(css.includes("margin-left: auto"), true, "the EQ must sit at the right side");
+  assert.equal(css.includes("island-meta-in"), true, "the metadata entrance animation missing");
+  assert.equal(css.includes("island-art-in"), true, "the album art entrance animation missing");
+  // reduced motion renders the island (the display:none bug is gone)
+  assert.equal(css.includes(".music-projectile.is-reduced"), true, "the reduced-motion stage missing");
+  assert.equal(/\.music-projectile\.is-reduced\s*\{[^}]*display: none/.test(css), false, "reduced motion must NOT be hidden");
   assert.equal(css.includes("eq-bounce"), true, "the equalizer heartbeat missing");
   // the stage is a FIXED-height playground - it never breathes for an
   // animation, so the old 26px rest + active-expansion rules are gone
