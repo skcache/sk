@@ -158,7 +158,7 @@ export default function Home() {
           id="intro"
           data-reveal
           aria-label="Intro"
-          className="mx-auto pt-14 pb-16 sm:pt-16 sm:pb-14 max-w-[48rem]"
+          className="mx-auto pt-14 pb-[19px] sm:pt-16 sm:pb-px max-w-[48rem]"
         >
           <StageProvider>
             <Intro />

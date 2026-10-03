@@ -518,18 +518,18 @@ body {
 /* ---------- shared interaction stage ---------- */
 
 /* a real bounded playground between the intro and the experience
-   section. FIXED height, always (72px mobile / 88px desktop) - a
+   section. FIXED height, always (124px mobile / 150px desktop) - a
    stable stage that never breathes or resizes for an animation.
    Toys (music island, ball, trident) play INSIDE the space; the
-   island moves into it instead of pushing the page around. */
+   island is absolutely positioned so nothing below ever moves. */
 .interaction-stage {
   position: relative;
-  height: 72px;
+  height: 116px;
 }
 
 @media (min-width: 640px) {
   .interaction-stage {
-    height: 88px;
+    height: 143px;
   }
 }
 
@@ -541,13 +541,16 @@ body {
   display: inline-block;
 }
 
-/* the island home: IN FLOW inside the interaction stage, 24px below
-   the intro paragraph - the stage is the fixed-height whitespace, the
-   island is its only content, so the page never moves. No travel, no
-   portal, nothing flies out of the word. */
+/* the island home: ABSOLUTE inside the fixed-height stage - it never
+   participates in flow, so the page/divider below NEVER moves. The
+   stage itself was grown (150 desktop / 124 mobile) by reallocating
+   the intro section's bottom padding, so the total page height is
+   unchanged and the island visually lives in the intro whitespace. */
 .music-projectile {
-  position: relative;
-  margin-top: 24px;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 8px;
   display: grid;
   justify-items: center;
   pointer-events: none;
@@ -571,6 +574,16 @@ body {
   box-shadow: none;
   overflow: hidden;
   max-width: calc(100vw - 22px);
+}
+
+/* the expanded height rides the narrow-viewport gutter too: on small
+   screens the panel is capped shorter so it keeps clear of the
+   divider below (the width clamp above leaves the height to the
+   aspect, so this trims only the mobile void) */
+@media (max-width: 639px) {
+  .music-island-shell {
+    max-height: 120px;
+  }
 }
 
 /* island content: the COMPACT anatomy lives in a full-bleed
@@ -619,8 +632,8 @@ body {
 
 .island-expanded-meta {
   position: absolute;
-  left: 76px;
-  top: 16px;
+  left: 78px;
+  top: 19px;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -647,12 +660,12 @@ body {
    round thumb - static during the performance (illustration only) */
 .island-progress-row {
   position: absolute;
-  left: 16px;
-  right: 16px;
-  top: 60px;
+  left: 18px;
+  right: 18px;
+  top: 74px;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
 }
 
 .island-time {
@@ -693,13 +706,14 @@ body {
   transform: translate(-50%, -50%);
 }
 
-/* transport row: previous / pause / next centered, the output glyph
-   on the trailing edge - visual only, no handlers */
+/* transport row: favorite star at the LEADING edge, previous / pause /
+   next centered (pause visually strongest), AirPlay at the TRAILING
+   edge - evenly distributed, Apple-style. Visual only, no handlers. */
 .island-controls {
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 10px;
+  bottom: 12px;
   display: block;
 }
 
@@ -707,17 +721,30 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 32px;
+  gap: 36px;
   color: rgba(255, 255, 255, 0.85);
+}
+
+.island-control-play {
+  color: rgba(255, 255, 255, 1);
+}
+
+.island-star {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  color: rgba(255, 255, 255, 0.65);
 }
 
 .island-airplay {
   position: absolute;
-  right: 16px;
+  right: 18px;
   top: 50%;
   transform: translateY(-50%);
   display: flex;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.65);
 }
 
 /* the live waveform at the trailing edge: many very thin bars of

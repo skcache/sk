@@ -564,12 +564,15 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(music.includes("favoriteSong.artist"), true, "the artist must render in the expanded view");
   assert.equal(music.includes("favoriteSong.artwork"), true, "the album artwork must stay");
   assert.equal(music.includes("dynamic-island-wave"), true, "the waveform missing");
-  assert.equal(music.includes("~3.8s"), true, "3.8s lifecycle missing");
-  // ONE visible object in flow: the shell + press wrapper only
-  assert.equal(music.includes("music-projectile"), true, "the in-flow island home missing");
+  assert.equal(music.includes("~3.5s"), true, "3.5s lifecycle missing");
+  // ONE visible object, absolute in the fixed stage: no flow, no shift
+  assert.equal(music.includes("music-projectile"), true, "the absolute island home missing");
   assert.equal(music.includes("music-island-press-wrap"), true, "the press/fade wrapper missing");
   assert.equal(music.includes("stiffness: 400"), true, "the matched spring must mirror the shell");
   assert.equal(music.includes('type: "spring"'), true, "the shared geometry must be a spring");
+  // the force-touch press: 1 -> .965 -> 1, expanding DURING release
+  assert.equal(music.includes("PRESS_SCALE"), true, "the force-touch depth missing");
+  assert.equal(music.includes("0.965"), true, "the force-touch depth must be ~0.965");
   // the state machine stays small: the five lifecycle phases
   assert.equal(music.includes('"opening"'), true, "the opening phase missing");
   assert.equal(music.includes('"compact"'), true, "the compact phase missing");
@@ -577,17 +580,19 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(music.includes('"compactClosing"'), true, "the collapse phase missing");
   assert.equal(music.includes('"closing"'), true, "the mirrored closing phase missing");
   // ONE absolute clock, one owner per property, no imperative calls
-  assert.equal(music.includes("bloom: 840"), true, "the bloom beat missing");
-  assert.equal(music.includes("pressStart: 780"), true, "the tactile press cue missing");
-  assert.equal(music.includes("pressRelease: 840"), true, "press release must share the bloom beat");
-  assert.equal(music.includes("collapse: 2680"), true, "the collapse beat missing");
-  assert.equal(music.includes("uiLeave: 2680"), true, "the expanded-content exit beat missing");
-  assert.equal(music.includes("close: 3520"), true, "the mirrored outro beat missing");
-  assert.equal(music.includes("done: 3800"), true, "the idle beat missing");
-  // intro mirrors outro: the wrapper fades 0 -> 1 in and 1 -> 0 out
+  assert.equal(music.includes("bloom: 740"), true, "the bloom beat missing");
+  assert.equal(music.includes("pressStart: 650"), true, "the force-touch press missing");
+  assert.equal(music.includes("pressRelease: 740"), true, "press release must share the bloom beat");
+  assert.equal(music.includes("metaIn: 840"), true, "metadata must enter before the shell settles");
+  assert.equal(music.includes("collapse: 2430"), true, "the collapse beat missing");
+  assert.equal(music.includes("uiLeave: 2350"), true, "the expanded-content exit beat missing");
+  assert.equal(music.includes("fadeShared: 3150"), true, "the shared-fade beat missing");
+  assert.equal(music.includes("close: 3250"), true, "the mirrored outro beat missing");
+  assert.equal(music.includes("done: 3550"), true, "the idle beat missing");
+  // intro mirrors outro: fade 0 -> 1 in, 1 -> 0 out + slight squash
   assert.equal(music.includes("initial={{ opacity: 0 }}"), true, "the intro fade-in missing");
-  assert.equal(music.includes("phase === \"closing\" ? 0 : 1"), true, "the outro fade-out missing");
-  assert.equal(music.includes("SHELL_SPRING"), true, "the shared shell spring missing");
+  assert.equal(music.includes("opacity: closing ? 0 : 1"), true, "the outro fade-out missing");
+  assert.equal(music.includes("scaleY: closing ? 0.9 : 1"), true, "the outro squash missing");
   // ONE animation system: Motion declarative only. No WAAPI, no CSS
   // keyframes for phase transitions, no conditional mounting.
   assert.equal(music.includes(".animate("), false, "no imperative animation calls are allowed");
@@ -603,9 +608,9 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(music.includes("cubic-bezier(0.4, 0, 0.2, 1)"), true, "the eased in-out exit missing");
   assert.equal(music.includes("delay: 2650"), false, "the old cumulative schedule must be gone");
   assert.equal(music.includes("delay: 2920"), false, "the old cumulative schedule must be gone");
-  // content leaves as the shell relaxes: the expanded UI fades while
+  // content leaves AS the shell relaxes: the expanded UI fades while
   // the contraction runs its first ~30% - a continuous dissolve
-  assert.equal(music.includes("uiLeave: 2680"), true, "the expanded-content exit beat missing");
+  assert.equal(music.includes("uiLeave: 2350"), true, "the expanded-content exit beat missing");
   assert.equal(music.includes("el.animate"), false, "the row WAAPI must be gone (edge-aligned content only)");
   assert.equal(music.includes("DynamicIslandProvider"), true, "island must use the official provider");
   assert.equal(music.includes("SIZE_PRESETS.COMPACT"), true, "the compact preset missing");
@@ -628,11 +633,13 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   const css = read("globals.css");
   assert.equal(css.includes(".interaction-stage"), true, "stage CSS missing");
   assert.equal(css.includes(".music-island-anchor"), false, "the invisible anchor CSS must be gone");
-  assert.equal(css.includes(".music-projectile"), true, "the in-flow island home CSS missing");
+  assert.equal(css.includes(".music-projectile"), true, "the absolute island home CSS missing");
   assert.equal(css.includes(".music-island-press-wrap"), true, "the press/fade wrapper CSS missing");
-  assert.equal(css.includes("margin-top: 24px"), true, "the 24px intro offset missing");
+  assert.equal(css.includes("top: 8px"), true, "the island offset below the intro missing");
+  assert.equal(css.includes("margin-top: 24px"), false, "the in-flow margin must be gone (absolute now)");
   assert.equal(css.includes(".music-seed-skin"), false, "the seed skin CSS must be gone (no travel)");
-  assert.equal(css.includes(".music-projectile.is-reduced"), false, "the reduced travel stage must be gone");
+  assert.equal(css.includes(".island-star"), true, "the favorite star missing");
+  assert.equal(css.includes("max-height: 120px"), true, "the mobile expanded cap missing");
   assert.equal(css.includes("background: #000000"), true, "the PURE BLACK shell missing");
   assert.equal(css.includes("rgba(255, 255, 255, 0.035)"), true, "the invisible hairline missing");
   assert.equal(css.includes("box-shadow: none"), true, "the shell must not float like a card");
@@ -663,11 +670,11 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   // the stage is a FIXED-height playground - it never breathes for an
   // animation, so the old 26px rest + active-expansion rules are gone
   const stageRule = css.match(/\.interaction-stage\s*\{([^}]+)\}/)?.[1] ?? "";
-  assert.equal(stageRule.includes("height: 72px"), true, "stage must be a fixed 72px playground");
+  assert.equal(stageRule.includes("height: 116px"), true, "stage must be a fixed 116px playground");
   assert.equal(stageRule.includes("transition"), false, "the stage must never transition its height");
   assert.equal(css.includes(".interaction-stage.is-active"), false, "the active expansion must be gone");
-  assert.equal(css.includes("height: 72px"), true, "mobile stage height missing");
-  assert.equal(css.includes("height: 88px"), true, "desktop stage height missing");
+  assert.equal(css.includes("height: 116px"), true, "mobile stage height missing");
+  assert.equal(css.includes("height: 143px"), true, "desktop stage height missing");
   assert.equal(css.includes(".island-row-content"), true, "island row CSS missing");
   assert.equal(css.includes(".music-island-shell"), true, "island shell CSS missing");
   assert.equal(css.includes(".dynamic-island-wave"), true, "waveform bars CSS missing");

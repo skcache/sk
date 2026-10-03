@@ -109,12 +109,14 @@ const DynamicIslandSizePresets: Record<SizePresets, Preset> = {
     aspectRatio: 44 / 235,
     borderRadius: 46,
   },
-  /* the MUSIC EXPANDED form: a real Now Playing panel, not a longer
-     pill - snug 345x112, tightly arranged with no dead vertical air */
+  /* the MUSIC EXPANDED form: Apple-like Now Playing proportions. Sized
+     against the intro whitespace: 335x132 (radius 34) keeps clear of
+     the divider on every viewport - taller than wide with the proper
+     top row / times / five-control rhythm, no generic card look */
   [SIZE_PRESETS.MUSIC_EXPANDED]: {
-    width: 345,
-    aspectRatio: 112 / 345,
-    borderRadius: 40,
+    width: 335,
+    aspectRatio: 132 / 335,
+    borderRadius: 34,
   },
   [SIZE_PRESETS.COMPACT_LONG]: {
     width: 300,
