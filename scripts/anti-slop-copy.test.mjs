@@ -543,17 +543,21 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(music.includes('dispatch({ type: "SET_SIZE"'), true, "the shell states must be driven by the stable dispatch");
   assert.equal(music.includes('newSize: SIZE_PRESETS.COMPACT }'), true, "the compact dispatch missing");
   assert.equal(music.includes('newSize: SIZE_PRESETS.EMPTY }'), true, "the empty dispatch missing");
-  // THIS PASS IS APPLE'S COMPACT NOW PLAYING ISLAND: one size
-  // transition (EMPTY -> COMPACT -> EMPTY), no expanded state
+  // THE EXPANDED CHOREOGRAPHY: the SAME shell blooms COMPACT ->
+  // MUSIC_EXPANDED -> COMPACT -> EMPTY on one absolute clock. The
+  // accepted compact state is untouched; COMPACT_LONG stays banned.
   assert.equal(music.includes("COMPACT_LONG"), false, "COMPACT_LONG must be gone from the choreography");
+  assert.equal(music.includes('newSize: SIZE_PRESETS.MUSIC_EXPANDED }'), true, "the music-expanded dispatch missing");
+  assert.equal(music.includes("MUSIC_EXPANDED"), true, "the dedicated expanded preset missing");
   assert.equal(music.includes("metaMount"), false, "the metadata mount must be gone");
   assert.equal(music.includes("metaExit"), false, "the metadata exit must be gone");
   assert.equal(music.includes("dynamic-island-meta"), false, "the metadata DOM must be gone");
-  assert.equal(music.includes("favoriteSong.title"), false, "the title must not render in compact mode");
-  assert.equal(music.includes("favoriteSong.artist"), false, "the artist must not render in compact mode");
+  // the title/artist belong ONLY to the true expanded Now Playing view
+  assert.equal(music.includes("favoriteSong.title"), true, "the title must render in the expanded view");
+  assert.equal(music.includes("favoriteSong.artist"), true, "the artist must render in the expanded view");
   assert.equal(music.includes("favoriteSong.artwork"), true, "the album artwork must stay");
   assert.equal(music.includes("dynamic-island-wave"), true, "the waveform missing");
-  assert.equal(music.includes("~3.4s"), true, "3.4s lifecycle missing");
+  assert.equal(music.includes("~5.3s"), true, "5.3s lifecycle missing");
   // ONE visible object: Motion owns POSITION (the seed travel), the
   // Cult shell owns DIMENSIONS - no invisible anchors, no layoutId
   assert.equal(music.includes("layoutId"), false, "the invisible-anchor layoutId hack must be gone");
@@ -566,19 +570,28 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   // seed is still gliding (70ms)
   assert.equal(music.includes("at(MUSIC_TIMING.expand, () => dispatch({ type: \"SET_SIZE\", newSize: SIZE_PRESETS.COMPACT }))"), true, "the mid-flight expansion missing");
   assert.equal(music.includes("delay: 300"), false, "the dead 300ms opening wait must be gone");
-  // the state machine stays small: external phrase + the shell states
+  // the state machine stays small: the six performance phases
   assert.equal(music.includes('"opening"'), true, "the opening phase missing");
+  assert.equal(music.includes('"expanded"'), true, "the expanded phase missing");
+  assert.equal(music.includes('"compactClosing"'), true, "the collapse phase missing");
   assert.equal(music.includes('"returning"'), true, "the return phase missing");
   assert.equal(music.includes('"dissolve"'), true, "the seed dissolve phase missing");
-  assert.equal(music.includes("MUSIC_TIMING.shrink"), true, "the shrink beat missing");
-  assert.equal(music.includes("returnMs: 3260"), true, "the MOVE+SHRINK return beat missing");
+  assert.equal(music.includes("bloom: 1080"), true, "the bloom beat missing");
+  assert.equal(music.includes("collapse: 3920"), true, "the collapse beat missing");
+  assert.equal(music.includes("returnMs: 4850"), true, "the MOVE+SHRINK return beat missing");
+  assert.equal(music.includes("press: 1000"), true, "the tactile press cue missing");
+  assert.equal(music.includes("island-expanded-ui"), true, "the expanded Now Playing surface missing");
+  assert.equal(music.includes("island-progress"), true, "the progress rail missing");
+  assert.equal(music.includes("island-controls"), true, "the transport controls missing");
   assert.equal(music.includes("EXIT_EASE"), true, "the smooth exit curve missing");
   assert.equal(music.includes("cubic-bezier(0.4, 0, 0.2, 1)"), true, "the eased in-out exit missing");
   assert.equal(music.includes("delay: 2650"), false, "the old cumulative schedule must be gone");
   assert.equal(music.includes("delay: 2920"), false, "the old cumulative schedule must be gone");
-  // content leaves BEFORE the shell collapses (no metadata in compact)
-  assert.equal(music.includes("waveOut"), true, "the waveform exit beat missing");
-  assert.equal(music.includes("artOut"), true, "the art exit beat missing");
+  // content leaves BEFORE the shell collapses (expanded UI exits at
+  // 3750 while the art/waveform - shared with compact - stay through)
+  assert.equal(music.includes("expandedHold: 3750"), true, "the expanded-content exit beat missing");
+  assert.equal(music.includes("duration: 200, easing: EXIT_EASE"), true, "the expanded UI exit fade missing");
+  assert.equal(music.includes("duration: 300, easing: EXIT_EASE"), true, "the return fade missing");
   assert.equal(music.includes("el.animate"), false, "the row WAAPI must be gone (edge-aligned content only)");
   assert.equal(music.includes("DynamicIslandProvider"), true, "island must use the official provider");
   assert.equal(music.includes("SIZE_PRESETS.COMPACT"), true, "the compact preset missing");
@@ -606,7 +619,7 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(css.includes("background: #000000"), true, "the PURE BLACK shell missing");
   assert.equal(css.includes("rgba(255, 255, 255, 0.035)"), true, "the invisible hairline missing");
   assert.equal(css.includes("box-shadow: none"), true, "the shell must not float like a card");
-  assert.equal(css.includes("max-width: calc(100vw - 56px)"), true, "the mobile viewport guard missing");
+  assert.equal(css.includes("max-width: calc(100vw - 22px)"), true, "the mobile viewport guard missing");
   // the OLD generic glass block is DELETED - nothing may override the
   // black surface (specular insets + white gradient + blur)
   assert.equal(css.includes(".dynamic-island-shell {"), false, "the old glass card block must be gone");

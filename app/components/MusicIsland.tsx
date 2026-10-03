@@ -13,26 +13,33 @@ import {
   SIZE_PRESETS,
 } from "./kit/dynamic-island";
 
-/* THE ONE absolute clock. The whole performance lives here:
-   press -> the seed is born at the word -> it moves toward the stage
-   WHILE the shell begins widening -> the seed arrives as the finished
-   Apple-style COMPACT island (235x44) -> ~2s hold with the live
-   waveform -> the waveform crossfades out -> the art follows a beat
-   later -> the shell shrinks AND the seed travels home at the SAME
-   beat (MOVE + SHRINK is one gesture) -> the seed dissolves into the
-   word -> idle. Every fade is long, eased in-out, and overlapped. */
+/* THE ONE ABSOLUTE CLOCK. The whole ~5.2s performance lives here:
+   press -> seed born at the word -> it moves toward the stage WHILE
+   the shell widens -> COMPACT (235x44) forms and holds -> a tiny
+   physical press cue -> the SAME black shell BLOOMS into the real
+   EXPANDED Now Playing form (371x148) -> Kick / Future / progress /
+   controls unfold -> ~2.3s hold -> the expanded-only content leaves
+   -> the same shell contracts back to the EXACT compact state ->
+   compact holds briefly -> the shell shrinks AND travels home at the
+   same beat -> the seed dissolves into the word -> idle.
+   One clock for the Cult states, the content beats, and the travel. */
 const MUSIC_TIMING = {
   expand: 70, // the shell starts widening while the seed is still moving
-  skinFade: 110, // the seed skin fades out almost immediately (one shell)
-  artIn: 200, // album art fades/scales in as the shell reaches its width
-  waveIn: 280, // the waveform follows a beat later
-  waveOut: 2700, // waveform crossfades out (300ms, eased in-out)
-  artOut: 2860, // art begins fading as the wave's tail settles (crossfade)
-  closing: 3180, // the seed skin re-forms under the shell
-  shrink: 3260, // COMPACT -> EMPTY: the shell begins shrinking
-  returnMs: 3260, // SAME beat: the seed travels home WHILE shrinking
-  dissolve: 3500, // the seed fades into the word (240ms) with a 20ms settled rest
-  done: 3760, // unmount AFTER the dissolve completes; idle
+  skinFade: 110, // the seed skin fades out (one visible object)
+  artIn: 200, // album art CSS entrance delay (mounts with the shell)
+  waveIn: 280, // waveform CSS entrance delay
+  compactAt: 350, // COMPACT fully formed
+  press: 1000, // the tactile press cue (130ms, scale 1 -> .975 -> 1)
+  bloom: 1080, // the shell BLOOMS into MUSIC_EXPANDED
+  metaIn: 1180, // title / artist unfold
+  progressIn: 1270, // the progress rail appears
+  controlsIn: 1340, // the controls resolve
+  expandedHold: 3750, // expanded-only content begins leaving (~200ms)
+  collapse: 3920, // MUSIC_EXPANDED -> COMPACT (same shell, art/wave move with it)
+  compactHold: 4250, // the exact compact state is restored and held
+  returnMs: 4850, // MOVE + SHRINK: fades + EMPTY + travel home begin together
+  dissolve: 5100, // the seed fades into the word (240ms, no pop)
+  done: 5340, // unmount AFTER the dissolve; idle
 } as const;
 
 /* the exit fade: long and eased in-out - never a cheap ease-in tail */
@@ -48,21 +55,23 @@ const SEED_SPRING = {
   mass: 0.8,
 };
 
-type Phase = "opening" | "open" | "closing" | "returning" | "dissolve";
+type Phase = "opening" | "compact" | "expanded" | "compactClosing" | "returning" | "dissolve";
 
 /**
- * The music egg as Apple's COMPACT Now Playing Dynamic Island:
- * a tiny pure-black pill (235x44) with album art at the LEADING edge,
- * a live waveform at the TRAILING edge, and intentional black void in
- * the center - the island wraps around the "camera region", it is NOT
- * a media card. No title, no artist, no expanded state in this pass.
+ * The music egg: ONE black object that physically becomes
+ * SEED -> COMPACT Dynamic Island -> EXPANDED Now Playing island ->
+ * COMPACT -> SEED, without ever breaking the illusion.
  *
- * One visible object: the seed born at `music` IS the shell being
- * born - Motion carries the position while the Cult shell stretches
- * around the traveler, and the seed skin fades within ~110ms so there
- * is never a second black capsule underneath. Closing mirrors the
- * opening: the seed begins moving home at the exact beat the shell
- * starts shrinking. Lifecycle ~3.4s, one deterministic performance.
+ * Compact is the ACCEPTED baseline (235x44, pure black, art leading,
+ * waveform trailing, black void center - no title/artist). The
+ * expansion blooms the SAME shell, and the album art + waveform are
+ * the SAME DOM elements the whole time - they reposition/resize with
+ * the shell. The expanded view adds Kick / Future, a thin progress
+ * rail, and three visual-only transport controls.
+ *
+ * Motion owns position; the Cult shell owns dimensions; the seed skin
+ * fades within ~110ms so there is never a second black object.
+ * Lifecycle ~5.3s, one deterministic performance per click.
  */
 export default function MusicIsland({ onDone }: { onDone: () => void }) {
   return (
@@ -116,8 +125,8 @@ function MusicBody({ onDone }: { onDone: () => void }) {
       setStage(findStageCenter());
       if (reduce) {
         // reduced motion: no travel - the island lives its schedule
-        // in place, then returns with a clean fade
-        setPhase("open");
+        // in place (compact -> expanded -> compact), then fades clean
+        setPhase("compact");
         schedule(MUSIC_TIMING.done, () => onDoneRef.current());
       }
     });
@@ -128,20 +137,37 @@ function MusicBody({ onDone }: { onDone: () => void }) {
     };
   }, [reduce, schedule]);
 
-  // the outer choreography on the SAME absolute clock: the skin fades
-  // as the shell covers it, the content crossfades out (long, eased
-  // in-out, overlapping), and the MOVE+SHRINK closing begins at the
-  // exact beat the shell contracts - then the seed dissolves.
+  // the outer choreography on the SAME absolute clock: phases, the
+  // press cue, the expanded-content exit, and the MOVE+SHRINK closing
   useEffect(() => {
     if (!origin || !stage || reduce) return;
-    schedule(MUSIC_TIMING.skinFade, () => setPhase("open"));
-    schedule(MUSIC_TIMING.waveOut, () => {
+    schedule(MUSIC_TIMING.skinFade, () => setPhase("compact"));
+    schedule(MUSIC_TIMING.bloom, () => setPhase("expanded"));
+    schedule(MUSIC_TIMING.press, () => {
+      const shell = document.querySelector(".music-island-shell");
+      if (!shell) return;
+      shell.animate(
+        [
+          { transform: "scale(1)" },
+          { transform: "scale(0.975)", offset: 0.5 },
+          { transform: "scale(1)" },
+        ],
+        { duration: 130, easing: "ease-in-out" }
+      );
+    });
+    schedule(MUSIC_TIMING.expandedHold, () => {
+      const ui = document.querySelector(".island-expanded-ui");
+      if (ui) {
+        ui.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, easing: EXIT_EASE, fill: "forwards" });
+      }
+    });
+    schedule(MUSIC_TIMING.collapse, () => setPhase("compactClosing"));
+    schedule(MUSIC_TIMING.returnMs, () => {
+      setPhase("returning"); // MOVE + SHRINK: the travel begins with the shell's EMPTY
       const wave = document.querySelector(".dynamic-island-wave");
       if (wave) {
         wave.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 300, easing: EXIT_EASE, fill: "forwards" });
       }
-    });
-    schedule(MUSIC_TIMING.artOut, () => {
       const art = document.querySelector(".dynamic-island-art");
       if (art) {
         art.animate(
@@ -150,8 +176,6 @@ function MusicBody({ onDone }: { onDone: () => void }) {
         );
       }
     });
-    schedule(MUSIC_TIMING.closing, () => setPhase("closing"));
-    schedule(MUSIC_TIMING.returnMs, () => setPhase("returning")); // with the shrink
     schedule(MUSIC_TIMING.dissolve, () => setPhase("dissolve"));
     schedule(MUSIC_TIMING.done, () => onDoneRef.current());
   }, [origin, stage, reduce, schedule]);
@@ -163,7 +187,7 @@ function MusicBody({ onDone }: { onDone: () => void }) {
     return { x: stage.x - origin.x, y: stage.y - origin.y };
   }, [origin, stage]);
 
-  const island = <IslandInner onDone={onDone} />;
+  const island = <IslandInner phase={phase} />;
 
   // reduced motion: the island simply appears at the stage center and
   // lives its schedule in place - no travel, no skin
@@ -195,7 +219,7 @@ function MusicBody({ onDone }: { onDone: () => void }) {
       }}
       initial={false}
       animate={
-        phase === "opening" || phase === "open" || phase === "closing"
+        phase === "opening" || phase === "compact" || phase === "expanded" || phase === "compactClosing"
           ? { x: delta.x, y: delta.y }
           : { x: 0, y: 0 }
       }
@@ -204,7 +228,12 @@ function MusicBody({ onDone }: { onDone: () => void }) {
       <span
         className="music-seed-skin"
         aria-hidden="true"
-        style={{ opacity: phase === "open" || phase === "dissolve" ? 0 : 1 }}
+        style={{
+          opacity:
+            phase === "compact" || phase === "expanded" || phase === "compactClosing" || phase === "dissolve"
+              ? 0
+              : 1,
+        }}
       />
       <span className="music-projectile-island">{island}</span>
     </motion.div>,
@@ -215,18 +244,14 @@ function MusicBody({ onDone }: { onDone: () => void }) {
 /**
  * The island itself: the official size machine driven by the reducer's
  * STABLE dispatch on the same absolute clock (never the cumulative
- * queue). ONE size transition in this pass: EMPTY -> COMPACT (the
- * Apple compact Now Playing form), then EMPTY again at the close.
- * Content is edge-aligned: art at the leading edge, waveform at the
- * trailing edge, intentful black void between them.
+ * queue). The SAME shell moves COMPACT -> MUSIC_EXPANDED -> COMPACT ->
+ * EMPTY; the compact art + waveform are the SAME elements throughout
+ * and simply reposition when the shell blooms. The expanded UI
+ * (title/artist/progress/controls) mounts only for the expanded phase.
  */
-function IslandInner({ onDone }: { onDone: () => void }) {
+function IslandInner({ phase }: { phase: Phase }) {
   const { state, dispatch } = useDynamicIslandSize();
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const onDoneRef = useRef(onDone);
-  useEffect(() => {
-    onDoneRef.current = onDone;
-  }, [onDone]);
   void state.isAnimating;
 
   /* ONE absolute clock. The Cult queue's delays are cumulative and
@@ -235,12 +260,16 @@ function IslandInner({ onDone }: { onDone: () => void }) {
   useEffect(() => {
     const at = (ms: number, fn: () => void) => timers.current.push(setTimeout(fn, ms));
     at(MUSIC_TIMING.expand, () => dispatch({ type: "SET_SIZE", newSize: SIZE_PRESETS.COMPACT }));
-    at(MUSIC_TIMING.shrink, () => dispatch({ type: "SET_SIZE", newSize: SIZE_PRESETS.EMPTY }));
+    at(MUSIC_TIMING.bloom, () => dispatch({ type: "SET_SIZE", newSize: SIZE_PRESETS.MUSIC_EXPANDED }));
+    at(MUSIC_TIMING.collapse, () => dispatch({ type: "SET_SIZE", newSize: SIZE_PRESETS.COMPACT }));
+    at(MUSIC_TIMING.returnMs, () => dispatch({ type: "SET_SIZE", newSize: SIZE_PRESETS.EMPTY }));
     return () => {
       timers.current.forEach(clearTimeout);
       timers.current = [];
     };
   }, [dispatch]);
+
+  const expanded = phase === "expanded";
 
   return (
     <DynamicIsland
@@ -248,7 +277,7 @@ function IslandInner({ onDone }: { onDone: () => void }) {
       className="music-island-shell mx-auto h-0 w-0 shrink-0 items-center justify-center border text-center text-ink"
     >
       <DynamicContainer className="dynamic-island-row">
-        <span className="island-row-content">
+        <span className={`island-row-content${expanded ? " is-expanded" : ""}`}>
           <Image
             className="dynamic-island-art"
             src={favoriteSong.artwork}
@@ -257,6 +286,30 @@ function IslandInner({ onDone }: { onDone: () => void }) {
             height={28}
             unoptimized
           />
+          {expanded && (
+            <span className="island-expanded-ui">
+              <span className="island-expanded-meta">
+                <span className="island-expanded-title">{favoriteSong.title}</span>
+                <span className="island-expanded-artist">{favoriteSong.artist}</span>
+              </span>
+              <span className="island-progress" aria-hidden="true">
+                <i className="island-progress-fill" />
+              </span>
+              <span className="island-controls" aria-hidden="true">
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M3.5 2.5v11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                  <path d="M5 8l7.5-5.5v11z" fill="currentColor" />
+                </svg>
+                <svg width="17" height="17" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M4.5 2.5l9 5.5-9 5.5z" fill="currentColor" />
+                </svg>
+                <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M12.5 2.5v11" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                  <path d="M11 8l-7.5-5.5v11z" fill="currentColor" />
+                </svg>
+              </span>
+            </span>
+          )}
           <span className="dynamic-island-wave" aria-hidden="true">
             <i />
             <i />

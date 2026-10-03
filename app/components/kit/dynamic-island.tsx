@@ -42,6 +42,7 @@ export type SizePresets =
   | "default"
   | "compact"
   | "compactLong"
+  | "musicExpanded"
   | "large"
   | "long"
   | "minimalLeading"
@@ -58,6 +59,7 @@ const SIZE_PRESETS = {
   DEFAULT: "default",
   COMPACT: "compact",
   COMPACT_LONG: "compactLong",
+  MUSIC_EXPANDED: "musicExpanded",
   LARGE: "large",
   LONG: "long",
   MINIMAL_LEADING: "minimalLeading",
@@ -106,6 +108,13 @@ const DynamicIslandSizePresets: Record<SizePresets, Preset> = {
     width: 235,
     aspectRatio: 44 / 235,
     borderRadius: 46,
+  },
+  /* the MUSIC EXPANDED form: a real Now Playing panel, not a longer
+     pill - added for the sk music island's compact->expanded bloom */
+  [SIZE_PRESETS.MUSIC_EXPANDED]: {
+    width: 371,
+    aspectRatio: 148 / 371,
+    borderRadius: 44,
   },
   [SIZE_PRESETS.COMPACT_LONG]: {
     width: 300,

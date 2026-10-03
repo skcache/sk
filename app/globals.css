@@ -576,14 +576,14 @@ body {
 }
 
 /* the island shell: PURE BLACK like the sensor hardware the island
-   visually wraps - no glass, no gray fill, no visible outline. The
-   hairline is nearly invisible on purpose. */
+   visually wraps - no glass, no gray fill, no visible outline. On
+   narrow viewports the expanded form may not exceed the gutters. */
 .music-island-shell {
   background: #000000;
   border-color: rgba(255, 255, 255, 0.035);
   box-shadow: none;
   overflow: hidden;
-  max-width: calc(100vw - 56px);
+  max-width: calc(100vw - 22px);
 }
 
 /* island content: the COMPACT anatomy lives in a full-bleed
@@ -643,9 +643,19 @@ body {
   object-fit: cover;
   margin: 0;
   box-shadow: none;
+  /* one continuous element from the compact seed through the expanded
+     bloom: its position/size follow the shell's own spring */
+  transition:
+    left 380ms cubic-bezier(0.22, 1, 0.36, 1),
+    top 380ms cubic-bezier(0.22, 1, 0.36, 1),
+    width 380ms cubic-bezier(0.22, 1, 0.36, 1),
+    height 380ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-radius 380ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
   /* slow, buttery entrance: the art resolves as the shell reaches its
-     width - never a snap */
-  animation: island-art-in 320ms cubic-bezier(0.22, 1, 0.36, 1) 200ms both;
+     width - the fill is backwards so the EXPANDED positioning (no
+     translateY) is never locked by the entrance's end state */
+  animation: island-art-in 320ms cubic-bezier(0.22, 1, 0.36, 1) 200ms backwards;
 }
 
 @keyframes island-art-in {
@@ -656,6 +666,106 @@ body {
   to {
     opacity: 1;
     transform: translateY(-50%) scale(1);
+  }
+}
+
+/* ---- the EXPANDED Now Playing positions (same elements, new places)
+   the art and waveform PHYSICALLY move with the shell's bloom - one
+   continuous object, no remounts, no teleports ---- */
+.island-row-content.is-expanded .dynamic-island-art {
+  left: 16px;
+  top: 18px;
+  transform: none;
+  width: 48px;
+  height: 48px;
+  border-radius: 11px;
+  animation: none;
+}
+
+.island-row-content.is-expanded .dynamic-island-wave {
+  right: 17px;
+  top: 22px;
+  transform: none;
+  height: 24px;
+  animation: none;
+}
+
+/* the expanded-only Now Playing surface: Kick / Future, a thin static
+   progress rail, and three visual-only transport controls. It mounts
+   only for the expanded phase and unfolds as the shell blooms. */
+.island-expanded-ui {
+  position: absolute;
+  inset: 0;
+}
+
+.island-expanded-meta {
+  position: absolute;
+  left: 79px;
+  top: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: left;
+  white-space: nowrap;
+  animation: expanded-piece-in 260ms cubic-bezier(0.22, 1, 0.36, 1) 80ms backwards;
+}
+
+.island-expanded-title {
+  font-size: 15.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+  line-height: 1.1;
+}
+
+.island-expanded-artist {
+  font-size: 12px;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.6);
+  line-height: 1.1;
+}
+
+.island-progress {
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 55px;
+  height: 2px;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.16);
+  overflow: hidden;
+  animation: expanded-piece-in 260ms cubic-bezier(0.22, 1, 0.36, 1) 170ms backwards;
+}
+
+.island-progress-fill {
+  display: block;
+  width: 35%;
+  height: 100%;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.island-controls {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 34px;
+  color: rgba(255, 255, 255, 0.85);
+  animation: expanded-piece-in 260ms cubic-bezier(0.22, 1, 0.36, 1) 240ms backwards;
+}
+
+@keyframes expanded-piece-in {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
@@ -671,8 +781,14 @@ body {
   align-items: center;
   gap: 2px;
   height: 18px;
+  /* same element through the bloom: position follows the shell */
+  transition:
+    right 380ms cubic-bezier(0.22, 1, 0.36, 1),
+    top 380ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 380ms cubic-bezier(0.22, 1, 0.36, 1),
+    height 380ms cubic-bezier(0.22, 1, 0.36, 1);
   /* a calm, gentle fade-in that drifts in after the art */
-  animation: island-wave-in 360ms ease-in-out 280ms both;
+  animation: island-wave-in 360ms ease-in-out 280ms backwards;
 }
 
 @keyframes island-wave-in {
