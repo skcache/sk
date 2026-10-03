@@ -6,141 +6,131 @@ import { useReducedMotion } from "motion/react";
 import TactileWord from "./TactileWord";
 import TridentMark from "./TridentMark";
 
-const WIPE_DELAY = 1100; // after the page reveal settles
+const WIPE_DELAY = 1000; // after the page reveal settles
 
-/**
- * THE ONE MASTER TIMELINE (normalized to 1000ms). Every piece of
- * the choreography - the navy text sweep, the staff formation, the
- * gold text sweep, the head formation, the hold beat, and the throw
- * - is driven from THIS single clock. No setTimeout handoff chains,
- * no per-widget timers; the frame clock crosses thresholds and the
- * classes flip once:
- *
- *   0.00  start (load paint / click)
- *   0.05  NAVY begins rising through the letters   + staff begins
- *   0.34  GOLD chases (navy nearly done)           + head begins
- *   0.66  gold completes, letters fully gold
- *   0.74  trident fully formed (all parts revealed)
- *   0.84  [click only] THROW begins - after a short readable beat
- *   1.00  master completes; letters have returned to ink
- *
- * LOAD: the paint timeline only - navy -> gold -> ink, once, no
- * trident. CLICK: the same paint timeline + the trident mounts at
- * t=0 (fully hidden, above the phrase) and its formation rides the
- * exact same pass thresholds, then it is thrown left -> right.
- *
- * The letters are LAYERED glyphs (the thinking lesson, vertical):
- * every character is a base ink glyph + a navy glyph + a gold glyph.
- * The navy layer is clip-hidden below the baseline and revealed
- * bottom -> top; the gold layer chases and reveals bottom -> top
- * OVER the navy. No background rewinds, no transition:none handoff -
- * a white seam is structurally impossible because the gold paints
- * over the navy.
- *
- * Reduced motion: no paint, instant ink; click still throws the
- * trident fast and horizontal.
- */
+/* The paint choreography is ONE CSS animation owned by the overlays
+   (see globals.css: ucsd-navy-rise / ucsd-gold-rise / the trident's
+   staff/head rises). React only says RUN STARTED (adds the `run`
+   class with the duration as --ucsd-run-ms) and RUN FINISHED
+   (removes it). The same fractions drive the word AND the trident,
+   so formation can never drift from the paint.
+
+   TEMPO: the first load is a fast ~500ms hint (navy ~150ms rise,
+   gold chases at ~140ms, quick fade), the click is ~950ms so the
+   trident's formation reads. The click adds the trident: the staff
+   reveals during the navy window, the head during the gold window,
+   then ~90ms of hold and the throw. The finish reset is invisible:
+   the overlays rest at opacity 0, so their clip geometry can reset
+   instantly with nothing seen. */
+const LOAD_MS = 500;
+const CLICK_MS = 950;
+const HOLD_MS = 90;
+
 const LETTERS = "UC San Diego".split("");
-
-const T = {
-  NAVY: 50, //  0.05 - navy text sweep + staff formation begin
-  GOLD: 340, //  0.34 - gold text sweep + head formation chase
-  MELT: 700, //  0.70 - the letters wash back to ink
-  THROW: 840, // 0.84 - the fully-formed trident is thrown
-  END: 1000, //  1.00 - master completes
-};
 
 export default function UCSDWord() {
   const reduceMotion = useReducedMotion();
-  const [pass, setPass] = useState(0); // 0 idle | 1 navy | 2 gold | 3 melt
+  const [run, setRun] = useState<{ id: number; ms: number } | null>(null);
   const [trident, setTrident] = useState<{
     origin: { x: number; y: number };
     thrown: boolean;
-    run: number;
+    id: number;
   } | null>(null);
   const wordRef = useRef<HTMLSpanElement>(null);
   const runningRef = useRef(false);
-  const runRef = useRef(0);
+  const runIdRef = useRef(0);
   const guards = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const pushGuard = useCallback((t: ReturnType<typeof setTimeout>) => {
+    guards.current.push(t);
+  }, []);
+
+  // RUN FINISHED for the word: the run class drops and the overlays
+  // reset to their invisible rest state - instant and unseen (their
+  // opacity is already 0: no reverse wipe is ever visible).
+  const endRun = useCallback((id: number) => {
+    setRun((r) => (r && r.id === id ? null : r));
+  }, []);
 
   const finish = useCallback(() => {
     runningRef.current = false;
-    setPass(0);
+    setRun(null);
     setTrident(null);
   }, []);
 
-  // ONE replayable master clock. `withTrident` distinguishes the
-  // load paint from the click (paint + trident + throw).
+  // ONE entry for load and click. The same paint choreography, two
+  // tempos; the click additionally mounts the trident at t=0 fully
+  // concealed and, once the paint run completes + the hold beat,
+  // throws it.
   const play = useCallback(
     (withTrident: boolean) => {
       if (runningRef.current) return; // an animation is running: ignore
       runningRef.current = true;
-      const id = ++runRef.current;
-      setPass(0);
-      setTrident(null);
-
-      if (withTrident) {
-        const rect = wordRef.current?.getBoundingClientRect();
-        if (!rect) return;
-        // mounts IMMEDIATELY at timeline start, fully hidden
-        setTrident({
-          origin: { x: rect.left + rect.width / 2, y: rect.top - 32 },
-          thrown: false,
-          run: id,
-        });
-      }
+      const id = ++runIdRef.current;
+      const ms = withTrident ? CLICK_MS : LOAD_MS;
 
       if (reduceMotion) {
-        setPass(3); // instant ink
+        // no paint: the letters stay ink; the click still throws
         if (withTrident) {
-          const t = setTimeout(() => {
-            setTrident((cur) => (cur && cur.run === id ? { ...cur, thrown: true } : cur));
-          }, 120);
-          guards.current.push(t);
+          const rect = wordRef.current?.getBoundingClientRect();
+          if (rect) {
+            setTrident({
+              origin: { x: rect.left + rect.width / 2, y: rect.top - 28 },
+              thrown: false,
+              id,
+            });
+            pushGuard(
+              setTimeout(() => {
+                setTrident((c) => (c && c.id === id ? { ...c, thrown: true } : c));
+              }, 60)
+            );
+          }
         }
-        const g = setTimeout(finish, 900);
-        guards.current.push(g);
+        pushGuard(setTimeout(finish, withTrident ? 1100 : 40));
         return;
       }
 
-      const t0 = performance.now();
-      let last = -1;
-      let raf = 0;
-      const tick = (now: number) => {
-        if (runRef.current !== id) return; // superseded
-        const t = now - t0;
-        if (t >= T.NAVY && last < 1) {
-          setPass(1);
-          last = 1;
-        }
-        if (t >= T.GOLD && last < 2) {
-          setPass(2);
-          last = 2;
-        }
-        if (t >= T.MELT && last < 3) {
-          setPass(3);
-          last = 3;
-        }
-        if (withTrident && t >= T.THROW && last < 4) {
-          last = 4;
-          setTrident((cur) => (cur && cur.run === id ? { ...cur, thrown: true } : cur));
-        }
-        if (t < T.END) {
-          raf = requestAnimationFrame(tick);
-        } else {
+      // RUN STARTED - the CSS choreography owns the whole paint.
+      setRun({ id, ms });
+
+      if (withTrident) {
+        const rect = wordRef.current?.getBoundingClientRect();
+        if (!rect) {
           finish();
+          return;
         }
-      };
-      raf = requestAnimationFrame(tick);
-      // ONE safety net (not a timeline): if rAF stalls (backgrounded
-      // tab) the run still force-completes to clean ink.
-      const guard = setTimeout(finish, T.END + 150);
-      guards.current.push(guard);
+        // mount IMMEDIATELY at timeline start, fully concealed
+        setTrident({ origin: { x: rect.left + rect.width / 2, y: rect.top - 28 }, thrown: false, id });
+      }
+
+      // RUN FINISHED (paint): the word resets invisibly. On click,
+      // the completion beat (HOLD_MS) then the throw.
+      pushGuard(
+        setTimeout(() => {
+          endRun(id);
+          if (withTrident) {
+            pushGuard(
+              setTimeout(() => {
+                setTrident((c) => (c && c.id === id ? { ...c, thrown: true } : c));
+              }, HOLD_MS)
+            );
+          } else {
+            finish();
+          }
+        }, ms + 20)
+      );
+      // safety net: force-complete this run ONLY (a stale guard from
+      // an earlier run must never clear a newer one)
+      pushGuard(
+        setTimeout(() => {
+          if (runIdRef.current === id) finish();
+        }, ms + HOLD_MS + 1500)
+      );
     },
-    [reduceMotion, finish]
+    [reduceMotion, finish, endRun, pushGuard]
   );
 
-  // LOAD: the paint timeline runs once after the reveal settles.
+  // LOAD: the fast paint hint runs once after the reveal settles.
   useEffect(() => {
     const t = setTimeout(() => play(false), WIPE_DELAY);
     return () => clearTimeout(t);
@@ -156,20 +146,15 @@ export default function UCSDWord() {
     play(true);
   }, [play]);
 
-  const endFlight = useCallback(() => {
-    setTrident((cur) => (cur ? { ...cur, thrown: false } : cur));
-    finish();
-  }, [finish]);
-
   return (
     <TactileWord label="UC San Diego" onActivate={activate} className="whitespace-nowrap">
       <span className="word-anchor" ref={wordRef}>
-        {/* layered glyphs: base ink + navy + gold, each character own
-            its reveal (bottom -> top). The gold chases the navy over
-            the same baseline - no gap is structurally possible. */}
+        {/* layered glyphs: base ink + navy + gold. The overlays own
+            their animation - one run class starts the whole paint. */}
         <span
           aria-hidden="true"
-          className={`ucsd-word${pass >= 1 ? " pass-navy" : ""}${pass >= 2 ? " pass-gold" : ""}${pass >= 3 ? " pass-melt" : ""}`}
+          className={`ucsd-word${run ? " run" : ""}`}
+          style={run ? ({ "--ucsd-run-ms": `${run.ms}ms` } as React.CSSProperties) : undefined}
         >
           {LETTERS.map((c, i) =>
             c === " " ? (
@@ -187,12 +172,12 @@ export default function UCSDWord() {
         </span>
         {trident && (
           <TridentBuild
-            key={`run-${trident.run}`}
+            key={`run-${trident.id}`}
             origin={trident.origin}
-            pass={pass}
+            runMs={run ? run.ms : CLICK_MS}
             thrown={trident.thrown}
             fast={!!reduceMotion}
-            onEnd={endFlight}
+            onEnd={finish}
           />
         )}
       </span>
@@ -201,25 +186,24 @@ export default function UCSDWord() {
 }
 
 /**
- * The trident: mounted at timeline start (fully hidden), built by
- * the same pass classes the letters use (build-staff during the
- * navy pass, build-head during the gold pass - every part clipped
- * below the baseline, revealed bottom -> up), and once the master
- * timeline flips `thrown` it receives a FULLY FORMED trident and
- * only FLIES it: quick horizontal acceleration, a very subtle
- * droop, exit beyond the viewport right. It does NOT decide when
- * construction is complete - the master clock does.
+ * The trident: mounted at timeline start fully concealed, formed by
+ * the SAME --ucsd-run-ms choreography (staff during the navy window,
+ * head during the gold window - all gold). Once the paint run
+ * completes and the hold beat passes, the master flips `thrown` and
+ * this component only FLIES the fully-formed mark: quick horizontal
+ * acceleration, a very subtle droop, exit beyond the viewport right.
+ * It does NOT decide when construction is complete.
  * Rendered via portal so the coordinates are viewport-true.
  */
 function TridentBuild({
   origin,
-  pass,
+  runMs,
   thrown,
   fast,
   onEnd,
 }: {
   origin: { x: number; y: number };
-  pass: number;
+  runMs: number;
   thrown: boolean;
   fast: boolean;
   onEnd: () => void;
@@ -230,8 +214,7 @@ function TridentBuild({
     onEndRef.current = onEnd;
   }, [onEnd]);
 
-  // FLIGHT ONLY. The formation is already complete before this
-  // runs: the master timeline decided `thrown`.
+  // FLIGHT ONLY - formation is complete before this ever runs.
   useEffect(() => {
     if (!thrown) return;
     const el = ref.current;
@@ -261,10 +244,10 @@ function TridentBuild({
     <div className="ucsd-trident-wrap" aria-hidden="true">
       <div
         ref={ref}
-        className={`ucsd-trident-fly${pass >= 1 ? " build-staff" : ""}${pass >= 2 ? " build-head" : ""}`}
-        style={{ left: 0, top: 0 }}
+        className={`ucsd-trident-fly${runMs > 0 ? " run" : ""}`}
+        style={{ left: 0, top: 0, "--ucsd-run-ms": `${runMs}ms` } as React.CSSProperties}
       >
-        <TridentMark height={28} />
+        <TridentMark height={26} />
       </div>
     </div>,
     document.body
