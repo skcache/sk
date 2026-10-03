@@ -19,13 +19,14 @@ import { createPortal } from "react-dom";
  * acknowledgment + a tiny 1.05/0.94 squash, and the exit begins while
  * the acknowledgment is still finishing.
  *
- * EXIT: three rightward arcs on normalized windows 0->.42 (H=34 full
- * parabola), .42->.72 (H=18 full parabola), .72->1 (H=12 smooth
- * half-rise). x progresses continuously; rotation runs the whole
- * exit (~2 turns, never frozen); during the final ~28% the ball
- * scales 1->0 smoothly WHILE x/y/rotation keep moving - no static
- * frame, no opacity pop, no frozen ball. Leaves past the line's
- * right end and only then calls onDone.
+ * EXIT: a REALISTIC bounce chain - the number of full parabolas
+ * scales with the screen real estate (2 on mobile, 4 on a laptop, up
+ * to 7 on a wide desktop), each 30px apex at a constant horizontal
+ * pace (360ms/arc) with a landing glow, then ONE rise-only arc
+ * carries the ball off the screen mid-air at FULL scale. No
+ * shrink-out, no fade, no static frame, no frozen rotation - the
+ * ball simply bounces its way off. Leaves fully past the screen edge
+ * and only then calls onDone.
  *
  * All squash/ack envelopes are driven by REAL elapsed time (no
  * per-frame decrements), so 60Hz and 120Hz displays look identical.
@@ -37,9 +38,17 @@ const REBOUNDS = [
   { apex: 5, dur: 180 }, // rebound 3
 ] as const;
 const SETTLE_MS = FALL_MS + REBOUNDS[0].dur + REBOUNDS[1].dur + REBOUNDS[2].dur; // 1240
-const EXIT_MS = 1400; // the flicked exit
-const EXIT_APEXES = [34, 18, 12]; // full parabola / full parabola / half-rise
-const EXIT_WINDOWS = [0.42, 0.72, 1]; // u boundaries for the three arcs
+// the flicked exit: the bounce COUNT scales with the screen real estate
+// (mobile 2, laptop 4, wide desktop 6-7) - a realistic chain of full
+// parabolas at a constant horizontal pace, plus one rise-only arc that
+// carries the ball off the screen mid-air at FULL scale. No shrink-out.
+const EXIT_ARC_MS = 360; // fixed per-arc duration (constant speed)
+const EXIT_APEX = 30; // uniform bounce apex, px
+const EXIT_FINAL_APEX = 55; // the last arc's rise, px (leaves mid-air)
+const EXIT_PX_PER_BOUNCE = 150; // screen distance per realistic bounce
+const EXIT_MIN_BOUNCES = 2;
+const EXIT_MAX_BOUNCES = 7;
+const SPIN_PER_ARC = 120; // degrees of rotation per arc (constant feel)
 const BALL = 28; // the svg ball size, px
 const SQUASH_MS = 60; // brief contact squash window
 
@@ -80,17 +89,26 @@ export default function BasketballStage({ onDone }: { onDone: () => void }) {
     const settleX = wrect.left + wrect.width / 2 - BALL / 2;
     const dropY0 = wrect.bottom + 2; // just below the word
     const dropDist = groundY - BALL - dropY0;
-    // the exit run spans from the settle spot to just past the line
-    const R = dividerRight + BALL / 2 - settleX;
+    // the exit run spans from the settle spot to fully past the SCREEN
+    // edge; the bounce count derives from the available runway, so
+    // mobile/desktop/laptop show different numbers of realistic bounces
+    const exitDist = Math.max(0, dividerRight - settleX);
+    const bounceCount = Math.min(
+      EXIT_MAX_BOUNCES,
+      Math.max(EXIT_MIN_BOUNCES, Math.round(exitDist / EXIT_PX_PER_BOUNCE))
+    );
+    const screenRight = Math.max(dividerRight, window.innerWidth);
+    const exitTravel = screenRight + BALL / 2 - settleX;
+    const nArcs = bounceCount + 1; // b landings + the final exit arc
+    const arcDX = exitTravel / nArcs;
 
     let raf = 0;
     let started = 0; // mount time (drop timeline)
     let exitT = 0; // ball-click time (exit timeline)
-    let prevExitU = 0;
+    let prevArc = 0; // the exit arc index, for landing detection
     let squashStart = 0; // the timestamp the impact squash began (ms)
     let ackStart = 0; // the timestamp the acknowledgment began (ms)
     let dropImpacts = 0; // drop impacts fired (3 max: fall + 2 landings)
-    let exitImpacts = 0; // exit impacts fired (2 max)
     let doneSent = false;
 
     const setPhaseBoth = (p: Phase) => {
@@ -129,8 +147,7 @@ export default function BasketballStage({ onDone }: { onDone: () => void }) {
       sweepUp();
       ackStart = performance.now();
       exitT = ackStart;
-      prevExitU = 0;
-      exitImpacts = 0;
+      prevArc = 0;
       setPhaseBoth("exiting");
       el.style.pointerEvents = "none";
       el.style.cursor = "default";
@@ -143,7 +160,6 @@ export default function BasketballStage({ onDone }: { onDone: () => void }) {
       let x = settleX;
       let y = groundY - BALL;
       let deg = 0;
-      let scale = 1;
 
       if (p === "dropping") {
         // ---- STATE 1: the dispense - ease-in fall, then single full
@@ -185,32 +201,27 @@ export default function BasketballStage({ onDone }: { onDone: () => void }) {
       } else if (p === "settled") {
         y = groundY - BALL; // the ball rests on the divider
       } else {
-        // ---- STATE 3: the flicked exit - windows on real elapsed
-        // time, continuous x + rotation, scale-out at the end
-        const u = Math.min(1, (now - exitT) / EXIT_MS);
-        if (prevExitU < EXIT_WINDOWS[0] && u >= EXIT_WINDOWS[0] && exitImpacts === 0) {
-          exitImpacts = 1;
-          impact(now);
-        }
-        if (prevExitU < EXIT_WINDOWS[1] && u >= EXIT_WINDOWS[1] && exitImpacts === 1) {
-          exitImpacts = 2;
-          impact(now);
-        }
-        prevExitU = u;
-        const arc = u < EXIT_WINDOWS[0] ? 0 : u < EXIT_WINDOWS[1] ? 1 : 2;
-        const arcStart = arc === 0 ? 0 : arc === 1 ? EXIT_WINDOWS[0] : EXIT_WINDOWS[1];
-        const arcSpan = arc === 0 ? EXIT_WINDOWS[0] : arc === 1 ? EXIT_WINDOWS[1] - EXIT_WINDOWS[0] : 1 - EXIT_WINDOWS[1];
-        const s = Math.max(0, Math.min(1, (u - arcStart) / arcSpan));
-        const h = arc < 2 ? 4 * EXIT_APEXES[arc] * s * (1 - s) : EXIT_APEXES[2] * (2 * s - s * s); // final half-rise
-        x = settleX + u * R;
+        // ---- STATE 3: the flicked exit - a REALISTIC bounce chain.
+        // The number of full parabolas scales with the runway between
+        // the settle spot and the screen edge (2 on mobile, 4 on a
+        // laptop, up to 7 on a wide desktop), every arc at the same
+        // horizontal pace with a landing impact, then ONE rise-only
+        // arc carries the ball OFF the screen mid-air at FULL scale -
+        // no shrinking into nothing, no fading, no static frame.
+        const u = Math.min(1, (now - exitT) / (nArcs * EXIT_ARC_MS));
+        x = settleX + u * exitTravel;
+        const arc = Math.min(nArcs - 1, Math.floor((x - settleX) / arcDX));
+        const s = (x - settleX - arc * arcDX) / arcDX;
+        const h = arc < bounceCount ? 4 * EXIT_APEX * s * (1 - s) : EXIT_FINAL_APEX * (2 * s - s * s);
         y = groundY - BALL - h;
-        deg = 720 * u; // continuous rotation, never frozen
-        // during the final ~28% the ball shrinks smoothly to zero
-        // WHILE x/y/rotation keep moving - no static final frame
-        scale = u >= EXIT_WINDOWS[1] ? 1 - (u - EXIT_WINDOWS[1]) / (1 - EXIT_WINDOWS[1]) : 1;
-        if (x >= dividerRight + BALL / 2) {
+        deg = SPIN_PER_ARC * (arc + s); // continuous rotation, never frozen
+        if (arc > prevArc) {
+          prevArc = arc;
+          impact(now); // every landing in the chain fires the glow
+        }
+        if (x >= screenRight + BALL / 2) {
           rot.style.transform = `rotate(${deg}deg)`;
-          el.style.transform = `translate(${x}px, ${y}px) scale(${scale}, ${scale})`;
+          el.style.transform = `translate(${x}px, ${y}px) scale(1, 1)`;
           if (!doneSent) {
             doneSent = true;
             setTimeout(() => onDoneRef.current(), 120);
@@ -226,12 +237,12 @@ export default function BasketballStage({ onDone }: { onDone: () => void }) {
       const ackElapsed = now - ackStart;
       if (ackElapsed < SQUASH_MS) {
         const d = Math.sin(Math.PI * (1 - ackElapsed / SQUASH_MS));
-        el.style.transform = `translate(${x}px, ${y}px) scale(${scale * (1 + 0.05 * d)}, ${scale * (1 - 0.06 * d)})`;
+        el.style.transform = `translate(${x}px, ${y}px) scale(${1 + 0.05 * d}, ${1 - 0.06 * d})`;
       } else if (squashElapsed < SQUASH_MS) {
         const d = Math.sin(Math.PI * (1 - squashElapsed / SQUASH_MS));
-        el.style.transform = `translate(${x}px, ${y}px) scale(${scale * (1 + 0.08 * d)}, ${scale * (1 - 0.12 * d)})`;
+        el.style.transform = `translate(${x}px, ${y}px) scale(${1 + 0.08 * d}, ${1 - 0.12 * d})`;
       } else {
-        el.style.transform = `translate(${x}px, ${y}px) scale(${scale}, ${scale})`;
+        el.style.transform = `translate(${x}px, ${y}px) scale(1, 1)`;
       }
       raf = requestAnimationFrame(tick);
     };

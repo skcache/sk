@@ -190,16 +190,17 @@ function MusicBody({ onDone }: { onDone: () => void }) {
       <motion.div
         className="music-island-press-wrap"
         initial={{ opacity: 0 }}
+        style={{ transformOrigin: "center" }}
         animate={{
           opacity: closing ? 0 : 1,
-          scaleX: pressed ? 0.982 : expanded ? [1, 1.018, 1.002, 1] : 1,
-          scaleY: pressed ? 0.95 : closing ? 0.9 : expanded ? [1, 1.012, 1.001, 1] : 1,
+          scaleX: closing ? 0 : pressed ? 0.982 : expanded ? [1, 1.018, 1.002, 1] : 1,
+          scaleY: closing ? 0 : pressed ? 0.95 : expanded ? [1, 1.012, 1.001, 1] : 1,
           y: pressed ? 1 : expanded ? [1, 0.2, 0, 0] : 0,
         }}
         transition={{
           opacity: WRAP_FADE,
-          scaleX: pressed ? PRESS_DOWN : expanded ? BLOOM_OVERSHOOT : PRESS_DOWN,
-          scaleY: pressed ? PRESS_DOWN : closing ? WRAP_FADE : expanded ? BLOOM_OVERSHOOT : PRESS_DOWN,
+          scaleX: closing ? SHELL_SPRING : pressed ? PRESS_DOWN : expanded ? BLOOM_OVERSHOOT : PRESS_DOWN,
+          scaleY: closing ? SHELL_SPRING : pressed ? PRESS_DOWN : expanded ? BLOOM_OVERSHOOT : PRESS_DOWN,
           y: pressed ? PRESS_DOWN : expanded ? BLOOM_OVERSHOOT : PRESS_DOWN,
         }}
       >
@@ -235,9 +236,13 @@ function IslandInner({ uiIn, shared, artOpacity, waveOpacity }: IslandProps) {
     const at = (ms: number, fn: () => void) => timers.current.push(setTimeout(fn, ms));
     at(MUSIC_TIMING.compact, () => dispatch({ type: "SET_SIZE", newSize: SIZE_PRESETS.COMPACT }));
     at(MUSIC_TIMING.bloom, () => dispatch({ type: "SET_SIZE", newSize: SIZE_PRESETS.MUSIC_EXPANDED }));
-    // ONE exit gesture: the shell shrinks DIRECTLY toward EMPTY - the
-    // compact geometry is only passed through mid-flight, never settled
-    at(MUSIC_TIMING.exitStart, () => dispatch({ type: "SET_SIZE", newSize: SIZE_PRESETS.EMPTY }));
+    // ONE exit gesture: NO EMPTY dispatch - the shell STAYS at the
+    // MUSIC_EXPANDED geometry for the whole close while the WRAPPER's
+    // 400/30 spring rigid-body-scales the entire island (shell + art +
+    // wave + UI) 1 -> 0 about its center. Edges and content are the
+    // same rigid body: zero relative motion, zero clip race, one
+    // smooth dissolve. (A shell collapse alongside the wrapper scale
+    // would compound into a quadratic crush.)
     return () => {
       timers.current.forEach(clearTimeout);
       timers.current = [];

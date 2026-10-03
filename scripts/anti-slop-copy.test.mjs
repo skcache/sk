@@ -513,12 +513,14 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(bbStage.includes("squashStart"), true, "the elapsed-time impact squash missing");
   assert.equal(bbStage.includes("ackStart"), true, "the elapsed-time acknowledgment squash missing");
   assert.equal(bbStage.includes("-="), false, "no per-frame decrements - the animation must not assume 60Hz");
-  // the smooth windowed exit: full parabolas, half-rise, scale-out
-  assert.equal(bbStage.includes("EXIT_APEXES = [34, 18, 12]"), true, "the exit apexes (34/18/12) missing");
-  assert.equal(bbStage.includes("EXIT_WINDOWS = [0.42, 0.72, 1]"), true, "the exit windows (0/.42/.72/1) missing");
-  assert.equal(bbStage.includes("EXIT_APEXES[2] * (2 * s - s * s)"), true, "the final half-rise missing");
-  assert.equal(bbStage.includes("1 - (u - EXIT_WINDOWS[1]) / (1 - EXIT_WINDOWS[1])"), true, "the smooth final scale-out missing");
-  assert.equal(bbStage.includes("720 * u"), true, "the continuous exit rotation missing");
+  // the realistic distance-scaled bounce chain: no fixed arc count,
+  // no shrink-out - the ball bounces its way off the screen at full scale
+  assert.equal(bbStage.includes("EXIT_APEX = 30"), true, "the uniform 30px bounce apex missing");
+  assert.equal(bbStage.includes("EXIT_FINAL_APEX = 55"), true, "the final mid-air rise missing");
+  assert.equal(bbStage.includes("Math.round(exitDist / EXIT_PX_PER_BOUNCE)"), true, "the distance-scaled bounce count missing");
+  assert.equal(bbStage.includes("EXIT_FINAL_APEX * (2 * s - s * s)"), true, "the final rise-only arc missing");
+  assert.equal(bbStage.includes("SPIN_PER_ARC * (arc + s)"), true, "the continuous per-arc rotation missing");
+  assert.equal(bbStage.includes("x >= screenRight + BALL / 2"), true, "the fully-past-the-screen-edge exit check missing");
   // the word IS measured now - the ball dispenses directly below it
   assert.equal(bbStage.includes('aria-label="basketball"'), true, "the word-center dispense measurement missing");
   // the ball becomes clickable only once settled
@@ -527,7 +529,7 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   // the OLD autonomous crossing is gone: no fixed run, no auto-unmount
   assert.equal(bbStage.includes("GRAVITY"), false, "real physics must be gone");
   assert.equal(bbStage.includes("RESTITUTION"), false, "the decaying bounce must be gone");
-  assert.equal(bbStage.includes("window.innerWidth"), false, "viewport-based geometry must be gone - the divider line is the court");
+  assert.equal(bbStage.includes("screenRight = Math.max(dividerRight, window.innerWidth)"), true, "the exit must measure the real screen edge to leave it");
   assert.equal(bbStage.includes("DUR_MS"), false, "the autonomous crossing must be gone - the ball waits for the click");
   // the divider rect drives a VIEWPORT-FIXED overlay (exact ground)
   assert.equal(bbStage.includes("#things-done"), true, "the divider ground line measurement missing");
@@ -581,7 +583,9 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(music.includes("useScheduledAnimations"), false, "the cumulative queue must be gone - ONE absolute clock only");
   assert.equal(music.includes('dispatch({ type: "SET_SIZE"'), true, "the shell states must be driven by the stable dispatch");
   assert.equal(music.includes('newSize: SIZE_PRESETS.COMPACT }'), true, "the compact dispatch missing");
-  assert.equal(music.includes('newSize: SIZE_PRESETS.EMPTY }'), true, "the empty dispatch missing");
+  // the close does NOT dispatch EMPTY: the wrapper's 400/30 spring
+  // rigid-body-scales the whole island to zero instead (one dissolve)
+  assert.equal(music.includes('newSize: SIZE_PRESETS.EMPTY }'), false, "the empty dispatch must be gone during the close");
   // NO word->stage travel architecture: the island lives in flow in
   // the stage's whitespace - no portal, no seed, no travel spring
   assert.equal(music.includes("createPortal"), false, "no portal - the island is in flow below the intro");
@@ -615,8 +619,10 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
     // .95 / y 1) held ~40ms; on release the shell blooms and the whole
     // island rides a VERY subtle over-bloom (~1.018) into a 1.0 settle
     assert.equal(music.includes("BLOOM_OVERSHOOT"), true, "the subtle shell over-bloom missing");
-    assert.equal(music.includes("scaleX: pressed ? 0.982 : expanded ? [1, 1.018, 1.002, 1] : 1"), true, "the stored compression + over-bloom missing");
-    assert.equal(music.includes("scaleY: pressed ? 0.95 : closing ? 0.9 : expanded ? [1, 1.012, 1.001, 1] : 1"), true, "the vertical compression missing");
+    assert.equal(music.includes("scaleX: closing ? 0 : pressed ? 0.982 : expanded ? [1, 1.018, 1.002, 1] : 1"), true, "the stored compression + over-bloom missing");
+    assert.equal(music.includes("scaleY: closing ? 0 : pressed ? 0.95 : expanded ? [1, 1.012, 1.001, 1] : 1"), true, "the vertical compression missing");
+    assert.equal(music.includes("scaleX: closing ? 0 : pressed ? 0.982"), true, "the closing rigid-body scale branch missing");
+    assert.equal(music.includes("scaleY: closing ? 0 : pressed ? 0.95"), true, "the closing rigid-body scale branch missing");
   // the waveform must stay ONE object through compact -> expanded ->
   // compact: same warm color, same animation, same DOM node - the
   // old quiet/off-white expanded override is GONE
@@ -643,7 +649,12 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   // intro mirrors outro: fade 0 -> 1 in, 1 -> 0 out + slight squash
   assert.equal(music.includes("initial={{ opacity: 0 }}"), true, "the intro fade-in missing");
   assert.equal(music.includes("opacity: closing ? 0 : 1"), true, "the outro fade-out missing");
-  assert.equal(music.includes("scaleY: pressed ? 0.95 : closing ? 0.9 : expanded ? [1, 1.012, 1.001, 1] : 1"), true, "the outro squash + press compression missing");
+  assert.equal(music.includes("scaleX: closing ? 0 : pressed ? 0.982 : expanded ? [1, 1.018, 1.002, 1] : 1"), true, "the unified-spring rigid-body collapse missing");
+  assert.equal(music.includes("scaleY: closing ? 0 : pressed ? 0.95 : expanded ? [1, 1.012, 1.001, 1] : 1"), true, "the unity collapse branch missing");
+  assert.equal(music.includes("transformOrigin: \"center\""), true, "the center-anchored collapse missing");
+  // the close is ONE rigid-body spring dissolve: the shell is HELD at
+  // the expanded geometry (no EMPTY dispatch racing the content)
+  assert.equal(music.includes("NO EMPTY dispatch"), true, "the EMPTY dispatch must be gone from the close");
   // ONE animation system: Motion declarative only. No WAAPI, no CSS
   // keyframes for phase transitions, no conditional mounting.
   assert.equal(music.includes(".animate("), false, "no imperative animation calls are allowed");
