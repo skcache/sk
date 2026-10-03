@@ -110,13 +110,12 @@ const DynamicIslandSizePresets: Record<SizePresets, Preset> = {
     borderRadius: 46,
   },
   /* the MUSIC EXPANDED form: Apple-like Now Playing proportions. Sized
-     against the intro whitespace: 335x132 (radius 34) keeps clear of
-     the divider on every viewport - taller than wide with the proper
-     top row / times / five-control rhythm, no generic card look */
+     against the intro whitespace: 335x140 (radius 36) - a touch taller
+     so it never reads squat, still clear of the divider everywhere */
   [SIZE_PRESETS.MUSIC_EXPANDED]: {
     width: 335,
-    aspectRatio: 132 / 335,
-    borderRadius: 34,
+    aspectRatio: 140 / 335,
+    borderRadius: 36,
   },
   [SIZE_PRESETS.COMPACT_LONG]: {
     width: 300,

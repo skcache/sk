@@ -496,27 +496,32 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(bb.includes("useStage"), true, "basketball must open the stage");
   assert.equal(bb.includes("word-ball"), false, "inline word ball must be gone");
   const bbStage = read("components/BasketballStage.tsx");
-  assert.equal(bbStage.includes("DUR_MS = 3200"), true, "the ~3.2s court crossing missing");
-  // the OLD physics loop is gone: no gravity integration, no
-  // restitution decay, no spawn-at-the-word, no rolling, no sine
+  // the TWO-MOTION interaction: dispense -> settled -> exit
+  assert.equal(bbStage.includes('"dropping"'), true, "the dispense state missing");
+  assert.equal(bbStage.includes('"settled"'), true, "the settled state missing");
+  assert.equal(bbStage.includes('"exiting"'), true, "the exit state missing");
+  assert.equal(bbStage.includes("FALL_MS = 380"), true, "the ~380ms drop missing");
+  assert.equal(bbStage.includes("REBOUND_1_APEX = 22"), true, "the medium rebound missing");
+  assert.equal(bbStage.includes("REBOUND_2_APEX = 7"), true, "the tiny rebound missing");
+  assert.equal(bbStage.includes("SETTLE_MS = 1000"), true, "the settle deadline missing");
+  assert.equal(bbStage.includes("EXIT_APEXES = [36, 20, 10]"), true, "the flicked exit arcs missing");
+  assert.equal(bbStage.includes("4 * EXIT_APEXES[arc] * s * (1 - s)"), true, "the exit parabolas missing");
+  assert.equal(bbStage.includes("720 * u"), true, "the ~2-turn exit rotation missing");
+  // the word IS measured now - the ball dispenses directly below it
+  assert.equal(bbStage.includes('aria-label="basketball"'), true, "the word-center dispense measurement missing");
+  // the ball becomes clickable only once settled
+  assert.equal(bbStage.includes("el.onclick"), true, "the clickable settled ball missing");
+  assert.equal(bbStage.includes("pointerEvents: phase === \"settled\" ? \"auto\" : \"none\""), true, "the pointer-events gating missing");
+  // the OLD autonomous crossing is gone: no fixed run, no auto-unmount
   assert.equal(bbStage.includes("GRAVITY"), false, "real physics must be gone");
   assert.equal(bbStage.includes("RESTITUTION"), false, "the decaying bounce must be gone");
   assert.equal(bbStage.includes("DROP_IN"), false, "the word drop-in must be gone");
-  assert.equal(bbStage.includes('button[aria-label="basketball"]'), false, "no word measurement");
   assert.equal(bbStage.includes("window.innerWidth"), false, "viewport-based geometry must be gone - the divider line is the court");
-  assert.equal(bbStage.includes("Math.sin(3.5"), false, "the old sine path must be gone - deterministic parabolas only");
+  assert.equal(bbStage.includes("Math.min(1, s * 1.5)"), false, "the old grow-in must be gone");
+  assert.equal(bbStage.includes("DUR_MS"), false, "the autonomous crossing must be gone - the ball waits for the click");
   // the divider rect drives a VIEWPORT-FIXED overlay (exact ground)
   assert.equal(bbStage.includes("#things-done"), true, "the divider ground line measurement missing");
   assert.equal(bbStage.includes("bb-overlay"), true, "the viewport-fixed overlay missing");
-  assert.equal(bbStage.includes("lr.left"), true, "the court must use the divider's raw viewport coordinates");
-  // four deterministic PARABOLAS: three full equal arcs + final half-rise
-  assert.equal(bbStage.includes("APEX = 46"), true, "the equal 46px bounce apex missing");
-  assert.equal(bbStage.includes("4 * APEX * s * (1 - s)"), true, "the full arc parabolas missing");
-  assert.equal(bbStage.includes("APEX * (2 * s - s * s)"), true, "the final HALF-RISE parabola missing");
-  assert.equal(bbStage.includes("FULL_TURNS = 4.75"), true, "~4.75 full rotations (~1710 deg) missing");
-  assert.equal(bbStage.includes("u * 7"), false, "the old linear grow-in must be gone");
-  assert.equal(bbStage.includes("Math.min(1, s * 1.5)"), true, "the grow-into-first-rise missing");
-  assert.equal(bbStage.includes("1 - s"), true, "the shrink-through-final-rise missing");
   // the impact is ONLY the in-ball light sweep - no ground dots
   assert.equal(bbStage.includes("bb-sweep"), true, "the in-ball light sweep missing");
   assert.equal(bbStage.includes("bb-contact-glow"), false, "the ground glow must be gone");
@@ -589,7 +594,7 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(music.includes("favoriteSong.artist"), true, "the artist must render in the expanded view");
   assert.equal(music.includes("favoriteSong.artwork"), true, "the album artwork must stay");
   assert.equal(music.includes("dynamic-island-wave"), true, "the waveform missing");
-  assert.equal(music.includes("~3.4s"), true, "3.4s lifecycle missing");
+  assert.equal(music.includes("~3.3s"), true, "3.3s lifecycle missing");
   // ONE visible object, absolute in the fixed stage: no flow, no shift
   assert.equal(music.includes("music-projectile"), true, "the absolute island home missing");
   assert.equal(music.includes("music-island-press-wrap"), true, "the press/fade wrapper missing");
@@ -609,18 +614,17 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(music.includes('"opening"'), true, "the opening phase missing");
   assert.equal(music.includes('"compact"'), true, "the compact phase missing");
   assert.equal(music.includes('"expanded"'), true, "the expanded phase missing");
-  assert.equal(music.includes('"compactClosing"'), true, "the collapse phase missing");
-  assert.equal(music.includes('"closing"'), true, "the mirrored closing phase missing");
-  // ONE absolute clock, one owner per property, no imperative calls
-  assert.equal(music.includes("bloom: 740"), true, "the bloom beat missing");
-  assert.equal(music.includes("pressStart: 650"), true, "the force-touch press missing");
-  assert.equal(music.includes("pressRelease: 695"), true, "the brief stored hold (~40ms) then the release");
-  assert.equal(music.includes("metaIn: 840"), true, "metadata must enter before the shell settles");
-  assert.equal(music.includes("collapse: 3035"), true, "the fast-collapse beat missing");
-  assert.equal(music.includes("uiLeave: 3000"), true, "the long expanded hold beat missing");
-  assert.equal(music.includes("fadeShared: 3125"), true, "the shared-fade beat missing");
-  assert.equal(music.includes("close: 3150"), true, "the mirrored outro beat missing");
-  assert.equal(music.includes("done: 3380"), true, "the idle beat missing");
+  assert.equal(music.includes('"compactClosing"'), false, "the compact-closing phase must be gone - ONE direct exit");
+    // ONE absolute clock, one owner per property, no imperative calls
+    assert.equal(music.includes("bloom: 740"), true, "the bloom beat missing");
+    assert.equal(music.includes("pressStart: 650"), true, "the force-touch press missing");
+    assert.equal(music.includes("pressRelease: 695"), true, "the brief stored hold (~40ms) then the release");
+    assert.equal(music.includes("metaIn: 840"), true, "metadata must enter before the shell settles");
+    assert.equal(music.includes("exitStart: 3025"), true, "the direct-to-EMPTY exit beat missing");
+    assert.equal(music.includes("uiLeave: 3000"), true, "the long expanded hold beat missing");
+    assert.equal(music.includes("fadeShared: 3080"), true, "the shared-fade beat missing");
+    assert.equal(music.includes("done: 3310"), true, "the idle beat missing");
+    assert.equal(music.includes("MUSIC_TIMING.collapse"), false, "the sequential COMPACT stop must be gone");
   // intro mirrors outro: fade 0 -> 1 in, 1 -> 0 out + slight squash
   assert.equal(music.includes("initial={{ opacity: 0 }}"), true, "the intro fade-in missing");
   assert.equal(music.includes("opacity: closing ? 0 : 1"), true, "the outro fade-out missing");
@@ -641,13 +645,15 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(music.includes("island-skip-prev"), true, "the rounded skip-back silhouette missing");
   assert.equal(music.includes("island-skip-next"), true, "the rounded skip-forward silhouette missing");
   assert.equal(music.includes("island-control-play"), true, "the Pause control missing");
-  // the skip icons: TWO TOUCHING filled arrowheads - no end bars, no
-  // stroked chevrons
-  assert.equal(music.includes('d="M14.8 5.8 8.2 12l6.6 6.2"'), true, "the left arrowhead pair missing");
-  assert.equal(music.includes('d="M9.2 5.8 15.8 12 9.2 18.2"'), true, "the right arrowhead pair missing");
-  assert.equal(music.includes('fill="currentColor"'), true, "the skip icons must be filled geometry");
+  // the skip icons: TWO SOLID TOUCHING ARROWHEADS - pure fill, rounded
+  // vertices, no stroke, no end bar, no hollow center
+  assert.equal(music.includes('d="M13.6 6.4 Q14.9 6.4 14.5 7.6 L8.9 11.2'), true, "the left solid arrowhead pair missing");
+  assert.equal(music.includes('d="M10.4 6.4 Q9.1 6.4 9.5 7.6 L15.1 11.2'), true, "the right solid arrowhead pair missing");
+  assert.equal(music.includes('fill="currentColor"'), true, "the skip icons must be solid fill");
+  assert.equal(music.includes("stroke=\"currentColor\""), false, "the skip icons must have NO stroke");
   assert.equal(music.includes('rect x="21.3"'), false, "the skip BACK end bar must be gone");
   assert.equal(music.includes('rect x="0.5"'), false, "the skip FORWARD end bar must be gone");
+  assert.equal(music.includes('width="28"'), true, "the skip icons must be ~28px");
   assert.equal(music.includes("EXIT_EASE"), true, "the smooth exit curve missing");
   assert.equal(music.includes("cubic-bezier(0.4, 0, 0.2, 1)"), true, "the eased in-out exit missing");
   assert.equal(music.includes("delay: 2650"), false, "the old cumulative schedule must be gone");
@@ -679,11 +685,12 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(css.includes(".music-island-anchor"), false, "the invisible anchor CSS must be gone");
   assert.equal(css.includes(".music-projectile"), true, "the absolute island home CSS missing");
   assert.equal(css.includes(".music-island-press-wrap"), true, "the press/fade wrapper CSS missing");
-  assert.equal(css.includes("top: 8px"), true, "the island offset below the intro missing");
+  assert.equal(css.includes(".music-projectile"), true, "the absolute island home missing");
+  assert.equal(css.includes("top: 0"), true, "the island lives at the top of the fixed stage whitespace");
   assert.equal(css.includes("margin-top: 24px"), false, "the in-flow margin must be gone (absolute now)");
   assert.equal(css.includes(".music-seed-skin"), false, "the seed skin CSS must be gone (no travel)");
-  assert.equal(css.includes(".island-star"), true, "the favorite star missing");
-  assert.equal(css.includes("max-height: 120px"), true, "the mobile expanded cap missing");
+  assert.equal(css.includes(".island-star"), false, "the favorite star CSS must be gone too");
+  assert.equal(css.includes("max-height: 112px"), true, "the mobile expanded cap missing");
   assert.equal(css.includes("background: #000000"), true, "the PURE BLACK shell missing");
   assert.equal(css.includes("rgba(255, 255, 255, 0.035)"), true, "the invisible hairline missing");
   assert.equal(css.includes("box-shadow: none"), true, "the shell must not float like a card");
@@ -711,9 +718,11 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   // quiet/off-white override must be gone - same warm gold, same pulse
   assert.equal(css.includes("wave-pulse-soft"), false, "the quiet-wave override must be gone");
   assert.equal(css.includes(".island-row-content.is-expanded"), false, "no expanded class CSS at all - wave stays identical");
-  // Apple-native type scoped to the island + the 3-column optical grid
+  // Apple-native type scoped to the island + the CENTERED controls
+// container (~55% of the width, never stretched edge to edge)
   assert.equal(css.includes('"SF Pro Text"'), true, "the Apple type stack missing");
-  assert.equal(css.includes("grid-template-columns: repeat(3, 1fr)"), true, "the 3-column control grid missing");
+  assert.equal(css.includes("width: 188px"), true, "the centered controls container missing");
+  assert.equal(css.includes("grid-template-columns: repeat(3, 1fr)"), false, "the full-width 3-column grid must be gone");
   // reduced motion is handled in the component - there is no travel to
   // hide and no separate reduced stage (the display:none bug is gone)
   assert.equal(css.includes(".music-projectile.is-reduced"), false, "the reduced travel stage must be gone");

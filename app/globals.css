@@ -550,7 +550,7 @@ body {
   position: absolute;
   left: 0;
   right: 0;
-  top: 8px;
+  top: 0;
   display: grid;
   justify-items: center;
   pointer-events: none;
@@ -590,7 +590,7 @@ body {
    aspect, so this trims only the mobile void) */
 @media (max-width: 639px) {
   .music-island-shell {
-    max-height: 120px;
+    max-height: 112px;
   }
 }
 
@@ -713,17 +713,19 @@ body {
   transform: translate(-50%, -50%);
 }
 
-/* transport row: previous | PAUSE | next on a real 3-column optical
-   grid - every control centered in an equal cell, pause dead-center,
-   spacious and minimal. No favorites, no AirPlay. */
+/* transport row: previous | PAUSE | next in a CENTERED container
+   (~188px = the middle ~55% of the island) - never stretched edge to
+   edge. Centered with auto margins (NOT left:50% + translate, which
+   Motion's own transform would clobber). */
 .island-controls {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 12px;
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  justify-items: center;
+  width: 188px;
+  margin-inline: auto;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
   color: rgba(255, 255, 255, 0.82);
 }
@@ -734,16 +736,6 @@ body {
 
 .island-control-play {
   color: #ffffff;
-}
-
-.island-star {
-  display: flex;
-  color: rgba(255, 255, 255, 0.6);
-}
-
-.island-airplay {
-  display: flex;
-  color: rgba(255, 255, 255, 0.6);
 }
 
 /* the live waveform at the trailing edge: many very thin bars of

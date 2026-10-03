@@ -48,10 +48,11 @@ const MUSIC_TIMING = {
   progressIn: 900, //
   controlsIn: 960, //
   uiLeave: 3000, // expanded-only UI starts fading (200ms) after the
-  collapse: 3035, // ~1.9s fully-settled hold; ~35ms later the shell
-  fadeShared: 3125, // art + waveform begin fading (280ms) - the shell
-  close: 3150, // is already mid-collapse: EMPTY + the mirrored fade
-  done: 3380, // unmount after the dissolve. ~3.4s total: expanded ->
+  exitStart: 3025, // ~1.9s fully-settled hold; ~25ms later the shell
+  fadeShared: 3080, // shrinks DIRECTLY toward EMPTY while the shared
+  done: 3310, // art/wave move inward + fade and the wrapper fades -
+  // ~3.3s total: ONE exit gesture - the compact geometry is only
+  // passed through mid-flight, never settled.
 } as const;
 
 /* the exit curve: eased in-out (cubic-bezier(0.4, 0, 0.2, 1)) -
@@ -103,7 +104,7 @@ const EXPANDED_FORM = {
   wave: { right: 17, top: 25, height: 24 },
 } as const;
 
-type Phase = "opening" | "compact" | "expanded" | "compactClosing" | "closing";
+type Phase = "opening" | "compact" | "expanded" | "closing";
 
 /**
  * The music egg: ONE black object that physically becomes
@@ -161,8 +162,7 @@ function MusicBody({ onDone }: { onDone: () => void }) {
       setUiIn(true);
     });
     schedule(MUSIC_TIMING.uiLeave, () => setUiIn(false));
-    schedule(MUSIC_TIMING.collapse, () => setPhase("compactClosing"));
-    schedule(MUSIC_TIMING.close, () => setPhase("closing"));
+    schedule(MUSIC_TIMING.exitStart, () => setPhase("closing"));
     schedule(MUSIC_TIMING.done, () => onDoneRef.current());
     return () => {
       timers.current.forEach(clearTimeout);
@@ -236,8 +236,9 @@ function IslandInner({ uiIn, shared, artOpacity, waveOpacity }: IslandProps) {
     const at = (ms: number, fn: () => void) => timers.current.push(setTimeout(fn, ms));
     at(MUSIC_TIMING.compact, () => dispatch({ type: "SET_SIZE", newSize: SIZE_PRESETS.COMPACT }));
     at(MUSIC_TIMING.bloom, () => dispatch({ type: "SET_SIZE", newSize: SIZE_PRESETS.MUSIC_EXPANDED }));
-    at(MUSIC_TIMING.collapse, () => dispatch({ type: "SET_SIZE", newSize: SIZE_PRESETS.COMPACT }));
-    at(MUSIC_TIMING.close, () => dispatch({ type: "SET_SIZE", newSize: SIZE_PRESETS.EMPTY }));
+    // ONE exit gesture: the shell shrinks DIRECTLY toward EMPTY - the
+    // compact geometry is only passed through mid-flight, never settled
+    at(MUSIC_TIMING.exitStart, () => dispatch({ type: "SET_SIZE", newSize: SIZE_PRESETS.EMPTY }));
     return () => {
       timers.current.forEach(clearTimeout);
       timers.current = [];
@@ -314,47 +315,31 @@ function IslandInner({ uiIn, shared, artOpacity, waveOpacity }: IslandProps) {
             transition={uiTransition(0.22)}
           >
             <span className="island-controls-main">
-              {/* previous: TWO TOUCHING filled arrowheads - soft
-                  rounded corners, no end bar, no stroked chevrons */}
-              <svg className="island-skip-prev" width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
+              {/* previous: TWO SOLID TOUCHING ARROWHEADS - pure fill,
+                  gently rounded vertices, no stroke, no end bar */}
+              <svg className="island-skip-prev" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
                 <path
-                  d="M14.8 5.8 8.2 12l6.6 6.2"
+                  d="M13.6 6.4 Q14.9 6.4 14.5 7.6 L8.9 11.2 Q8 12 8.9 12.8 L14.5 16.4 Q14.9 17.6 13.6 17.6 Z"
                   fill="currentColor"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
                 />
                 <path
-                  d="M21.2 5.8 14.6 12l6.6 6.2"
+                  d="M20.6 6.4 Q21.9 6.4 21.5 7.6 L15.9 11.2 Q15 12 15.9 12.8 L21.5 16.4 Q21.9 17.6 20.6 17.6 Z"
                   fill="currentColor"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
                 />
               </svg>
               <svg className="island-control-play" width="30" height="30" viewBox="0 0 24 24" aria-hidden="true">
                 <rect x="3.5" y="2.5" width="6.5" height="19" rx="2.6" fill="currentColor" />
                 <rect x="14" y="2.5" width="6.5" height="19" rx="2.6" fill="currentColor" />
               </svg>
-              {/* next: TWO TOUCHING filled arrowheads, mirrored */}
-              <svg className="island-skip-next" width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
+              {/* next: TWO SOLID TOUCHING ARROWHEADS, mirrored */}
+              <svg className="island-skip-next" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
                 <path
-                  d="M9.2 5.8 15.8 12 9.2 18.2"
+                  d="M10.4 6.4 Q9.1 6.4 9.5 7.6 L15.1 11.2 Q16 12 15.1 12.8 L9.5 16.4 Q9.1 17.6 10.4 17.6 Z"
                   fill="currentColor"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
                 />
                 <path
-                  d="M2.8 5.8 9.4 12 2.8 18.2"
+                  d="M3.4 6.4 Q2.1 6.4 2.5 7.6 L8.1 11.2 Q9 12 8.1 12.8 L2.5 16.4 Q2.1 17.6 3.4 17.6 Z"
                   fill="currentColor"
-                  stroke="currentColor"
-                  strokeWidth="1.6"
-                  strokeLinejoin="round"
-                  strokeLinecap="round"
                 />
               </svg>
             </span>
