@@ -9,20 +9,22 @@ import TridentMark from "./TridentMark";
 
 /* THE ONE TIMING CONTRACT. Every number of the choreography lives
    here and nowhere else:
-   - the navy phrase sweep + the trident staff reveal: navyStart ->
-     navyEnd
+   - the navy phrase paint + the trident staff reveal: navyStart ->
+     navyEnd (a deliberate, readable pass - 420ms, not a snap)
    - the gold chase + the trident head reveal: goldStart -> goldEnd
-   - the settle: overlays fade to reveal the ink base by settleEnd
+     (overlaps navy by ~130ms so gold is already moving as navy tops)
+   - the settle: paints resolve back to the ink base by settleEnd ->
+     total
    - the completion beat before the throw: hold
    The component builds the WAAPI timeline from these values; CSS
    knows only the rest states. No scattered durations anywhere. */
 const UCSD_TIMING = {
   total: 900,
   navyStart: 0,
-  navyEnd: 300,
-  goldStart: 260,
-  goldEnd: 610,
-  settleEnd: 780,
+  navyEnd: 420,
+  goldStart: 290,
+  goldEnd: 750,
+  settleEnd: 750,
   hold: 90,
 };
 
@@ -36,11 +38,6 @@ const ACTUATION_MS = 50;
 const MARK_W = 84;
 const MARK_H = 26;
 const FLIGHT_SPEED = 1.1; // px/ms - perceived horizontal speed
-/* The rise easing restored from 1ad96e: one smooth neutral motion.
-   GEOMETRY keeps this exact curve; the GLOW breathes ease-in-out
-   on a SEPARATE animation - light never touches the clip. */
-const EASE = "cubic-bezier(0.45, 0, 0.55, 1)";
-const GLOW_EASE = "ease-in-out"; // light only
 const THROW_EASE = "cubic-bezier(0.16, 0.8, 0.3, 1)"; // stored energy release
 const THROW_ROTATION = 2.5; // tiny nose-down tilt (deg) on the throw
 /* When the phrase sits mid-paragraph (mobile lines reach under the
@@ -51,16 +48,6 @@ const RAISE_CLEARANCE = 40;
 
 const PHRASE = "UC San Diego";
 
-/* THE THINKING-LIKE LIGHT: a SEPARATE textShadow animation per
-   overlay, riding the same clock as its clip reveal. The glow goes
-   0 -> soft peak (mid) -> soft settled (end); it never adds a
-   clipPath keyframe and never alters sweep velocity. */
-const NO_GLOW = "0 0 0 rgba(0, 0, 0, 0)";
-const NAVY_GLOW_PEAK = "0 0 9px rgba(80, 125, 190, 0.35)";
-const NAVY_GLOW_END = "0 0 5px rgba(80, 125, 190, 0.15)";
-const GOLD_GLOW_PEAK = "0 0 9px rgba(240, 202, 103, 0.38)";
-const GOLD_GLOW_END = "0 0 5px rgba(240, 202, 103, 0.16)";
-
 type UcsdState = "idle" | "building" | "flying";
 
 /**
@@ -68,22 +55,29 @@ type UcsdState = "idle" | "building" | "flying";
  * phrase is ordinary site ink and stays that way until the user
  * clicks it.
  *
- * CLICK: PRESS -> SNAP -> the phrase sweeps NAVY bottom -> top (its
- * light crest glowing like Thinking), GOLD immediately chases over
- * it (no white gap), then both fade to reveal the ink base. While
- * the colors rise, the minimalist GOLD trident materializes above
- * the phrase (staff with the navy timing, head with the gold
- * timing, both gold - the passes set TIMING only). After the head
- * finishes it catches one tiny warm glow pulse (no opacity change),
- * holds, and flies left -> right off the viewport once the phrase
- * is ordinary ink. Then everything returns to IDLE.
+ * CLICK: PRESS -> SNAP -> a NAVY tide rises bottom -> top as ONE
+ * smooth phrase-wide pass (constant velocity), with a SOFT BRIGHT
+ * light front riding its top edge. Before navy finishes, GOLD starts
+ * rising the same way, its own light front riding the gold edge; gold
+ * overtakes navy, then both resolves cleanly back to the ink base.
+ * Meanwhile the minimalist GOLD trident materializes above (staff
+ * with the navy window, head with the gold window - the passes set
+ * TIMING only), catches one tiny warm pulse after the head finishes,
+ * holds, and flies right once the phrase is ordinary ink. Then
+ * everything returns to IDLE.
  *
- * The paint is ONE WAAPI timeline from UCSD_TIMING: every overlay
- * gets a pure clip reveal (the 1ad two-keyframe motion) PLUS a
- * separate ease-in-out light animation - geometry and light are
- * separate mechanisms. The flight is ONE deterministic WAAPI
- * transform. The overlays rest at opacity 0, so all resets are
- * instant and invisible - a reverse wipe is structurally impossible.
+ * Paint owns COLOR: each overlay is ONE linear clip reveal (a
+ * constant-velocity front - Thinking's smoothness comes from light,
+ * not from the wave slowing down).
+ *
+ * LIGHT owns LUMINOSITY: each paint pass has a phrase-level light
+ * front - a whole-phrase duplicate revealed through a STATIC narrow
+ * feathered band (a mask on the wrapper) that scans bottom -> top by
+ * translating the wrapper while an inversely-translated copy holds
+ * the glyphs still. Position is linear (same duration/delay as its
+ * paint - the band can never separate from the color front);
+ * amplitude breathes ease-in-out (0 -> full -> full -> 0). Geometry
+ * and light are separate mechanisms, as in Thinking.
  */
 export default function UCSDWord() {
   const reduceMotion = useReducedMotion();
@@ -92,6 +86,8 @@ export default function UCSDWord() {
   const wordRef = useRef<HTMLSpanElement>(null);
   const navyRef = useRef<HTMLSpanElement>(null);
   const goldRef = useRef<HTMLSpanElement>(null);
+  const navyGlowRef = useRef<HTMLSpanElement>(null);
+  const goldGlowRef = useRef<HTMLSpanElement>(null);
   const staffRef = useRef<HTMLSpanElement>(null);
   const headRef = useRef<HTMLSpanElement>(null);
   const markRef = useRef<HTMLSpanElement>(null);
@@ -172,9 +168,9 @@ export default function UCSDWord() {
     );
   }, [state]);
 
-  // BUILDING: the phrase paint + the light + the trident formation -
-  // one WAAPI timeline from the ONE timing contract. The trident
-  // never moves here; only its reveal progresses.
+  // BUILDING: the paint + the light + the trident formation - one
+  // WAAPI timeline from the ONE timing contract. The trident never
+  // moves here; only its reveal progresses.
   useEffect(() => {
     if (state !== "building" || !origin) return;
     const T = UCSD_TIMING;
@@ -185,9 +181,10 @@ export default function UCSDWord() {
       return;
     }
 
-    /* GEOMETRY: the exact 1ad two-keyframe reveal - inset(100%) ->
-       inset(0) with the 1ad rise ease. One mechanism, no midpoint,
-       no masks, no crests. Glow never appears here. */
+    /* GEOMETRY: the paint fronts. ONE linear two-keyframe reveal -
+       inset(100%) -> inset(0). LINEAR: the moving front has constant
+       velocity. No midpoint, no masks on the paint, no crests, no
+       per-letter work. The light lives in its own layers below. */
     const reveal = (
       el: HTMLElement | null,
       dur: number,
@@ -210,67 +207,93 @@ export default function UCSDWord() {
           duration: dur,
           delay,
           fill: "forwards",
-          easing: EASE,
+          easing: "linear",
         })
       );
     };
 
-    /* LIGHT: a SEPARATE ease-in-out textShadow animation on the same
-       clock as its pass - 0 -> soft peak -> soft settled. Geometry
-       and light are independent; the glow never alters velocity. */
-    const light = (
-      el: HTMLElement | null,
+    /* LIGHT FRONTS: the phrase-level luminous bands. The wrapper
+       carries a STATIC feathered mask (a ~10px horizontal band - the
+       middle of the box) and translates vertically; the copy inside
+       translates INVERSELY, so the glyphs never move - only the band
+       of light scans the phrase. Position: linear, same duration and
+       delay as its paint pass - the band tracks the color boundary
+       continuously. Amplitude: ease-in-out (0 -> full -> full -> 0)
+       - Thinking's softness lives HERE, not in the wave. */
+    const bandScan = (
+      front: HTMLElement | null,
       dur: number,
       delay: number,
-      peak: string,
-      end: string
+      D: number
     ) => {
-      if (!el) return;
+      if (!front) return;
+      const copy = front.firstElementChild as HTMLElement | null;
       runs.push(
-        el.animate(
+        front.animate(
           [
-            { textShadow: NO_GLOW },
-            { offset: 0.5, textShadow: peak },
-            { textShadow: end },
+            { transform: `translateY(${D}px)` },
+            { transform: `translateY(${-D}px)` },
           ],
-          { duration: dur, delay, fill: "forwards", easing: GLOW_EASE }
+          { duration: dur, delay, fill: "forwards", easing: "linear" }
+        )
+      );
+      if (copy) {
+        runs.push(
+          copy.animate(
+            [
+              { transform: `translateY(${-D}px)` },
+              { transform: `translateY(${D}px)` },
+            ],
+            { duration: dur, delay, fill: "forwards", easing: "linear" }
+          )
+        );
+      }
+      runs.push(
+        front.animate(
+          [
+            { opacity: "0" },
+            { offset: 0.5, opacity: "1" },
+            { offset: 0.75, opacity: "1" },
+            { opacity: "0" },
+          ],
+          { duration: dur, delay, fill: "forwards", easing: "ease-in-out" }
         )
       );
     };
 
-    // navy phrase sweep + staff reveal: the same numbers
+    // the phrase paints: navy 0->420, gold 290->750 (the overlap is
+    // the choreography: gold starts while navy is still moving)
     reveal(navyRef.current, T.navyEnd - T.navyStart, T.navyStart);
-    reveal(staffRef.current, T.navyEnd - T.navyStart, T.navyStart, false);
-    // gold chases + head reveal: the same numbers, the same delay
     reveal(goldRef.current, T.goldEnd - T.goldStart, T.goldStart);
+    // the trident formation stays synced to the SAME windows
+    reveal(staffRef.current, T.navyEnd - T.navyStart, T.navyStart, false);
     reveal(headRef.current, T.goldEnd - T.goldStart, T.goldStart, false);
 
-    // the thinking-like light rides the same windows
-    light(
-      navyRef.current,
+    // the light fronts ride the same linear windows; the band must
+    // track the paint boundary: D = half the box + a small overshoot,
+    // so the band starts just below the glyphs and ends just above
+    const boxH = navyRef.current?.offsetHeight ?? 44;
+    const D = boxH / 2 + 8;
+    bandScan(
+      navyGlowRef.current,
       T.navyEnd - T.navyStart,
       T.navyStart,
-      NAVY_GLOW_PEAK,
-      NAVY_GLOW_END
+      D
     );
-    light(
-      goldRef.current,
+    bandScan(
+      goldGlowRef.current,
       T.goldEnd - T.goldStart,
       T.goldStart,
-      GOLD_GLOW_PEAK,
-      GOLD_GLOW_END
+      D
     );
 
-    // settle: both overlays fade - the glow leaves with them,
-    // revealing the untouched ink base by T.total
+    // settle: the paint overlaps both fade to reveal the untouched
+    // ink base by T.total - no gold pause, no reverse, no third pass
     for (const el of [navyRef.current, goldRef.current]) {
       if (!el) continue;
       runs.push(
         el.animate(
-          [
-            { opacity: "1" },
-            { opacity: "0" },
-          ],
+          [{ opacity: "1" }, { opacity: "0" }],
           {
             duration: T.total - T.settleEnd,
             delay: T.settleEnd,
@@ -338,17 +361,25 @@ export default function UCSDWord() {
   return (
     <TactileWord label="UC San Diego" onActivate={activate} className="whitespace-nowrap">
       <span className="word-anchor" ref={wordRef}>
-        {/* the phrase-level paint stack: ONE base + TWO overlays.
-            The base defines the dimensions; the overlays are
-            absolute duplicates (aria-hidden) that animate their own
-            clip + light - no layout shift, no per-glyph work. */}
+        {/* the phrase-level paint stack: ONE base + two paints + two
+            light fronts. The base defines the dimensions; everything
+            else is an absolute duplicate (aria-hidden). Paint owns
+            color (clip reveals); the glow-fronts own luminosity
+            (feathered band scans) - no layout shift, no per-glyph
+            work. */}
         <span className="ucsd-word">
           <span className="ucsd-base">{PHRASE}</span>
           <span aria-hidden="true" className="ucsd-navy" ref={navyRef}>
             {PHRASE}
           </span>
+          <span aria-hidden="true" className="ucsd-navy-glow" ref={navyGlowRef}>
+            <span className="ucsd-glow-copy">{PHRASE}</span>
+          </span>
           <span aria-hidden="true" className="ucsd-gold" ref={goldRef}>
             {PHRASE}
+          </span>
+          <span aria-hidden="true" className="ucsd-gold-glow" ref={goldGlowRef}>
+            <span className="ucsd-glow-copy">{PHRASE}</span>
           </span>
         </span>
         {origin && state !== "idle" && (

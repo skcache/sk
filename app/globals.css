@@ -269,14 +269,71 @@ body {
   transition: none; /* the clip NEVER transitions - no reverse wipe */
 }
 
+/* PAINT owns COLOR only - the brief's key split. The luminosity of
+   each pass lives in the glow-front layers below, never here. */
 .ucsd-navy {
   color: #182B49; /* the official UCSD navy - the TEXT pass color */
-  text-shadow: 0 0 5px rgba(80, 125, 190, 0.15); /* the settled glow */
 }
 
 .ucsd-gold {
   color: #C69214; /* the official UCSD gold - the TEXT pass color */
-  text-shadow: 0 0 5px rgba(240, 202, 103, 0.16); /* the settled glow */
+}
+
+/* THE LIGHT FRONTS: whole-phrase duplicates revealed through a
+   NARROW FEATHERED BAND. The mask is STATIC (fixed in the wrapper's
+   own box - ~10px tall, soft edges, centered). The wrapper
+   translates vertically while the copy inside translates inversely,
+   so the glyphs never move - only the band of light scans the
+   phrase. The light tints are brighter than the paints on purpose;
+   the halos are restrained so the glyphs stay sharp. */
+.ucsd-navy-glow,
+.ucsd-gold-glow {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0; /* invisible at rest */
+  will-change: transform, opacity;
+  /* the fixed feathered band: transparent -> soft -> full -> soft ->
+     transparent (never animated: the mask shape stays put; ONLY the
+     wrapper translates) */
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 40%,
+    black 46%,
+    black 54%,
+    transparent 60%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to bottom,
+    transparent 0%,
+    transparent 40%,
+    black 46%,
+    black 54%,
+    transparent 60%,
+    transparent 100%
+  );
+}
+
+.ucsd-navy-glow {
+  color: #8FBCEA;
+  text-shadow:
+    0 0 9px rgba(143, 188, 234, 0.45),
+    0 0 14px rgba(80, 125, 190, 0.18);
+}
+
+.ucsd-gold-glow {
+  color: #F5D98C;
+  text-shadow:
+    0 0 9px rgba(245, 217, 140, 0.48),
+    0 0 14px rgba(240, 202, 103, 0.18);
+}
+
+.ucsd-glow-copy {
+  position: absolute;
+  inset: 0;
+  will-change: transform; /* the inverse translate holds the glyphs still */
 }
 
 /* the trident: a fixed-size HTML wrapper holding TWO perfectly
