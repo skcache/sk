@@ -574,6 +574,14 @@ body {
   box-shadow: none;
   overflow: hidden;
   max-width: calc(100vw - 22px);
+  /* Apple-native type, scoped to the island only (no bundled fonts) */
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "SF Pro Text",
+    "SF Pro Display",
+    system-ui,
+    sans-serif;
 }
 
 /* the expanded height rides the narrow-viewport gutter too: on small
@@ -633,7 +641,7 @@ body {
 .island-expanded-meta {
   position: absolute;
   left: 78px;
-  top: 17px;
+  top: 21px;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -673,7 +681,6 @@ body {
   font-weight: 400;
   color: rgba(255, 255, 255, 0.55);
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.01em;
   line-height: 1;
 }
 
@@ -706,19 +713,19 @@ body {
   transform: translate(-50%, -50%);
 }
 
-/* transport row: favorite star, previous, pause, next, AirPlay -
-   FIVE controls evenly distributed across the full bottom width
-   (space-between), pause centered and visually strongest. Apple
+/* transport row: star | previous | pause | next | AirPlay on a REAL
+   5-column optical grid - each control centered in an equal cell, so
+   the centers are perfectly even and pause sits dead-center. Apple
    silhouettes, one quiet muted-white language. Visual only. */
 .island-controls {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 12px;
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  justify-items: center;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 18px;
   color: rgba(255, 255, 255, 0.8);
 }
 
@@ -806,47 +813,28 @@ body {
   }
 }
 
-/* the EXPANDED waveform goes quiet: off-white bars, gentler pulse,
-   visually quieter than the title. The compact keeps its accepted
-   warm-gold liveliness - this override is color/quietness only. */
-.island-row-content.is-expanded .dynamic-island-wave i {
-  background: rgba(255, 255, 255, 0.55);
-  animation-name: wave-pulse-soft;
-}
-
-@keyframes wave-pulse-soft {
-  0%,
-  100% {
-    transform: scaleY(0.72);
-  }
-  50% {
-    transform: scaleY(1);
-  }
-}
-
 /* stage projectiles */
 .stage-basketball {
   position: absolute;
   left: 0;
-  bottom: 8px;
+  top: 0;
   width: 26px;
   height: 26px;
   will-change: transform;
 }
 
-/* contact shadow under the ball: grounds the flight, breathes with
-   height (opacity + spread driven per-frame in BasketballStage).
-   8-bit style: a hard-edged chunky block, no blur, no soft gradient */
-.bb-shadow {
+/* the impact particles: tiny pixel squares at the divider contact,
+   absolute in the stage, killed after their short lifetime */
+.bb-particles {
   position: absolute;
-  left: 0;
-  bottom: 6px;
-  width: 26px;
-  height: 7px;
-  border-radius: 2px;
-  background: rgba(0, 0, 0, 0.55);
-  transform-origin: center;
+  inset: 0;
   pointer-events: none;
+}
+
+.bb-particle {
+  position: absolute;
+  opacity: 1;
+  transition: opacity 120ms ease-out;
 }
 
 /* ---------- page reveal (progressive enhancement) ---------- */

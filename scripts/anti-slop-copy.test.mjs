@@ -496,15 +496,23 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(bb.includes("useStage"), true, "basketball must open the stage");
   assert.equal(bb.includes("word-ball"), false, "inline word ball must be gone");
   const bbStage = read("components/BasketballStage.tsx");
-  assert.equal(bbStage.includes("DUR = 2450"), true, "slow readable crossing missing");
-  assert.equal(bbStage.includes("wordX"), true, "ball must spawn at the word");
-  assert.equal(bbStage.includes("DROP_IN"), true, "drop-in above the stage missing");
-  assert.equal(bbStage.includes("RESTITUTION"), true, "true restitution physics missing");
-  assert.equal(bbStage.includes("GRAVITY"), true, "time-integrated gravity missing");
-  assert.equal(bbStage.includes("bb-shadow"), true, "contact shadow missing");
+  assert.equal(bbStage.includes("DUR_MS = 2150"), true, "the ~2.15s deterministic crossing missing");
+  // the OLD physics loop is gone: no gravity integration, no
+  // restitution decay, no spawn-at-the-word, no rolling
+  assert.equal(bbStage.includes("GRAVITY"), false, "real physics must be gone");
+  assert.equal(bbStage.includes("RESTITUTION"), false, "the decaying bounce must be gone");
+  assert.equal(bbStage.includes("DROP_IN"), false, "the word drop-in must be gone");
+  assert.equal(bbStage.includes('button[aria-label="basketball"]'), false, "no word measurement");
+  // piecewise parabolas with the divider as the ground line + rotation
+  assert.equal(bbStage.includes("APEX = 44"), true, "the uniform bounce apex missing");
+  assert.equal(bbStage.includes("#things-done"), true, "the divider ground line measurement missing");
+  assert.equal(bbStage.includes("rotate(${deg.toFixed(1)}deg)"), true, "continuous forward rotation missing");
+  assert.equal(bbStage.includes("bb-particle"), true, "the impact pixel squares missing");
+  assert.equal(bbStage.includes("bb-shadow"), false, "the old contact shadow must be gone");
   assert.equal(bbStage.includes("PixelBall"), true, "8-bit pixel sprite missing");
   assert.equal(bbStage.includes("crispEdges"), true, "pixel sprite must stay hard-edged");
-  assert.equal(bbStage.includes("SPINS"), false, "pixel sprites must not rotate");
+  // the new ball ROTATES forward - the old no-spin assumption is gone
+  assert.equal(bbStage.includes("SPINS"), false, "the no-rotation assumption must be gone");
   // chiba lab: the one-time letter cascade mini easter egg - NOT the
   // inference glow sweep
   const chiba = read("components/ChibaWord.tsx");
@@ -570,9 +578,16 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(music.includes("music-island-press-wrap"), true, "the press/fade wrapper missing");
   assert.equal(music.includes("stiffness: 400"), true, "the matched spring must mirror the shell");
   assert.equal(music.includes('type: "spring"'), true, "the shared geometry must be a spring");
-  // the force-touch press: 1 -> .965 -> 1, expanding DURING release
-  assert.equal(music.includes("PRESS_SCALE"), true, "the force-touch depth missing");
-  assert.equal(music.includes("0.965"), true, "the force-touch depth must be ~0.965");
+  // the force-touch press: STORED COMPRESSION (scaleX .982 / scaleY .95
+    // / y 1) held ~45ms, released with a spring-SHAPED POP (~1.008 ->
+    // ~1.0015 -> settle) while the shell blooms mid-release
+    assert.equal(music.includes("PRESS_POP"), true, "the release POP shape missing");
+    assert.equal(music.includes("scaleX: pressed ? 0.982 : [0.982, 1.008, 1.0015, 1]"), true, "the stored compression + keyframed pop missing");
+    assert.equal(music.includes("scaleY: pressed ? 0.95 : closing ? 0.9 : [0.95, 1.006, 1.001, 1]"), true, "the vertical compression missing");
+  // the waveform must stay ONE object through compact -> expanded ->
+  // compact: same warm color, same animation, same DOM node - the
+  // old quiet/off-white expanded override is GONE
+  assert.equal(music.includes("is-expanded"), false, "no expanded class - the wave stays identical");
   // the state machine stays small: the five lifecycle phases
   assert.equal(music.includes('"opening"'), true, "the opening phase missing");
   assert.equal(music.includes('"compact"'), true, "the compact phase missing");
@@ -582,7 +597,7 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   // ONE absolute clock, one owner per property, no imperative calls
   assert.equal(music.includes("bloom: 740"), true, "the bloom beat missing");
   assert.equal(music.includes("pressStart: 650"), true, "the force-touch press missing");
-  assert.equal(music.includes("pressRelease: 740"), true, "press release must share the bloom beat");
+  assert.equal(music.includes("pressRelease: 710"), true, "the brief stored hold (~45ms) then the POP release");
   assert.equal(music.includes("metaIn: 840"), true, "metadata must enter before the shell settles");
   assert.equal(music.includes("collapse: 2430"), true, "the collapse beat missing");
   assert.equal(music.includes("uiLeave: 2350"), true, "the expanded-content exit beat missing");
@@ -592,7 +607,7 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   // intro mirrors outro: fade 0 -> 1 in, 1 -> 0 out + slight squash
   assert.equal(music.includes("initial={{ opacity: 0 }}"), true, "the intro fade-in missing");
   assert.equal(music.includes("opacity: closing ? 0 : 1"), true, "the outro fade-out missing");
-  assert.equal(music.includes("scaleY: closing ? 0.9 : 1"), true, "the outro squash missing");
+  assert.equal(music.includes("scaleY: pressed ? 0.95 : closing ? 0.9 : [0.95, 1.006, 1.001, 1]"), true, "the outro squash + press compression missing");
   // ONE animation system: Motion declarative only. No WAAPI, no CSS
   // keyframes for phase transitions, no conditional mounting.
   assert.equal(music.includes(".animate("), false, "no imperative animation calls are allowed");
@@ -663,10 +678,13 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(css.includes("island-wave-in"), false, "the CSS wave entrance must be gone (Motion owns it)");
   assert.equal(css.includes("expanded-piece-in"), false, "the CSS UI entrance must be gone (Motion owns it)");
   assert.equal(css.includes(".island-row-content.is-expanded .dynamic-island-art"), false, "no CSS placement overrides - Motion owns placement");
-  // the ONLY expanded-class rule is the quiet waveform color (static
-  // styling, allowed): off-white bars + a softer pulse in expanded
-  assert.equal(css.includes(".island-row-content.is-expanded .dynamic-island-wave i"), true, "the quiet expanded waveform missing");
-  assert.equal(css.includes("wave-pulse-soft"), true, "the quiet waveform pulse missing");
+  // the waveform is ONE object from compact through expanded: the old
+  // quiet/off-white override must be gone - same warm gold, same pulse
+  assert.equal(css.includes("wave-pulse-soft"), false, "the quiet-wave override must be gone");
+  assert.equal(css.includes(".island-row-content.is-expanded"), false, "no expanded class CSS at all - wave stays identical");
+  // Apple-native type scoped to the island + the 5-column optical grid
+  assert.equal(css.includes('"SF Pro Text"'), true, "the Apple type stack missing");
+  assert.equal(css.includes("grid-template-columns: repeat(5, 1fr)"), true, "the 5-column control grid missing");
   // reduced motion is handled in the component - there is no travel to
   // hide and no separate reduced stage (the display:none bug is gone)
   assert.equal(css.includes(".music-projectile.is-reduced"), false, "the reduced travel stage must be gone");

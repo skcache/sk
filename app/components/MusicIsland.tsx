@@ -41,9 +41,9 @@ const MUSIC_TIMING = {
   compact: 0, // the shell EMPTY -> COMPACT immediately: the tiny pill
   artIn: 120, // content begins appearing BEFORE the shell finishes
   waveIn: 170, //
-  pressStart: 650, // the force-touch press begins (scale 1 -> .965)
-  pressRelease: 740, // the release - the bloom starts DURING it
-  bloom: 740, // press release + expansion = ONE motion, same beat
+  pressStart: 650, // the force-touch press begins (stored compression)
+  pressRelease: 710, // ~45ms hold at full compression, then the POP
+  bloom: 740, // shell expansion starts DURING the release pop
   metaIn: 840, // metadata begins before the shell is fully expanded
   progressIn: 900, //
   controlsIn: 960, //
@@ -73,9 +73,18 @@ const SHELL_SPRING = {
    single outer wrapper (never the shell itself) */
 const WRAP_FADE = { duration: 0.28, ease: "easeInOut" } as const;
 
-/* the force-touch depth: a real Apple-like press, 1 -> .965 -> 1,
-   ~120ms total, expanding DURING the release */
-const PRESS_SCALE = 0.965;
+/* the force-touch press: real stored compression - squashes (scaleX
+   0.982 / scaleY 0.95 / y 1) held ~45ms, then a spring-SHAPED POP
+   through ~1.008 -> ~1.0015 -> settle 1, while the shell blooms
+   DURING the release. Keyframed so the rebound is VISIBLE: with a
+   ~1.8% press amplitude, a true underdamped spring's overshoot is
+   only ~0.0005 (mathematically invisible). PRESS -> POP. */
+const PRESS_DOWN = { duration: 0.04, ease: "easeInOut" as const };
+const PRESS_POP = {
+  duration: 0.18,
+  times: [0, 0.4, 0.75, 1],
+  ease: ["easeOut", "easeInOut", "easeOut"] as ("easeOut" | "easeInOut")[],
+} satisfies { duration: number; times: number[]; ease: ("easeOut" | "easeInOut")[] };
 
 /* the UI unfold: quick, overlapping, eased out on entry and eased
    in-out on exit - all on the same duration so the pieces overlap
@@ -91,7 +100,7 @@ const COMPACT_FORM = {
 /* the expanded Now Playing form: 335x132, Apple's own rhythm */
 const EXPANDED_FORM = {
   art: { left: 16, top: 14, width: 46, height: 46, borderRadius: 10 },
-  wave: { right: 17, top: 22, height: 24 },
+  wave: { right: 17, top: 25, height: 24 },
 } as const;
 
 type Phase = "opening" | "compact" | "expanded" | "compactClosing" | "closing";
@@ -183,13 +192,15 @@ function MusicBody({ onDone }: { onDone: () => void }) {
         initial={{ opacity: 0 }}
         animate={{
           opacity: closing ? 0 : 1,
-          scale: pressed ? PRESS_SCALE : 1,
-          scaleY: closing ? 0.9 : 1,
+          scaleX: pressed ? 0.982 : [0.982, 1.008, 1.0015, 1],
+          scaleY: pressed ? 0.95 : closing ? 0.9 : [0.95, 1.006, 1.001, 1],
+          y: pressed ? 1 : [1, 0.4, 0.1, 0],
         }}
         transition={{
           opacity: WRAP_FADE,
-          scale: { duration: pressed ? 0.06 : 0.07, ease: "easeInOut" },
-          scaleY: { duration: 0.28, ease: "easeInOut" },
+          scaleX: pressed ? PRESS_DOWN : PRESS_POP,
+          scaleY: pressed ? PRESS_DOWN : closing ? WRAP_FADE : PRESS_POP,
+          y: pressed ? PRESS_DOWN : PRESS_POP,
         }}
       >
         {island}
@@ -246,7 +257,7 @@ function IslandInner({ uiIn, shared, artOpacity, waveOpacity }: IslandProps) {
       id="music-stage-island"
       className="music-island-shell mx-auto h-0 w-0 shrink-0 items-center justify-center border text-center text-ink"
     >
-      <span className={`island-row-content${shared ? " is-expanded" : ""}`}>
+      <span className="island-row-content">
         {/* the album art: ONE element from first frame to last - it
             physically resizes and relocates on the shell's spring */}
         <motion.div
@@ -310,24 +321,28 @@ function IslandInner({ uiIn, shared, artOpacity, waveOpacity }: IslandProps) {
               </svg>
             </span>
             <span className="island-controls-main">
-              <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M16 5.5 7.5 12l8.5 6.5z" fill="currentColor" />
-                <path d="M21.5 5.5 13 12l8.5 6.5z" fill="currentColor" />
+              <svg width="25" height="25" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M15 6 8.5 12l6.5 6" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M21.5 6 15 12l6.5 6" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
               <svg className="island-control-play" width="30" height="30" viewBox="0 0 24 24" aria-hidden="true">
                 <rect x="3.5" y="2.5" width="6.5" height="19" rx="2.6" fill="currentColor" />
                 <rect x="14" y="2.5" width="6.5" height="19" rx="2.6" fill="currentColor" />
               </svg>
-              <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
-                <path d="M8 5.5 16.5 12 8 18.5z" fill="currentColor" />
-                <path d="M14 5.5 22.5 12 14 18.5z" fill="currentColor" />
+              <svg width="25" height="25" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M9 6l6.5 6L9 18" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M15 6l6.5 6L15 18" stroke="currentColor" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </span>
             <span className="island-airplay">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M5.2 9.4a8.6 8.6 0 0 1 13.6 0" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-                <path d="M7.9 12.2a5.4 5.4 0 0 1 8.2 0" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
-                <path d="M12 11.6 16.6 16.8H7.4z" fill="currentColor" />
+                <path d="M5.6 8.4a8.4 8.4 0 0 1 12.8 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                <path d="M8.3 10.9a5.2 5.2 0 0 1 7.4 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                <path d="M10.4 12.7a2.6 2.6 0 0 1 3.2 0" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+                <path
+                  d="M12 11.4c.78 0 1.5.38 1.94 1L17.4 16.5c.5.62.07 1.6-.7 1.6H7.3c-.78 0-1.2-.98-.7-1.6L10.06 12.4c.44-.62 1.16-1 1.94-1z"
+                  fill="currentColor"
+                />
               </svg>
             </span>
           </motion.span>
