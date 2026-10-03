@@ -88,9 +88,9 @@ const COMPACT_FORM = {
   wave: { right: 10, top: 13, height: 18 },
 } as const;
 
-/* the expanded Now Playing form: 335x140, Apple's own rhythm */
+/* the expanded Now Playing form: 335x132, Apple's own rhythm */
 const EXPANDED_FORM = {
-  art: { left: 16, top: 16, width: 46, height: 46, borderRadius: 12 },
+  art: { left: 16, top: 14, width: 46, height: 46, borderRadius: 10 },
   wave: { right: 17, top: 22, height: 24 },
 } as const;
 
@@ -246,7 +246,7 @@ function IslandInner({ uiIn, shared, artOpacity, waveOpacity }: IslandProps) {
       id="music-stage-island"
       className="music-island-shell mx-auto h-0 w-0 shrink-0 items-center justify-center border text-center text-ink"
     >
-      <span className="island-row-content">
+      <span className={`island-row-content${shared ? " is-expanded" : ""}`}>
         {/* the album art: ONE element from first frame to last - it
             physically resizes and relocates on the shell's spring */}
         <motion.div
@@ -302,31 +302,29 @@ function IslandInner({ uiIn, shared, artOpacity, waveOpacity }: IslandProps) {
             transition={uiTransition(0.22)}
           >
             <span className="island-star">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <svg width="21" height="21" viewBox="0 0 24 24" aria-hidden="true">
                 <path
                   d="M12 3.8l2.5 5.05 5.6.82-4.05 3.95.95 5.57L12 16.35l-5.01 2.64.95-5.57-4.05-3.95 5.6-.82z"
-                  stroke="currentColor"
-                  strokeWidth="1.7"
-                  strokeLinejoin="round"
+                  fill="currentColor"
                 />
               </svg>
             </span>
             <span className="island-controls-main">
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M6 4.5v15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                <path d="M7.5 12l11-7.5v15z" fill="currentColor" />
+              <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M16 5.5 7.5 12l8.5 6.5z" fill="currentColor" />
+                <path d="M21.5 5.5 13 12l8.5 6.5z" fill="currentColor" />
               </svg>
-              <svg className="island-control-play" width="30" height="30" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <rect x="4.5" y="3.5" width="5.5" height="17" rx="2.2" fill="currentColor" />
-                <rect x="14" y="3.5" width="5.5" height="17" rx="2.2" fill="currentColor" />
+              <svg className="island-control-play" width="30" height="30" viewBox="0 0 24 24" aria-hidden="true">
+                <rect x="3.5" y="2.5" width="6.5" height="19" rx="2.6" fill="currentColor" />
+                <rect x="14" y="2.5" width="6.5" height="19" rx="2.6" fill="currentColor" />
               </svg>
-              <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                <path d="M18 4.5v15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                <path d="M16.5 12l-11-7.5v15z" fill="currentColor" />
+              <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M8 5.5 16.5 12 8 18.5z" fill="currentColor" />
+                <path d="M14 5.5 22.5 12 14 18.5z" fill="currentColor" />
               </svg>
             </span>
             <span className="island-airplay">
-              <svg width="23" height="23" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                 <path d="M5.2 9.4a8.6 8.6 0 0 1 13.6 0" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
                 <path d="M7.9 12.2a5.4 5.4 0 0 1 8.2 0" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
                 <path d="M12 11.6 16.6 16.8H7.4z" fill="currentColor" />

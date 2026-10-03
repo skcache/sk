@@ -633,16 +633,16 @@ body {
 .island-expanded-meta {
   position: absolute;
   left: 78px;
-  top: 19px;
+  top: 17px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 2px;
   text-align: left;
   white-space: nowrap;
 }
 
 .island-expanded-title {
-  font-size: 15.5px;
+  font-size: 15px;
   font-weight: 600;
   letter-spacing: -0.01em;
   color: #ffffff;
@@ -652,7 +652,7 @@ body {
 .island-expanded-artist {
   font-size: 12px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.6);
+  color: rgba(255, 255, 255, 0.55);
   line-height: 1.1;
 }
 
@@ -665,11 +665,11 @@ body {
   top: 74px;
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
 }
 
 .island-time {
-  font-size: 9.5px;
+  font-size: 9px;
   font-weight: 400;
   color: rgba(255, 255, 255, 0.55);
   font-variant-numeric: tabular-nums;
@@ -682,7 +682,7 @@ body {
   flex: 1;
   height: 2px;
   border-radius: 1px;
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .island-progress-fill {
@@ -692,59 +692,52 @@ body {
   width: 35%;
   height: 100%;
   border-radius: 1px;
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.85);
 }
 
 .island-progress-thumb {
   position: absolute;
   left: 35%;
   top: 50%;
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.9);
   transform: translate(-50%, -50%);
 }
 
-/* transport row: favorite star at the LEADING edge, previous / pause /
-   next centered (pause visually strongest), AirPlay at the TRAILING
-   edge - evenly distributed, Apple-style. Visual only, no handlers. */
+/* transport row: favorite star, previous, pause, next, AirPlay -
+   FIVE controls evenly distributed across the full bottom width
+   (space-between), pause centered and visually strongest. Apple
+   silhouettes, one quiet muted-white language. Visual only. */
 .island-controls {
   position: absolute;
   left: 0;
   right: 0;
   bottom: 12px;
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 18px;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .island-controls-main {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 36px;
-  color: rgba(255, 255, 255, 0.85);
+  display: contents;
 }
 
 .island-control-play {
-  color: rgba(255, 255, 255, 1);
+  color: #ffffff;
 }
 
 .island-star {
-  position: absolute;
-  left: 18px;
-  top: 50%;
-  transform: translateY(-50%);
   display: flex;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .island-airplay {
-  position: absolute;
-  right: 18px;
-  top: 50%;
-  transform: translateY(-50%);
   display: flex;
-  color: rgba(255, 255, 255, 0.65);
+  color: rgba(255, 255, 255, 0.6);
 }
 
 /* the live waveform at the trailing edge: many very thin bars of
@@ -807,6 +800,24 @@ body {
   0%,
   100% {
     transform: scaleY(0.4);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+/* the EXPANDED waveform goes quiet: off-white bars, gentler pulse,
+   visually quieter than the title. The compact keeps its accepted
+   warm-gold liveliness - this override is color/quietness only. */
+.island-row-content.is-expanded .dynamic-island-wave i {
+  background: rgba(255, 255, 255, 0.55);
+  animation-name: wave-pulse-soft;
+}
+
+@keyframes wave-pulse-soft {
+  0%,
+  100% {
+    transform: scaleY(0.72);
   }
   50% {
     transform: scaleY(1);

@@ -662,7 +662,11 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(css.includes("island-art-in"), false, "the CSS art entrance must be gone (Motion owns it)");
   assert.equal(css.includes("island-wave-in"), false, "the CSS wave entrance must be gone (Motion owns it)");
   assert.equal(css.includes("expanded-piece-in"), false, "the CSS UI entrance must be gone (Motion owns it)");
-  assert.equal(css.includes(".island-row-content.is-expanded"), false, "no CSS phase overrides - Motion owns placement");
+  assert.equal(css.includes(".island-row-content.is-expanded .dynamic-island-art"), false, "no CSS placement overrides - Motion owns placement");
+  // the ONLY expanded-class rule is the quiet waveform color (static
+  // styling, allowed): off-white bars + a softer pulse in expanded
+  assert.equal(css.includes(".island-row-content.is-expanded .dynamic-island-wave i"), true, "the quiet expanded waveform missing");
+  assert.equal(css.includes("wave-pulse-soft"), true, "the quiet waveform pulse missing");
   // reduced motion is handled in the component - there is no travel to
   // hide and no separate reduced stage (the display:none bug is gone)
   assert.equal(css.includes(".music-projectile.is-reduced"), false, "the reduced travel stage must be gone");
