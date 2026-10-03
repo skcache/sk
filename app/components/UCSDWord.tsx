@@ -7,25 +7,33 @@ import { useReducedMotion } from "motion/react";
 import TactileWord from "./TactileWord";
 import TridentMark from "./TridentMark";
 
-/* THE ONE TIMING CONTRACT.
-   - navy paint front: 0 -> navyEnd (linear, whole phrase)
-   - gold paint front: goldStart -> goldEnd (linear, whole phrase),
-     chasing navy before it finishes - zero white gap
-   - navyGlowFade: the navy light yields as gold takes ownership
-   - settleStart -> total: the overlays fade to the normal ink
-   - shimmerAt/Dur: the trident completion bloom; cleanBeat of clean
-     fully-formed trident over SETTLED ink; then the throw */
+/* THE ONE TIMING CONTRACT. Every number of the choreography lives
+   here and nowhere else.
+   - navy paint front: 0 -> navyEnd (whole phrase, ONE fluid rise)
+   - gold paint front: goldStart -> goldEnd, chasing navy before it
+     finishes - zero white gap
+   - navyGlowPeak / goldGlowPeak: the single soft glow peaks at the
+     mid-rise of each pass and softens before the pass lands
+   - goldEnd -> total: BOTH overlays fade to the normal ink - no
+     parked gold, no pause at full color
+   - shimmerAt + shimmerDur: the trident completion bloom over the
+     settled ink; cleanBeat of clean fully-formed trident; then the
+     throw at total + cleanBeat. */
 const UCSD_TIMING = {
-  total: 800, // the phrase is fully ordinary ink again
-  navyEnd: 340,
-  goldStart: 230,
-  goldEnd: 640,
-  navyGlowFade: 560,
-  settleStart: 650,
-  shimmerAt: 645,
-  shimmerDur: 65,
-  cleanBeat: 40,
+  total: 860, // both overlays fully transparent - normal ink
+  navyEnd: 420, // navy fully painted (glow already softening)
+  navyGlowPeak: 180, // navy mid-rise + glow peak
+  goldStart: 320, // the chase - well before navy finishes
+  goldEnd: 740, // gold reaches the top
+  goldGlowPeak: 200, // gold mid-rise + glow peak (520 absolute)
+  shimmerAt: 740, // the trident completion bloom
+  shimmerDur: 80, // 740 -> 820, then neutral
+  cleanBeat: 60, // clean fully-formed trident over SETTLED ink
 };
+
+/* ONE smooth neutral motion curve for both rises - the whole
+   choreography feels like one continuous fluid tide. */
+const RISE_EASE = "cubic-bezier(0.4, 0, 0.2, 1)";
 
 /* The actuation beat: TactileWord calls onActivate on pointer-up,
    the same event that starts the key's spring return. For UCSD we
@@ -164,8 +172,11 @@ export default function UCSDWord() {
     );
   }, [state]);
 
-  // BUILDING: ONE clip reveal + ONE glow envelope per overlay -
-  // whole-phrase surfaces, linear fronts, eased light.
+  // BUILDING: the paint is TWO whole-phrase overlays, each with
+  // EXACTLY ONE WAAPI animation. That single animation owns the
+  // clipPath reveal + the opacity hold/fade + the text-shadow glow
+  // in one keyframe sequence - no competing fill:forwards effects
+  // on the same element.
   useEffect(() => {
     if (state !== "building" || !origin) return;
     const T = UCSD_TIMING;
@@ -180,75 +191,97 @@ export default function UCSDWord() {
       el: HTMLElement | null,
       dur: number,
       delay: number,
-      settleStart: number,
-      settleEnd: number,
-      glowDur: number,
-      glowEnvelope: Keyframe[]
+      envelope: Keyframe[]
     ) => {
       if (!el) return;
-      // ONE clip reveal: the whole phrase surface, bottom -> top,
-      // constant velocity
       runs.push(
-        el.animate(
-          [
-            { clipPath: "inset(100% 0 0 0)", opacity: 1 },
-            { clipPath: "inset(0 0 0 0)", opacity: 1 },
-          ],
-          { duration: dur, delay, fill: "forwards", easing: "linear" }
-        )
-      );
-      // ONE glow envelope: 0 -> soft peak -> soft lower -> 0, on the
-      // same clock as the pass (the glow belongs to its color)
-      runs.push(
-        el.animate(glowEnvelope, {
-          duration: glowDur,
+        el.animate(envelope, {
+          duration: dur,
           delay,
           fill: "forwards",
-          easing: "ease-in-out",
-        })
-      );
-      // the settle: the overlay fades to the untouched ink
-      runs.push(
-        el.animate([{ opacity: 1 }, { opacity: 0 }], {
-          duration: settleEnd - settleStart,
-          delay: settleStart,
-          fill: "forwards",
-          easing: "ease",
+          // linear at the animation level: the keyframe offsets define
+          // the EXACT anchor times (180/420/740/860). The fluid curve
+          // lives per-keyframe, so it shapes each segment's motion
+          // without re-timing the anchors (Chrome time-scales a
+          // single animation-level easing across the whole path).
+          easing: "linear",
         })
       );
     };
 
-    // NAVY: 0 -> 340, glow peaks while it rises, softens, yields by
-    // navyGlowFade (560) as the gold takes ownership; the overlay
-    // fades 670 -> 800
+    // NAVY - ONE animation, 0 -> 860:
+    //   0:      hidden, glow off
+    //   ~180:   mid-rise, glow at its soft peak
+    //   ~420:   fully painted, glow already softening
+    //   420-740: stays under the gold (never fades early)
+    //   740-860: clean fade with the gold - normal ink
     pass(
       navyRef.current,
-      T.navyEnd,
-      0,
-      T.settleStart + 20,
       T.total,
-      T.navyGlowFade,
+      0,
       [
-        { textShadow: NO_GLOW },
-        { offset: 0.2, textShadow: NAVY_GLOW },
-        { offset: 0.55, textShadow: NAVY_GLOW_SOFT },
-        { textShadow: NO_GLOW },
+        {
+          clipPath: "inset(100% 0 0 0)",
+          opacity: 1,
+          textShadow: NO_GLOW,
+          easing: RISE_EASE,
+        },
+        {
+          offset: T.navyGlowPeak / T.total,
+          clipPath: "inset(50% 0 0 0)",
+          opacity: 1,
+          textShadow: NAVY_GLOW,
+          easing: RISE_EASE,
+        },
+        {
+          offset: T.navyEnd / T.total,
+          clipPath: "inset(0 0 0 0)",
+          opacity: 1,
+          textShadow: NAVY_GLOW_SOFT,
+          easing: "linear",
+        },
+        {
+          offset: T.goldEnd / T.total,
+          clipPath: "inset(0 0 0 0)",
+          opacity: 1,
+          textShadow: NO_GLOW,
+          easing: "ease",
+        },
+        { clipPath: "inset(0 0 0 0)", opacity: 0, textShadow: NO_GLOW },
       ]
     );
-    // GOLD: 230 -> 640, chases before navy finishes (zero gap),
-    // glow peaks mid-pass, exhales into the settle 650 -> 800
+
+    // GOLD - ONE animation, 320 -> 860:
+    //   320:   hidden, chases navy before it finishes
+    //   ~520:  mid-rise, warm glow at its soft peak
+    //   ~740:  reaches the top, glow softening
+    //   740-860: clean fade with the navy - no pause at full gold
     pass(
       goldRef.current,
-      T.goldEnd - T.goldStart,
-      T.goldStart,
-      T.settleStart,
-      T.total,
       T.total - T.goldStart,
+      T.goldStart,
       [
-        { textShadow: NO_GLOW },
-        { offset: 0.22, textShadow: GOLD_GLOW },
-        { offset: 0.6, textShadow: GOLD_GLOW_SOFT },
-        { textShadow: NO_GLOW },
+        {
+          clipPath: "inset(100% 0 0 0)",
+          opacity: 1,
+          textShadow: NO_GLOW,
+          easing: RISE_EASE,
+        },
+        {
+          offset: T.goldGlowPeak / (T.total - T.goldStart),
+          clipPath: "inset(50% 0 0 0)",
+          opacity: 1,
+          textShadow: GOLD_GLOW,
+          easing: RISE_EASE,
+        },
+        {
+          offset: (T.goldEnd - T.goldStart) / (T.total - T.goldStart),
+          clipPath: "inset(0 0 0 0)",
+          opacity: 1,
+          textShadow: GOLD_GLOW_SOFT,
+          easing: "ease",
+        },
+        { clipPath: "inset(0 0 0 0)", opacity: 0, textShadow: NO_GLOW },
       ]
     );
 
@@ -263,7 +296,7 @@ export default function UCSDWord() {
             { clipPath: "inset(100% 0 0 0)" },
             { clipPath: "inset(0 0 0 0)" },
           ],
-          { duration: T.goldEnd, delay: 0, fill: "forwards", easing: "linear" }
+          { duration: T.goldEnd, delay: 0, fill: "forwards", easing: RISE_EASE }
         )
       );
       // the completion bloom: tiny warm glint (LOCKED, not

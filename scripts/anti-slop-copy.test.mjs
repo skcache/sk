@@ -321,20 +321,34 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   const ucsd = read("components/UCSDWord.tsx");
   assert.equal(ucsd.includes("TridentMark"), true, "trident asset missing");
   assert.equal(ucsd.includes("UCSD_TIMING"), true, "the one timing contract missing");
-  assert.equal(ucsd.includes("navyEnd: 340"), true, "navy front must end at 340ms");
-  assert.equal(ucsd.includes("goldStart: 230"), true, "gold chase must begin at 230ms");
-  assert.equal(ucsd.includes("goldEnd: 640"), true, "gold front must end at 640ms");
-  assert.equal(ucsd.includes("settleStart: 650"), true, "the color settle must begin at 650ms");
-  assert.equal(ucsd.includes("total: 800"), true, "the phrase must be ink by 800ms");
-  assert.equal(ucsd.includes("navyGlowFade: 560"), true, "the navy light must yield as gold takes over");
-  assert.equal(ucsd.includes("shimmerAt: 645"), true, "the completion bloom timing missing");
+  assert.equal(ucsd.includes("navyEnd: 420"), true, "navy front must end at 420ms");
+  assert.equal(ucsd.includes("goldStart: 320"), true, "gold chase must begin at 320ms");
+  assert.equal(ucsd.includes("goldEnd: 740"), true, "gold front must end at 740ms");
+  assert.equal(ucsd.includes("navyGlowPeak: 180"), true, "the navy glow peak timing missing");
+  assert.equal(ucsd.includes("goldGlowPeak: 200"), true, "the gold glow peak timing missing");
+  assert.equal(ucsd.includes("total: 860"), true, "the phrase must be ink by 860ms");
+  assert.equal(ucsd.includes("shimmerAt: 740"), true, "the completion bloom timing missing");
+  assert.equal(ucsd.includes("shimmerDur: 80"), true, "the completion bloom duration missing");
+  assert.equal(ucsd.includes("cleanBeat: 60"), true, "the clean beat before the throw missing");
+  assert.equal(ucsd.includes("const RISE_EASE"), true, "the one neutral rise curve missing");
+    assert.equal(ucsd.includes("cubic-bezier(0.4, 0, 0.2, 1)"), true, "the neutral fluid-tide curve missing");
+    // the curve rides PER-KEYFRAME so the anchors stay exact; the
+    // animation-level linear only pins the keyframe times down
+    assert.equal(ucsd.includes("easing: RISE_EASE"), true, "the fluid curve must shape the rise segments");
+    assert.equal(ucsd.includes("easing: \"ease\""), true, "the settle must be a clean fade");
+  // each color overlay gets EXACTLY ONE animation owning clip+opacity+glow
+  assert.equal(ucsd.includes("el.animate(envelope"), true, "the single merged animation per overlay missing");
+  assert.equal(ucsd.includes("clipPath: \"inset(100% 0 0 0)\""), true, "the reveal start keyframe missing");
+  assert.equal(ucsd.includes("textShadow: NO_GLOW"), true, "the glow must live inside the merged keyframes");
+  assert.equal(ucsd.includes("glowEnvelope"), false, "the separate glow envelope animation must be gone");
+  assert.equal(ucsd.includes("settleStart"), false, "the separate settle animation must be gone");
+  assert.equal(ucsd.includes("glowDur"), false, "the separate glow-clock animation must be gone");
   assert.equal(ucsd.includes("const DIM"), false, "the base dim must be gone - ink stays untouched");
   assert.equal(ucsd.includes("const WASH"), false, "the brightness washes must be gone");
   assert.equal(ucsd.includes("ACTUATION_MS"), true, "the post-release actuation beat missing");
   assert.equal(ucsd.includes("RAISE_CLEARANCE"), true, "the mobile paragraph-clearance raise missing");
-  // the simple architecture: ONE clip + ONE glow envelope per overlay
-  assert.equal(ucsd.includes("easing: \"linear\""), true, "the paint fronts must move at constant speed");
-  assert.equal(ucsd.includes("cubic-bezier(0.22, 1, 0.36, 1)"), false, "the decelerating reveal ease must be gone");
+  // the simple architecture: ONE merged animation per overlay, ONE curve
+    assert.equal(ucsd.includes("cubic-bezier(0.22, 1, 0.36, 1)"), false, "the decelerating reveal ease must be gone");
   assert.equal(ucsd.includes("PAINT_STAGGER"), false, "the per-letter paint wave must be gone");
   assert.equal(ucsd.includes("GLOW_STAGGER"), false, "the per-letter glow wave must be gone");
   assert.equal(ucsd.includes("CREST_LETTER_MS"), false, "the crest letter envelope must be gone");
