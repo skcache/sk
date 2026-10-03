@@ -66,12 +66,6 @@ const PHRASE = "UC San Diego";
 const DIM = 0.5; // the quiet baseline - exactly the thinking letters' dim
 const WASH = 0.8; // the paints are luminous light washes, never dark fills
 
-/* BAND: the light-crest strip - 16% of the phrase box, centered on
-   the moving paint front (about 24% of the glyph height - soft
-   illumination, not a razor line). The strip slides bottom -> top
-   LINEARLY with the front. */
-const BAND = "84% 0 0 0";
-
 /* The crest light colors: brighter than the branded paint fills -
    PAINT stays branded, LIGHT makes it luminous. */
 const NAVY_CREST_GLOW = `0 0 7px rgba(80, 125, 190, 0.6), 0 0 14px rgba(80, 125, 190, 0.28)`;
@@ -280,12 +274,13 @@ export default function UCSDWord() {
       );
     }
 
-    /* ---- LIGHT CRESTS: the glow belongs to a narrow band riding
-       the moving front. The strip position is LINEAR with the paint
-       clock; the intensity (opacity + text-shadow) breathes
-       ease-in-out - the thinking principle translated vertically.
-       The navy light decays as the gold crest takes ownership, so
-       two halos never stack at full strength. */
+    /* ---- LIGHT CRESTS: the glow belongs to a smooth envelope
+       riding the moving front - a gaussian hump whose mask-position
+       slides linearly with the paint clock (no hard edges, the
+       thinking light), while the layer's presence (opacity +
+       text-shadow) breathes ease-in-out. The navy light decays as
+       the gold crest takes ownership, so two halos never stack at
+       full strength. */
     const crest = (
       el: HTMLElement | null,
       posDur: number,
@@ -298,8 +293,8 @@ export default function UCSDWord() {
       runs.push(
         el.animate(
           [
-            { clipPath: `inset(${BAND})` },
-            { clipPath: "inset(0 0 86% 0)" },
+            { maskPosition: "50% 100%", WebkitMaskPosition: "50% 100%" },
+            { maskPosition: "50% 0%", WebkitMaskPosition: "50% 0%" },
           ],
           { duration: posDur, delay: posDelay, fill: "forwards", easing: "linear" }
         )

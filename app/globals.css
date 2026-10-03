@@ -285,9 +285,35 @@ body {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  clip-path: inset(84% 0 0 0); /* the band parked at the bottom */
   opacity: 0; /* the light is off at rest */
   transition: none;
+  /* the moving light envelope: a soft gaussian hump (no hard edges -
+     the thinking light has no visible band boundaries). The crest
+     layer's intensity = the hump alpha, and the hump slides
+     bottom -> top with the paint front via an animated mask-position
+     (a plain length - smooth in every engine). */
+  mask-image: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0.3) 25%,
+    #000 50%,
+    rgba(0, 0, 0, 0.3) 75%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0) 0%,
+    rgba(0, 0, 0, 0.3) 25%,
+    #000 50%,
+    rgba(0, 0, 0, 0.3) 75%,
+    rgba(0, 0, 0, 0) 100%
+  );
+  mask-size: 100% 30%;
+  -webkit-mask-size: 100% 30%;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  mask-position: 50% 100%; /* parked below; WAAPI slides it up */
+  -webkit-mask-position: 50% 100%;
 }
 
 .ucsd-navy-crest {

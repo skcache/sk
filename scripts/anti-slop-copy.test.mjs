@@ -244,8 +244,8 @@ test("polish pass: reveal, grain, plaque, affordance, autoplay", () => {
   assert.equal(css.includes("color: #E3B23C"), true, "the gold LIGHT wash missing");
   assert.equal(css.includes("color: #8FBCEA"), true, "the navy crest light missing");
   assert.equal(css.includes("#182B49"), false, "the dark navy fill must be gone (light, not blackout)");
-  assert.equal(css.includes("mask-size"), false, "the CSS mask system must be gone");
-  assert.equal(css.includes("mask-image"), false, "the CSS mask system must be gone");
+  assert.equal(css.includes("mask-size: 100% 30%"), true, "the crest soft-hump envelope missing");
+  assert.equal(css.includes("mask-image"), true, "the crest hump mask missing");
   assert.equal(css.includes(".ucsd-navy, .ucsd-gold {"), false, "the old shared rest block must be gone");
   assert.equal(css.includes("ucsd-gap"), false, "the per-word gap must be gone");
   assert.equal(css.includes("opacity: 0"), true, "overlays must be invisible at rest (invisible reset)");
@@ -331,12 +331,14 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(ucsd.includes("const WASH = 0.8"), true, "the luminous paint wash missing");
   assert.equal(ucsd.includes("ACTUATION_MS"), true, "the post-release actuation beat missing");
   assert.equal(ucsd.includes("RAISE_CLEARANCE"), true, "the mobile paragraph-clearance raise missing");
-  // position moves LINEARLY; only the light intensity eases
+  // one geometry mechanism for the PAINT (clip only) - and the
+  // crest light rides a smooth hump (mask-position, no hard edges)
   assert.equal(ucsd.includes("easing: \"linear\""), true, "the paint fronts must move at constant speed");
   assert.equal(ucsd.includes("cubic-bezier(0.22, 1, 0.36, 1)"), false, "the decelerating reveal ease must be gone");
-  // one geometry mechanism - the mask system is deleted
   assert.equal(ucsd.includes("maskSize"), false, "the animated mask-size must be gone");
   assert.equal(ucsd.includes("WebkitMaskSize"), false, "the webkit mask feather must be gone");
+  assert.equal(ucsd.includes("maskPosition"), true, "the crest light hump must ride mask-position");
+  assert.equal(ucsd.includes("WebkitMaskPosition"), true, "the webkit hump ride missing");
   // the moving light crests: a narrow band per pass, riding the front
   assert.equal(ucsd.includes("ucsd-navy-crest"), true, "the navy light crest layer missing");
   assert.equal(ucsd.includes("ucsd-gold-crest"), true, "the gold light crest layer missing");
