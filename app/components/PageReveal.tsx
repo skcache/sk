@@ -43,7 +43,7 @@ export default function PageReveal() {
           opacity: 1,
           y: 0,
           filter: "blur(0px)",
-          duration: dramatic ? 1.15 : 0.9,
+          duration: dramatic ? 0.575 : 0.9,
           ease: "power3.out",
         },
         i * 0.3, // ~300ms offset between slots: a human-perceivable cascade
