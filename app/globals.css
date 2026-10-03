@@ -259,9 +259,15 @@ body {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  clip-path: inset(100% 0 0 0); /* hidden below the baseline */
   opacity: 0; /* invisible at rest: the idle reset is unseen */
   transition: none; /* the clip NEVER transitions - no reverse wipe */
+  white-space: pre; /* the per-letter spans keep the spaces' widths */
+}
+
+/* the per-letter paint spans: each glyph reveals on its own slight
+   beat (PAINT_STAGGER) - never perfectly in sync */
+.ucsd-pl {
+  display: inline-block;
 }
 
 .ucsd-navy {
@@ -275,11 +281,12 @@ body {
   color: #E3B23C;
 }
 
-/* the LIGHT CRESTS: duplicates of the phrase, visible only inside a
-   narrow band (16% of the phrase box, centered on the moving paint
-   front). Their color is the BRIGHTEST light tone of the pass; the
-   glow (text-shadow) and the band position are animated by WAAPI -
-   nothing here at rest. */
+/* the LIGHT CRESTS: duplicates of the phrase split per letter. The
+   wrapper carries a soft gaussian hump mask (no hard edges - the
+   thinking light) whose POSITION slides bottom -> top with the
+   paint front; each letter span's glow (opacity + text-shadow)
+   breathes on its own staggered beat (GLOW_STAGGER) so the light
+   travels through the glyphs like the thinking wave. */
 .ucsd-navy-crest,
 .ucsd-gold-crest {
   position: absolute;
@@ -287,11 +294,7 @@ body {
   pointer-events: none;
   opacity: 0; /* the light is off at rest */
   transition: none;
-  /* the moving light envelope: a soft gaussian hump (no hard edges -
-     the thinking light has no visible band boundaries). The crest
-     layer's intensity = the hump alpha, and the hump slides
-     bottom -> top with the paint front via an animated mask-position
-     (a plain length - smooth in every engine). */
+  white-space: pre;
   mask-image: linear-gradient(
     to top,
     rgba(0, 0, 0, 0) 0%,
@@ -316,6 +319,10 @@ body {
   -webkit-mask-position: 50% 100%;
 }
 
+.ucsd-cl {
+  display: inline-block;
+}
+
 .ucsd-navy-crest {
   color: #8FBCEA; /* the navy crest - the brightest blue light */
 }
@@ -325,24 +332,25 @@ body {
 }
 
 /* the trident: a fixed-size HTML wrapper holding TWO perfectly
-   overlapping SVGs (staff layer + head layer, same viewBox). The
-   FORMATION clips the HTML layer wrappers - predictable on every
-   browser/mobile - never SVG <g> elements. Rest = fully concealed;
-   WAAPI reveals staff with the navy front and head with the gold
-   front. Both layers are GOLD: the text passes set TIMING only,
-   not color. */
+   overlapping SVGs (staff layer + head layer, same viewBox,
+   identical gold). The FORMATION reveals the WHOLE MARK as one
+   unit - the wrapper clip slides bottom -> top on the paint clock;
+   no per-layer clips (the two-phase split read as a broken
+   trident mid-formation). Rest = fully concealed; the reveal ends
+   exactly as the phrase finishes painting, then the completion
+   glint. */
 .trident-mark {
   position: relative;
   display: block;
   pointer-events: none;
+  clip-path: inset(100% 0 0 0); /* concealed until the reveal */
+  transition: none;
 }
 
 .trident-staff-layer,
 .trident-head-layer {
   position: absolute;
   inset: 0;
-  clip-path: inset(100% 0 0 0); /* concealed until the reveal */
-  transition: none;
 }
 
 .trident-mark svg {

@@ -337,6 +337,12 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(ucsd.includes("cubic-bezier(0.22, 1, 0.36, 1)"), false, "the decelerating reveal ease must be gone");
   assert.equal(ucsd.includes("maskSize"), false, "the animated mask-size must be gone");
   assert.equal(ucsd.includes("WebkitMaskSize"), false, "the webkit mask feather must be gone");
+  assert.equal(ucsd.includes("PAINT_STAGGER"), true, "the per-letter paint wave missing");
+  assert.equal(ucsd.includes("GLOW_STAGGER"), true, "the per-letter glow wave missing");
+  assert.equal(ucsd.includes("ucsd-pl"), true, "the per-letter paint spans missing");
+  assert.equal(ucsd.includes("ucsd-cl"), true, "the per-letter crest spans missing");
+  assert.equal(ucsd.includes('duration: T.goldEnd, delay: 0'), true, "the trident must materialize as ONE unit");
+  assert.equal(ucsd.includes("staffRef"), false, "the two-phase trident refs must be gone");
   assert.equal(ucsd.includes("maskPosition"), true, "the crest light hump must ride mask-position");
   assert.equal(ucsd.includes("WebkitMaskPosition"), true, "the webkit hump ride missing");
   // the moving light crests: a narrow band per pass, riding the front

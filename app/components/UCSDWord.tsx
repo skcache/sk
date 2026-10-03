@@ -66,6 +66,15 @@ const PHRASE = "UC San Diego";
 const DIM = 0.5; // the quiet baseline - exactly the thinking letters' dim
 const WASH = 0.8; // the paints are luminous light washes, never dark fills
 
+/* PER-LETTER LIFE (the thinking wave): the letters are never
+   perfectly in sync - each glyph lights and fades on its own beat.
+   The paint fronts stagger by PAINT_STAGGER (a gentle L->R wave);
+   the glow envelopes stagger by GLOW_STAGGER (like .tw's 70ms), so
+   the light travels through the letters while the tide rises. */
+const PAINT_STAGGER = 22;
+const GLOW_STAGGER = 38;
+const CREST_LETTER_MS = 360; // one letter's glow window
+
 /* The crest light colors: brighter than the branded paint fills -
    PAINT stays branded, LIGHT makes it luminous. */
 const NAVY_CREST_GLOW = `0 0 7px rgba(80, 125, 190, 0.6), 0 0 14px rgba(80, 125, 190, 0.28)`;
@@ -110,8 +119,6 @@ export default function UCSDWord() {
   const navyCrestRef = useRef<HTMLSpanElement>(null);
   const goldRef = useRef<HTMLSpanElement>(null);
   const goldCrestRef = useRef<HTMLSpanElement>(null);
-  const staffRef = useRef<HTMLSpanElement>(null);
-  const headRef = useRef<HTMLSpanElement>(null);
   const markRef = useRef<HTMLSpanElement>(null);
   const flyRef = useRef<HTMLDivElement>(null);
   const anims = useRef<Animation[]>([]);
@@ -222,27 +229,44 @@ export default function UCSDWord() {
       );
     }
 
-    /* ---- PAINT FRONTS: position only, LINEAR, one velocity.
-       clip-path is the ONLY geometry mechanism (no mask system).
-       The paints are luminous WASHES (WASH opacity - the letters
-       keep their luminance under the brand color). */
-    const paint = (
+    /* ---- PAINT WASHES: the layers carry the luminous brand color
+       (WASH presence on the wrapper). The REVEAL is PER LETTER:
+       each glyph's front rises on its own slight beat
+       (PAINT_STAGGER) - never perfectly in sync, the thinking
+       wave. clip-path is the ONLY geometry mechanism. */
+    const wash = (
       el: HTMLElement | null,
-      dur: number,
-      delay: number,
+      revealDur: number,
+      revealDelay: number,
       settleStart: number,
       settleEnd: number
     ) => {
       if (!el) return;
       runs.push(
-        el.animate(
-          [
-            { clipPath: "inset(100% 0 0 0)", opacity: WASH },
-            { clipPath: "inset(0 0 0 0)", opacity: WASH },
-          ],
-          { duration: dur, delay, fill: "forwards", easing: "linear" }
-        )
+        el.animate([{ opacity: 0 }, { opacity: WASH }], {
+          duration: 40,
+          delay: revealDelay,
+          fill: "forwards",
+          easing: "linear",
+        })
       );
+      const kids = el.querySelectorAll<HTMLElement>(".ucsd-pl");
+      for (let i = 0; i < kids.length; i++) {
+        runs.push(
+          kids[i].animate(
+            [
+              { clipPath: "inset(100% 0 0 0)" },
+              { clipPath: "inset(0 0 0 0)" },
+            ],
+            {
+              duration: revealDur,
+              delay: revealDelay + i * PAINT_STAGGER,
+              fill: "forwards",
+              easing: "linear",
+            }
+          )
+        );
+      }
       // the settle: the colors fade into the ink base (gold first)
       if (settleEnd > settleStart) {
         runs.push(
@@ -255,13 +279,12 @@ export default function UCSDWord() {
         );
       }
     };
-    // the navy's exit is its yield-below (it must not also run a
+    // the navy's exit is its yield below (it must not also run a
     // later settle anim that could re-open it)
-    paint(navyRef.current, T.navyEnd, 0, 0, 0);
-    paint(goldRef.current, T.goldEnd - T.goldStart, T.goldStart, T.settleStart, T.total - 20);
+    wash(navyRef.current, T.navyEnd, 0, 0, 0);
+    wash(goldRef.current, T.goldEnd - T.goldStart, T.goldStart, T.settleStart, T.total - 20);
 
-    // the navy WASH yields as the gold covers it (no muddy stack):
-    // the navy paint fades out right after its front completes
+    // the navy WASH yields as the gold covers it (no muddy stack)
     const navy = navyRef.current;
     if (navy) {
       runs.push(
@@ -274,21 +297,13 @@ export default function UCSDWord() {
       );
     }
 
-    /* ---- LIGHT CRESTS: the glow belongs to a smooth envelope
-       riding the moving front - a gaussian hump whose mask-position
-       slides linearly with the paint clock (no hard edges, the
-       thinking light), while the layer's presence (opacity +
-       text-shadow) breathes ease-in-out. The navy light decays as
-       the gold crest takes ownership, so two halos never stack at
-       full strength. */
-    const crest = (
-      el: HTMLElement | null,
-      posDur: number,
-      posDelay: number,
-      envDelay: number,
-      envDur: number,
-      env: ({ offset?: number; opacity: number; textShadow: string })[]
-    ) => {
+    /* ---- LIGHT CRESTS, PER LETTER: the vertical hump
+       (mask-position on the wrapper, linear with the paint clock)
+       shapes the envelope with no hard edges; each LETTER's glow
+       (opacity + text-shadow) breathes on its own staggered beat
+       (GLOW_STAGGER) - the light travels through the glyphs like
+       the thinking wave, rising and fading per letter. */
+    const crestWrap = (el: HTMLElement | null, posDur: number, posDelay: number) => {
       if (!el) return;
       runs.push(
         el.animate(
@@ -299,64 +314,55 @@ export default function UCSDWord() {
           { duration: posDur, delay: posDelay, fill: "forwards", easing: "linear" }
         )
       );
-      runs.push(
-        el.animate(env as Keyframe[], {
-          duration: envDur,
-          delay: envDelay,
-          fill: "forwards",
-          easing: "ease-in-out",
-        })
-      );
     };
-    crest(
-      navyCrestRef.current,
-      T.navyEnd,
-      0,
-      0,
-      T.navyCrestFade,
-      [
-        { opacity: 0, textShadow: NO_GLOW },
-        { offset: 0.12, opacity: 1, textShadow: NAVY_CREST_GLOW },
-        { offset: 0.667, opacity: 1, textShadow: NAVY_CREST_GLOW },
-        { opacity: 0, textShadow: NO_GLOW },
-      ]
-    );
-    crest(
-      goldCrestRef.current,
-      T.goldEnd - T.goldStart,
-      T.goldStart,
-      T.goldStart,
-      T.goldCrestFade - T.goldStart,
-      [
-        { opacity: 0, textShadow: NO_GLOW },
-        { offset: 0.09, opacity: 1, textShadow: GOLD_CREST_GLOW },
-        { offset: 0.77, opacity: 1, textShadow: GOLD_CREST_GLOW },
-        { opacity: 0, textShadow: NO_GLOW },
-      ]
-    );
-
-    // the trident formation rides the SAME fronts (linear, same
-    // durations/delays): staff with navy, head with gold
-    const fade = (el: HTMLElement | null, dur: number, delay: number) => {
+    const crestLetters = (el: HTMLElement | null, baseDelay: number, glow: string) => {
       if (!el) return;
+      const kids = el.querySelectorAll<HTMLElement>(".ucsd-cl");
+      for (let i = 0; i < kids.length; i++) {
+        runs.push(
+          kids[i].animate(
+            [
+              { opacity: 0, textShadow: NO_GLOW },
+              { offset: 0.12, opacity: 1, textShadow: glow },
+              { offset: 0.74, opacity: 1, textShadow: glow },
+              { opacity: 0, textShadow: NO_GLOW },
+            ],
+            {
+              duration: CREST_LETTER_MS,
+              delay: baseDelay + i * GLOW_STAGGER,
+              fill: "forwards",
+              easing: "ease-in-out",
+            }
+          )
+        );
+      }
+    };
+    crestWrap(navyCrestRef.current, T.navyEnd, 0);
+    crestLetters(navyCrestRef.current, 0, NAVY_CREST_GLOW);
+    crestWrap(goldCrestRef.current, T.goldEnd - T.goldStart, T.goldStart);
+    crestLetters(goldCrestRef.current, T.goldStart, GOLD_CREST_GLOW);
+
+    // the trident MATERIALIZES AS ONE UNIT (never a broken
+    // two-phase split): the whole mark reveals bottom -> top on the
+    // combined paint clock - it finishes assembling exactly as the
+    // phrase finishes painting, then the completion glint.
+    const mark = markRef.current;
+    if (mark) {
       runs.push(
-        el.animate(
+        mark.animate(
           [
             { clipPath: "inset(100% 0 0 0)" },
             { clipPath: "inset(0 0 0 0)" },
           ],
-          { duration: dur, delay, fill: "forwards", easing: "linear" }
+          { duration: T.goldEnd, delay: 0, fill: "forwards", easing: "linear" }
         )
       );
-    };
-    fade(staffRef.current, T.navyEnd, 0);
-    fade(headRef.current, T.goldEnd - T.goldStart, T.goldStart);
+    }
 
     // the trident completion: ONE tiny warm bloom (LOCKED, not
     // POWER-UP) - restrained drop-shadow + brightness, opacity stays
     // 1 (the object just finished assembling; it is MORE solid, not
     // translucent). The filter is already neutral by the throw.
-    const mark = markRef.current;
     if (mark) {
       runs.push(
         mark.animate(
@@ -416,24 +422,30 @@ export default function UCSDWord() {
         <span className="ucsd-word">
           <span className="ucsd-base" ref={baseRef}>{PHRASE}</span>
           <span aria-hidden="true" className="ucsd-navy" ref={navyRef}>
-            {PHRASE}
+            {PHRASE.split("").map((c, i) => (
+              <span key={i} className="ucsd-pl">{c}</span>
+            ))}
           </span>
           <span aria-hidden="true" className="ucsd-navy-crest" ref={navyCrestRef}>
-            {PHRASE}
+            {PHRASE.split("").map((c, i) => (
+              <span key={i} className="ucsd-cl">{c}</span>
+            ))}
           </span>
           <span aria-hidden="true" className="ucsd-gold" ref={goldRef}>
-            {PHRASE}
+            {PHRASE.split("").map((c, i) => (
+              <span key={i} className="ucsd-pl">{c}</span>
+            ))}
           </span>
           <span aria-hidden="true" className="ucsd-gold-crest" ref={goldCrestRef}>
-            {PHRASE}
+            {PHRASE.split("").map((c, i) => (
+              <span key={i} className="ucsd-cl">{c}</span>
+            ))}
           </span>
         </span>
         {origin && state !== "idle" && (
           <TridentBuild
             origin={origin}
             state={state}
-            staffRef={staffRef}
-            headRef={headRef}
             markRef={markRef}
             flyRef={flyRef}
           />
@@ -453,15 +465,11 @@ export default function UCSDWord() {
 function TridentBuild({
   origin,
   state,
-  staffRef,
-  headRef,
   markRef,
   flyRef,
 }: {
   origin: { left: number; top: number };
   state: "building" | "flying";
-  staffRef: RefObject<HTMLSpanElement | null>;
-  headRef: RefObject<HTMLSpanElement | null>;
   markRef: RefObject<HTMLSpanElement | null>;
   flyRef: RefObject<HTMLDivElement | null>;
 }) {
@@ -473,13 +481,7 @@ function TridentBuild({
         style={{ left: origin.left, top: origin.top, width: MARK_W, height: MARK_H }}
         data-state={state}
       >
-        <TridentMark
-          width={MARK_W}
-          height={MARK_H}
-          staffRef={staffRef}
-          headRef={headRef}
-          markRef={markRef}
-        />
+        <TridentMark width={MARK_W} height={MARK_H} markRef={markRef} />
       </div>
     </div>,
     document.body
