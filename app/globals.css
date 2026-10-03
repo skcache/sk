@@ -258,6 +258,20 @@ body {
   clip-path: inset(100% 0 0 0); /* hidden below the baseline */
   opacity: 0; /* invisible at rest: the idle reset is unseen */
   transition: none; /* the clip NEVER transitions - no reverse wipe */
+  /* the reveal front: the stable clip + a soft 8px mask feather.
+     The mask-SIZE animates (a plain length - it interpolates
+     smoothly in every engine, unlike gradient stops), so the sweep
+     front reads like the thinking band instead of a razor edge. The
+     clip stays as the safety net: if a browser ever fails the mask,
+     the clip alone still hides/reveals correctly. */
+  mask-image: linear-gradient(to top, rgba(0, 0, 0, 0) 0px, rgba(0, 0, 0, 0.4) 3px, #000 8px);
+  -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0) 0px, rgba(0, 0, 0, 0.4) 3px, #000 8px);
+  mask-size: 100% 0%;
+  -webkit-mask-size: 100% 0%;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  mask-position: bottom;
+  -webkit-mask-position: bottom;
 }
 
 .ucsd-navy {
@@ -289,6 +303,17 @@ body {
   inset: 0;
   clip-path: inset(100% 0 0 0); /* concealed until the reveal */
   transition: none;
+  /* the same soft 8px mask feather as the phrase overlays - the
+     formation front rides on mask-size (a smooth length), with the
+     clip as the safety net */
+  mask-image: linear-gradient(to top, rgba(0, 0, 0, 0) 0px, rgba(0, 0, 0, 0.4) 3px, #000 8px);
+  -webkit-mask-image: linear-gradient(to top, rgba(0, 0, 0, 0) 0px, rgba(0, 0, 0, 0.4) 3px, #000 8px);
+  mask-size: 100% 0%;
+  -webkit-mask-size: 100% 0%;
+  mask-repeat: no-repeat;
+  -webkit-mask-repeat: no-repeat;
+  mask-position: bottom;
+  -webkit-mask-position: bottom;
 }
 
 .trident-mark svg {

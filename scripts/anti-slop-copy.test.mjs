@@ -316,9 +316,13 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(ucsd.includes("settleEnd: 800"), true, "the settle beat must be 800ms");
   assert.equal(ucsd.includes("hold: 90"), true, "the completion beat must be 90ms");
   assert.equal(ucsd.includes("ACTUATION_MS"), true, "the post-release actuation beat missing");
+  assert.equal(ucsd.includes("RAISE_CLEARANCE"), true, "the mobile paragraph-clearance raise missing");
   assert.equal(ucsd.includes("cubic-bezier(0.22, 1, 0.36, 1)"), true, "the quick responsive rise ease missing");
+  assert.equal(ucsd.includes("maskSize"), true, "the soft mask feather reveal missing");
+  assert.equal(ucsd.includes("WebkitMaskSize"), true, "the webkit mask feather missing");
   assert.equal(ucsd.includes("textShadow"), true, "the sweep glow must ride the WAAPI reveal");
   assert.equal(ucsd.includes("drop-shadow"), true, "the trident completion shimmer missing");
+  assert.equal(ucsd.includes("brightness(1.25)"), true, "the completion glow must visibly pulse");
   assert.equal(ucsd.includes("T.total + T.hold"), true, "the throw must wait for the full ink settle + beat");
   assert.equal(ucsd.includes("rotate("), true, "the throw rotation missing");
   assert.equal(ucsd.includes("const t = timers.current"), false, "cleanup must read the CURRENT refs (no stale array capture)");

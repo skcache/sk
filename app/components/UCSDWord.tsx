@@ -40,6 +40,11 @@ const FLIGHT_SPEED = 1.1; // px/ms - perceived horizontal speed
 const RISE_EASE = "cubic-bezier(0.22, 1, 0.36, 1)"; // quick, graceful settle
 const THROW_EASE = "cubic-bezier(0.16, 0.8, 0.3, 1)"; // stored energy release
 const THROW_ROTATION = 2.5; // tiny nose-down tilt (deg) on the throw
+/* When the phrase sits mid-paragraph (mobile lines reach under the
+   trident band), the mark must float ABOVE the preceding line's
+   glyphs instead of rendering over them. On desktop the previous
+   line usually ends before the phrase, so the tight 6px gap stays. */
+const RAISE_CLEARANCE = 40;
 
 const PHRASE = "UC San Diego";
 
@@ -48,12 +53,12 @@ const PHRASE = "UC San Diego";
    NAVY and GOLD hand off; at settle the glow leaves with the fade. */
 const GLOW_NAVY = [
   "0 1px 0 rgba(24, 43, 73, 0)",
-  "0 1px 10px rgba(24, 43, 73, 0.5)",
+  "0 1px 14px rgba(24, 43, 73, 0.52)",
   "0 1px 10px rgba(24, 43, 73, 0.22)",
 ];
 const GLOW_GOLD = [
   "0 1px 0 rgba(198, 146, 20, 0)",
-  "0 1px 10px rgba(198, 146, 20, 0.42)",
+  "0 1px 14px rgba(198, 146, 20, 0.46)",
   "0 1px 10px rgba(198, 146, 20, 0.18)",
 ];
 const NO_GLOW = "0 1px 0 rgba(0, 0, 0, 0)";
@@ -127,12 +132,41 @@ export default function UCSDWord() {
         pendingRef.current = false;
         const rect = wordRef.current?.getBoundingClientRect();
         if (!rect) return;
-        // SPAWN: mathematically centered above the phrase using the
-        // mark's actual rendered width/height - no eyeballed offsets.
-        setOrigin({
-          left: rect.left + rect.width / 2 - MARK_W / 2,
-          top: rect.top - MARK_H - 6,
-        });
+        const left = rect.left + rect.width / 2 - MARK_W / 2;
+        const top = rect.top - MARK_H - 6;
+        // the trident must never render over the surrounding words:
+        // the paragraph layout differs per viewport, so measure the
+        // text BEFORE the phrase and, if it occupies the trident's
+        // band, raise the mark above that text instead of the tight
+        // 6px gap (desktop's previous line usually ends left of the
+        // phrase and keeps the tight gap).
+        let raisedTop = top;
+        const anchor = wordRef.current;
+        const host = anchor ? (anchor.closest("p") ?? anchor.parentElement) : null;
+        const button = anchor ? anchor.parentElement : null;
+        if (host && button) {
+          try {
+            const range = document.createRange();
+            range.setStart(host, 0);
+            range.setEnd(button, 0);
+            const prev = range.getBoundingClientRect();
+            const band = {
+              left,
+              right: left + MARK_W,
+              top,
+              bottom: top + MARK_H,
+            };
+            const collides =
+              prev.right > band.left &&
+              prev.left < band.right &&
+              prev.bottom > band.top &&
+              prev.top < band.bottom;
+            if (collides) raisedTop = rect.top - MARK_H - RAISE_CLEARANCE;
+          } catch {
+            // measurement unavailable: keep the tight gap
+          }
+        }
+        setOrigin({ left, top: raisedTop });
         setState("building");
       }, ACTUATION_MS)
     );
@@ -156,8 +190,16 @@ export default function UCSDWord() {
       runs.push(
         el.animate(
           [
-            { clipPath: "inset(100% 0 0 0)" },
-            { clipPath: "inset(0 0 0 0)" },
+            {
+              clipPath: "inset(100% 0 0 0)",
+              maskSize: "100% 0%",
+              WebkitMaskSize: "100% 0%",
+            },
+            {
+              clipPath: "inset(0 0 0 0)",
+              maskSize: "100% 100%",
+              WebkitMaskSize: "100% 100%",
+            },
           ],
           { duration: dur, delay, fill: "forwards", easing: RISE_EASE }
         )
@@ -172,12 +214,22 @@ export default function UCSDWord() {
       glow: string[]
     ) => {
       if (!el) return;
-      // the clip reveal: one clean two-keyframe rise
+      // the clip + the soft mask feather: one clean two-keyframe rise
       runs.push(
         el.animate(
           [
-            { clipPath: "inset(100% 0 0 0)", opacity: 1 },
-            { clipPath: "inset(0 0 0 0)", opacity: 1 },
+            {
+              clipPath: "inset(100% 0 0 0)",
+              maskSize: "100% 0%",
+              WebkitMaskSize: "100% 0%",
+              opacity: 1,
+            },
+            {
+              clipPath: "inset(0 0 0 0)",
+              maskSize: "100% 100%",
+              WebkitMaskSize: "100% 100%",
+              opacity: 1,
+            },
           ],
           { duration: dur, delay, fill: "forwards", easing: RISE_EASE }
         )
@@ -225,24 +277,29 @@ export default function UCSDWord() {
     settle(goldRef.current, GLOW_GOLD[2]);
 
     // phrases are fully ordinary ink by T.total. The trident then
-    // catches a tiny golden shimmer (construction complete), the
-    // shimmer settles, and the throw starts after the completion
+    // catches a clear golden shimmer (construction complete), the
+    // glow settles, and the throw starts right after the completion
     // beat - never while the text is still fading.
     const mark = markRef.current;
     if (mark) {
       runs.push(
         mark.animate(
           [
-            { filter: "drop-shadow(0 0 0 rgba(198, 146, 20, 0))", opacity: 1 },
+            { filter: "drop-shadow(0 0 0 rgba(198, 146, 20, 0)) brightness(1)", opacity: 1 },
             {
-              offset: 0.5,
-              filter: "drop-shadow(0 0 6px rgba(198, 146, 20, 0.55))",
-              opacity: 0.97,
+              offset: 0.45,
+              filter: "drop-shadow(0 0 12px rgba(198, 146, 20, 0.7)) brightness(1.25)",
+              opacity: 0.92,
             },
-            { filter: "drop-shadow(0 0 0 rgba(198, 146, 20, 0))", opacity: 1 },
+            {
+              offset: 0.82,
+              filter: "drop-shadow(0 0 4px rgba(198, 146, 20, 0.28)) brightness(1.04)",
+              opacity: 0.98,
+            },
+            { filter: "drop-shadow(0 0 0 rgba(198, 146, 20, 0)) brightness(1)", opacity: 1 },
           ],
           {
-            duration: T.hold - 20,
+            duration: T.hold,
             delay: T.total,
             fill: "forwards",
             easing: "ease-in-out",
