@@ -100,8 +100,18 @@ test("interaction architecture: three objects, no generic API", () => {
 
 test("interactive words are semantic buttons via TactileWord", () => {
   const tactile = read("components/TactileWord.tsx");
+  const css = read("globals.css");
   assert.match(tactile, /<motion\.button/);
-  assert.equal(tactile.includes("type=\"button\""), true);
+  assert.equal(tactile.includes('type="button"'), true);
+  // the ONE-TIME discovery shimmer is global through TactileWord:
+  // every current AND future word inherits it - never per-component
+  assert.equal(tactile.includes("IntersectionObserver"), true, "the shimmer observer missing");
+  assert.equal(tactile.includes('dataset.shimmered'), true, "the one-time shimmer guard missing");
+  assert.equal(tactile.includes("i * 80"), true, "the ~80ms stagger missing");
+  assert.equal(tactile.includes("reduceMotion"), true, "the reduced-motion gate missing");
+  assert.equal(css.includes("@keyframes word-shimmer"), true, "the word-shimmer keyframes missing");
+  assert.equal(css.includes(".word-button.is-shimmering"), true, "the shimmer class missing");
+  assert.equal(tactile.includes("is-pressed"), true);
   assert.equal(tactile.includes("aria-label={label}"), true);
   for (const f of ["InferenceWord.tsx", "UCSDWord.tsx", "BasketballWord.tsx"]) {
     const src = read(`components/${f}`);
@@ -114,7 +124,6 @@ test("no stale effect CSS or old keyframes remain", () => {
   for (const stale of [
     "ucsd-flash",
     "trident-pop",
-    "shimmer",
     "ball-hop",
     "sparkline",
     "box-pop",
@@ -718,7 +727,7 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   assert.equal(css.includes("margin-top: 24px"), false, "the in-flow margin must be gone (absolute now)");
   assert.equal(css.includes(".music-seed-skin"), false, "the seed skin CSS must be gone (no travel)");
   assert.equal(css.includes(".island-star"), false, "the favorite star CSS must be gone too");
-  assert.equal(css.includes("max-height: 112px"), true, "the mobile expanded cap missing");
+  assert.equal(css.includes("max-height: 112px"), false, "the mobile expanded cap must be GONE - the island keeps its real 335x140 proportions");
   assert.equal(css.includes("background: #000000"), true, "the PURE BLACK shell missing");
   assert.equal(css.includes("rgba(255, 255, 255, 0.035)"), true, "the invisible hairline missing");
   assert.equal(css.includes("box-shadow: none"), true, "the shell must not float like a card");
@@ -758,10 +767,10 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   // the stage is a FIXED-height playground - it never breathes for an
   // animation, so the old 26px rest + active-expansion rules are gone
   const stageRule = css.match(/\.interaction-stage\s*\{([^}]+)\}/)?.[1] ?? "";
-  assert.equal(stageRule.includes("height: 116px"), true, "stage must be a fixed 116px playground");
+  assert.equal(stageRule.includes("height: 158px"), true, "stage must be a fixed 158px playground (grew to contain the full 335x140 island)");
   assert.equal(stageRule.includes("transition"), false, "the stage must never transition its height");
   assert.equal(css.includes(".interaction-stage.is-active"), false, "the active expansion must be gone");
-  assert.equal(css.includes("height: 116px"), true, "mobile stage height missing");
+  assert.equal(css.includes("height: 158px"), true, "mobile stage height missing");
   assert.equal(css.includes("height: 143px"), true, "desktop stage height missing");
   assert.equal(css.includes(".island-row-content"), true, "island row CSS missing");
   assert.equal(css.includes(".music-island-shell"), true, "island shell CSS missing");

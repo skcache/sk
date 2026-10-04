@@ -111,6 +111,44 @@ body {
   color: #ffffff;
 }
 
+/* first-encounter discovery shimmer: ONE restrained glint the first
+   time a word scrolls into view. Outer-only (filter + text-shadow) -
+   child animations (thinking wave, paint sweep, logos) are never
+   touched, queried, or cancelled. No color change, no scale, no
+   movement, no repeat - a polished-object glint, not an ad. */
+@keyframes word-shimmer {
+  0% {
+    filter: none;
+    text-shadow: none;
+  }
+  30% {
+    filter: brightness(1.12);
+    text-shadow: none;
+  }
+  55% {
+    filter: brightness(1.22);
+    text-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
+  }
+  80% {
+    filter: brightness(1.06);
+    text-shadow: 0 0 3px rgba(255, 255, 255, 0.25);
+  }
+  100% {
+    filter: none;
+    text-shadow: none;
+  }
+}
+
+.word-button.is-shimmering {
+  animation: word-shimmer 540ms ease-in-out 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .word-button.is-shimmering {
+    animation: none;
+  }
+}
+
 /* ---------- inference: thinking morph ---------- */
 
 /* no reservation: the cell is word-sized at rest and springs to
@@ -524,7 +562,9 @@ body {
    island is absolutely positioned so nothing below ever moves. */
 .interaction-stage {
   position: relative;
-  height: 116px;
+  /* mobile grows to contain the full 335x140 island + breathing room
+     (158 = 140 + 18); desktop stays 143px, visually unchanged */
+  height: 158px;
 }
 
 @media (min-width: 640px) {
@@ -573,6 +613,10 @@ body {
   border-color: rgba(255, 255, 255, 0.035);
   box-shadow: none;
   overflow: hidden;
+  /* width stays gutter-safe on narrow viewports; NO mobile height cap
+     (the old 112px squash is gone) - the island keeps its REAL 335x140
+     expanded proportions everywhere, and the mobile stage grew below
+     to contain it cleanly */
   max-width: calc(100vw - 22px);
   /* Apple-native type, scoped to the island only (no bundled fonts) */
   font-family:
@@ -582,26 +626,6 @@ body {
     "SF Pro Display",
     system-ui,
     sans-serif;
-}
-
-/* the expanded height rides the narrow-viewport gutter too: on small
-   screens the panel is capped shorter so it keeps clear of the
-   divider below (the width clamp above leaves the height to the
-   aspect, so this trims only the mobile void) */
-@media (max-width: 639px) {
-  .music-island-shell {
-    max-height: 112px;
-  }
-  /* the 112px mobile cap is tight: pull the progress row up and the
-     controls down a touch so the rail/timestamps never collide with
-     the transport row (stage/divider untouched). Higher specificity -
-     the base rules come later in the file. */
-  .music-island-shell .island-progress-row {
-    top: 58px;
-  }
-  .music-island-shell .island-controls {
-    bottom: 10px;
-  }
 }
 
 /* island content: the COMPACT anatomy lives in a full-bleed
