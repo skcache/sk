@@ -4,35 +4,68 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { motion, useReducedMotion } from "motion/react";
 
 /**
- * ONE-TIME FIRST-ENCOUNTER SHIMMER (module scope, shared by every
+ * ONE-TIME FIRST-ENCOUNTER GLINT (module scope, shared by every
  * TactileWord): a singleton IntersectionObserver watches each
- * .word-button once. The first time a word becomes visibly present in
- * the viewport it gets a single ~540ms glisten (brightness + soft
- * white text-shadow on the OUTER button only - child animations are
- * never touched). Words visible together stagger ~80ms apart; a word
- * that scrolls in later starts immediately. dataset.shimmered makes
- * it strictly one-shot per session; reduced-motion disables it.
+ * .word-button once - but nothing may shimmer before PageReveal
+ * announces `interactive-shimmer-ready` (the intro text must be sharp
+ * first). Words already visible when the event fires glint then,
+ * staggered ~100ms in DOM order; words below the fold glint later the
+ * first time the observer sees them. The glint itself is a narrow
+ * white band sweeping left->right across the OUTER button only
+ * (::before overlay - child animations are never touched).
+ * dataset.shimmered makes it strictly one-shot per session;
+ * reduced-motion disables it entirely.
  */
 let shimmerObserver: IntersectionObserver | null = null;
+let shimmerReady = false;
+let readyBound = false;
+const pendingShimmers: HTMLElement[] = [];
+const pendingSeen = new Set<HTMLElement>();
+
+function bindReady() {
+  if (readyBound) return;
+  readyBound = true;
+  window.addEventListener("interactive-shimmer-ready", () => {
+    shimmerReady = true;
+    const batch = pendingShimmers.splice(0);
+    pendingSeen.clear();
+    batch.forEach((el, i) => fireShimmer(el, i));
+  });
+}
+
+function fireShimmer(el: HTMLElement, i: number) {
+  if (el.dataset.shimmered === "1") return; // strictly one-shot
+  el.dataset.shimmered = "1"; // one-time per page session
+  shimmerObserver?.unobserve(el);
+  el.classList.add("is-shimmering");
+  el.style.animationDelay = `${i * 100}ms`; // ~90-120ms stagger
+  const done = () => {
+    el.classList.remove("is-shimmering");
+    el.style.animationDelay = "";
+  };
+  el.addEventListener("animationend", done, { once: true });
+  // safety net if animationend never fires (tab hidden, etc.)
+  window.setTimeout(done, 1600);
+}
 
 function getShimmerObserver() {
   if (typeof IntersectionObserver === "undefined") return null;
+  bindReady();
   shimmerObserver ??= new IntersectionObserver(
     (entries) => {
       entries.forEach((entry, i) => {
         if (!entry.isIntersecting) return;
         const el = entry.target as HTMLElement;
-        el.dataset.shimmered = "1"; // one-time per page session
-        shimmerObserver?.unobserve(el);
-        el.classList.add("is-shimmering");
-        el.style.animationDelay = `${i * 80}ms`; // ~80ms stagger
-        const done = () => {
-          el.classList.remove("is-shimmering");
-          el.style.animationDelay = "";
-        };
-        el.addEventListener("animationend", done, { once: true });
-        // safety net if animationend never fires (tab hidden, etc.)
-        window.setTimeout(done, 1600);
+        if (!shimmerReady) {
+          // the reveal is still running: hold the word (deduped - the
+          // reveal's rise/blur re-fires visibility events) - it will
+          // glint the moment `interactive-shimmer-ready` fires
+          if (pendingSeen.has(el)) return;
+          pendingSeen.add(el);
+          pendingShimmers.push(el);
+          return;
+        }
+        fireShimmer(el, i);
       });
     },
     { threshold: 0.2 }

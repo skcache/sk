@@ -103,14 +103,18 @@ test("interactive words are semantic buttons via TactileWord", () => {
   const css = read("globals.css");
   assert.match(tactile, /<motion\.button/);
   assert.equal(tactile.includes('type="button"'), true);
-  // the ONE-TIME discovery shimmer is global through TactileWord:
+  // the ONE-TIME discovery glint is global through TactileWord:
   // every current AND future word inherits it - never per-component
-  assert.equal(tactile.includes("IntersectionObserver"), true, "the shimmer observer missing");
-  assert.equal(tactile.includes('dataset.shimmered'), true, "the one-time shimmer guard missing");
-  assert.equal(tactile.includes("i * 80"), true, "the ~80ms stagger missing");
+  assert.equal(tactile.includes("IntersectionObserver"), true, "the glint observer missing");
+  assert.equal(tactile.includes('dataset.shimmered'), true, "the one-time glint guard missing");
+  assert.equal(tactile.includes("i * 100"), true, "the ~100ms stagger missing");
   assert.equal(tactile.includes("reduceMotion"), true, "the reduced-motion gate missing");
-  assert.equal(css.includes("@keyframes word-shimmer"), true, "the word-shimmer keyframes missing");
-  assert.equal(css.includes(".word-button.is-shimmering"), true, "the shimmer class missing");
+  assert.equal(tactile.includes("interactive-shimmer-ready"), true, "the reveal-ready gate missing");
+  assert.equal(tactile.includes("pendingShimmers"), true, "the pre-reveal pending queue missing");
+  assert.equal(css.includes("@keyframes word-glint"), true, "the word-glint sweep keyframes missing");
+  assert.equal(css.includes(".word-button.is-shimmering::before"), true, "the glint overlay missing");
+  assert.equal(css.includes("word-shimmer"), false, "the old whole-word brightness pulse must be gone");
+  assert.equal(css.includes("filter: brightness"), false, "no whole-word brightness filter anywhere");
   assert.equal(tactile.includes("is-pressed"), true);
   assert.equal(tactile.includes("aria-label={label}"), true);
   for (const f of ["InferenceWord.tsx", "UCSDWord.tsx", "BasketballWord.tsx"]) {

@@ -111,40 +111,49 @@ body {
   color: #ffffff;
 }
 
-/* first-encounter discovery shimmer: ONE restrained glint the first
-   time a word scrolls into view. Outer-only (filter + text-shadow) -
-   child animations (thinking wave, paint sweep, logos) are never
-   touched, queried, or cancelled. No color change, no scale, no
-   movement, no repeat - a polished-object glint, not an ad. */
-@keyframes word-shimmer {
+/* first-encounter discovery GLINT: a narrow white highlight sweeps
+   left -> right across the word ONCE, the first time it becomes
+   visibly present (after the intro reveal has resolved to sharp text -
+   see TactileWord's interactive-shimmer-ready gate). Implemented as an
+   outer ::before overlay band (background-position sweep): the actual
+   text never moves, scales, or re-layouts, and child animations
+   (thinking wave, paint sweep, logos) are never touched. No repeat,
+   no lingering glow - a polished newly-unveiled-object glint. */
+@keyframes word-glint {
   0% {
-    filter: none;
-    text-shadow: none;
-  }
-  30% {
-    filter: brightness(1.12);
-    text-shadow: none;
-  }
-  55% {
-    filter: brightness(1.22);
-    text-shadow: 0 0 6px rgba(255, 255, 255, 0.5);
-  }
-  80% {
-    filter: brightness(1.06);
-    text-shadow: 0 0 3px rgba(255, 255, 255, 0.25);
+    background-position: -35% 0;
   }
   100% {
-    filter: none;
-    text-shadow: none;
+    background-position: 135% 0;
   }
 }
 
-.word-button.is-shimmering {
-  animation: word-shimmer 540ms ease-in-out 1;
+.word-button.is-shimmering::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1; /* the band glides OVER the glyphs */
+  pointer-events: none; /* clicks pass straight through */
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.35) 30%,
+    rgba(255, 255, 255, 0.8) 50%,
+    rgba(255, 255, 255, 0.35) 70%,
+    transparent 100%
+  );
+  background-size: 26% 100%; /* the glint band: ~1/4 of the word */
+  background-repeat: no-repeat;
+  background-position: -35% 0;
+  animation: word-glint 600ms ease-in-out 1;
+  animation-delay: inherit; /* the button's inline stagger delay */
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .word-button.is-shimmering {
+  .word-button.is-shimmering::before {
     animation: none;
   }
 }

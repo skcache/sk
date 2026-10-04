@@ -20,20 +20,29 @@ export default function PageReveal() {
     const slots = Array.from(document.querySelectorAll<HTMLElement>("[data-reveal]"));
     if (!slots.length) return;
 
+    // the interactive words must NEVER shimmer underneath the reveal -
+    // the first-view glint waits for this announcement, dispatched only
+    // once the INTRO slot has resolved to sharp, readable text
+    const announceReady = () => {
+      window.dispatchEvent(new CustomEvent("interactive-shimmer-ready"));
+    };
+
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const failsafe = window.setTimeout(() => {
       gsap.set(slots, { opacity: 1, y: 0, filter: "blur(0px)", clearProps: "all" });
+      announceReady();
     }, 6000);
 
     if (reduce) {
       gsap.set(slots, { opacity: 1, clearProps: "all" });
+      announceReady();
       return () => {
         clearTimeout(failsafe);
         root.classList.remove("js");
       };
     }
 
-    const tl = gsap.timeline();
+    const tl = gsap.timeline({ onComplete: announceReady });
     slots.forEach((slot, i) => {
       const dramatic = slot.id === "intro";
       tl.fromTo(
