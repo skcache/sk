@@ -106,6 +106,15 @@ test("interactive words are semantic buttons via TactileWord", () => {
   // the ONE-TIME discovery glint is global through TactileWord:
   // every current AND future word inherits it - never per-component
   assert.equal(tactile.includes("IntersectionObserver"), true, "the glint observer missing");
+  assert.equal(tactile.includes("PROX_RADIUS = 120"), true, "the proximity radius (120px) missing");
+  assert.equal(tactile.includes("PROX_PULL_MAX = 2"), true, "the max 2px magnetic pull missing");
+  assert.equal(tactile.includes("PROX_GLOW_MAX = 0.07"), true, "the subtle proximity glow missing");
+  assert.equal(tactile.includes("word-proximity"), true, "the proximity wrapper missing");
+  assert.equal(tactile.includes('e.pointerType !== "mouse"'), true, "the fine-pointer-only gate missing");
+  assert.equal(tactile.includes('"(pointer: fine)"'), true, "the coarse-pointer guard missing");
+  assert.equal(tactile.includes("useSpring"), true, "the springed proximity missing");
+  assert.equal(css.includes(".word-proximity"), true, "the proximity wrapper CSS missing");
+  assert.equal(css.includes("display: inline-block"), true, "the no-layout-shift inline-block wrapper missing");
   assert.equal(tactile.includes('dataset.shimmered'), true, "the one-time glint guard missing");
   assert.equal(tactile.includes("i * 100"), true, "the ~100ms stagger missing");
   assert.equal(tactile.includes("reduceMotion"), true, "the reduced-motion gate missing");

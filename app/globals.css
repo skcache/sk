@@ -69,6 +69,14 @@ body {
 
 /* ---------- interactive words ---------- */
 
+/* proximity magnetism wrapper: the magnetic pull lives here (inline-block
+   so transforms apply; it shrink-wraps the button exactly, so the page
+   layout never changes - the pull is purely visual). The button's own
+   press transform stays on the button inside, untouched. */
+.word-proximity {
+  display: inline-block;
+}
+
 .word-button {
   position: relative;
   margin: 0;
