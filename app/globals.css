@@ -700,7 +700,7 @@ body {
   position: absolute;
   left: 0;
   top: 0;
-  width: 35%;
+  width: var(--island-progress, 0%);
   height: 100%;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.85);
@@ -708,7 +708,7 @@ body {
 
 .island-progress-thumb {
   position: absolute;
-  left: 35%;
+  left: var(--island-progress, 0%);
   top: 50%;
   width: 5px;
   height: 5px;

@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import { motion, useReducedMotion } from "motion/react";
-import { favoriteSong } from "../config/favorite-song";
+import { favoriteSong, playbackProgress } from "../config/favorite-song";
 import {
   DynamicIsland,
   DynamicIslandProvider,
@@ -34,6 +34,13 @@ import {
  * flips motion targets and Motion resolves the physics. CSS is static
  * styling only, except the repeating waveform pulse.
  */
+
+/* the playback readout is DERIVED from the config's two numbers, so the
+   two timestamps and the rail percentage can never drift apart */
+const mmss = (s: number) =>
+  `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+const ELAPSED_LABEL = mmss(favoriteSong.elapsed); // e.g. 1m20s
+const REMAINING_LABEL = `-${mmss(favoriteSong.duration - favoriteSong.elapsed)}`;
 
 /* THE ONE ABSOLUTE CLOCK - the whole performance lives on this table.
    Every phase overlaps the next one: nothing pauses between states. */
@@ -301,16 +308,17 @@ function IslandInner({ uiIn, shared, artOpacity, waveOpacity }: IslandProps) {
           </motion.span>
           <motion.span
             className="island-progress-row"
+            style={{ "--island-progress": playbackProgress } as CSSProperties}
             initial={false}
             animate={{ opacity: uiIn ? 1 : 0, y: uiIn ? 0 : 4 }}
             transition={uiTransition(0.18)}
           >
-            <span className="island-time">1:20</span>
+            <span className="island-time">{ELAPSED_LABEL}</span>
             <span className="island-progress">
               <i className="island-progress-fill" />
               <i className="island-progress-thumb" />
             </span>
-            <span className="island-time">-0:45</span>
+            <span className="island-time">{REMAINING_LABEL}</span>
           </motion.span>
           <motion.span
             className="island-controls"

@@ -796,4 +796,19 @@ test("v2 repair: cohesive thinking, real island primitives, quiet stage", () => 
   const fav = read("config/favorite-song.ts");
   assert.equal(fav.includes("Kick"), true, "favorite song missing");
   assert.equal(fav.includes("Future"), true, "favorite artist missing");
+  // PLAYBACK ACCURACY: elapsed / duration live once in the config; the two
+  // timestamps AND both rail parts derive from them, so the numbers can
+  // never contradict each other (80 / 135 = 59.26%)
+  assert.equal(fav.includes("elapsed: 80"), true, "the elapsed seconds missing from the config");
+  assert.equal(fav.includes("duration: 135"), true, "the duration seconds missing from the config");
+  assert.equal(fav.includes("toFixed(2)"), true, "the one progress percentage missing");
+  assert.equal(music.includes('"--island-progress": playbackProgress'), true, "the rail must read the one shared percentage");
+  assert.equal(music.includes("ELAPSED_LABEL"), true, "the elapsed timestamp must be derived");
+  assert.equal(music.includes("REMAINING_LABEL"), true, "the remaining timestamp must be derived");
+  assert.equal(music.includes("1:20"), false, "the hardcoded elapsed timestamp must be gone");
+  assert.equal(music.includes("-0:45"), false, "the stale remaining timestamp must be gone");
+  assert.equal(css.includes("width: var(--island-progress"), true, "the fill must read the shared progress variable");
+  assert.equal(css.includes("left: var(--island-progress"), true, "the thumb must read the shared progress variable");
+  assert.equal(css.includes("width: 35%"), false, "the hardcoded 35% fill must be gone");
+  assert.equal(css.includes("left: 35%"), false, "the hardcoded 35% thumb must be gone");
 });
