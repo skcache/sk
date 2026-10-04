@@ -439,7 +439,7 @@ test("mechanical press pass: no box, no squash, no hint, no stale systems", () =
   assert.equal(ucsd.includes("performance.now"), false, "manual physics clock must be gone");
   assert.equal(ucsd.includes("translate3d"), true, "the flight must use translate3d");
   assert.equal(ucsd.includes("onfinish"), true, "the flight must finish to a clean state");
-  assert.equal(ucsd.includes("Math.min(750, Math.max(420"), true, "distance-clamped flight duration missing");
+  assert.equal(ucsd.includes("Math.min(980, Math.max(540"), true, "distance-clamped flight duration missing");
   assert.equal(ucsd.includes("MARK_W / 2"), true, "spawn must be centered by the mark width");
   assert.equal(ucsd.includes("MARK_H - 6"), true, "spawn must sit above the phrase by the mark height");
   assert.equal(ucsd.includes('"idle" | "building" | "flying"'), true, "the 3-state machine missing");

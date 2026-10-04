@@ -37,7 +37,7 @@ const ACTUATION_MS = 50;
 /* Trident + flight constants (also defined once). */
 const MARK_W = 84;
 const MARK_H = 26;
-const FLIGHT_SPEED = 1.1; // px/ms - perceived horizontal speed
+const FLIGHT_SPEED = 0.85; // px/ms - perceived horizontal speed (a leisurely throw, not a fling)
 const THROW_EASE = "cubic-bezier(0.16, 0.8, 0.3, 1)"; // stored energy release
 const THROW_ROTATION = 2.5; // tiny nose-down tilt (deg) on the throw
 /* When the phrase sits mid-paragraph (mobile lines reach under the
@@ -374,7 +374,7 @@ export default function UCSDWord() {
     const dx = window.innerWidth - origin.left + MARK_W + 20;
     const dur = reduceMotion
       ? 300
-      : Math.min(750, Math.max(420, dx / FLIGHT_SPEED));
+      : Math.min(980, Math.max(540, dx / FLIGHT_SPEED));
     const fly = box.animate(
       [
         { transform: `translate3d(0, 0, 0) rotate(0deg)` },
