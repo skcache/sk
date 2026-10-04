@@ -101,11 +101,12 @@ test("interaction architecture: three objects, no generic API", () => {
 test("interactive words are semantic buttons via TactileWord", () => {
   const tactile = read("components/TactileWord.tsx");
   const css = read("globals.css");
+  const reveal = read("components/PageReveal.tsx");
   assert.match(tactile, /<motion\.button/);
   assert.equal(tactile.includes('type="button"'), true);
-  // the ONE-TIME discovery glint is global through TactileWord:
-  // every current AND future word inherits it - never per-component
-  assert.equal(tactile.includes("IntersectionObserver"), true, "the glint observer missing");
+  // proximity magnetism is the discoverability affordance now: no
+  // first-load glint, no shimmer - the words are quiet until the
+  // cursor comes near (or they are pressed)
   assert.equal(tactile.includes("PROX_RADIUS = 120"), true, "the proximity radius (120px) missing");
   assert.equal(tactile.includes("PROX_PULL_MAX = 2"), true, "the max 2px magnetic pull missing");
   assert.equal(tactile.includes("PROX_GLOW_MAX = 0.07"), true, "the subtle proximity glow missing");
@@ -115,15 +116,12 @@ test("interactive words are semantic buttons via TactileWord", () => {
   assert.equal(tactile.includes("useSpring"), true, "the springed proximity missing");
   assert.equal(css.includes(".word-proximity"), true, "the proximity wrapper CSS missing");
   assert.equal(css.includes("display: inline-block"), true, "the no-layout-shift inline-block wrapper missing");
-  assert.equal(tactile.includes('dataset.shimmered'), true, "the one-time glint guard missing");
-  assert.equal(tactile.includes("i * 100"), true, "the ~100ms stagger missing");
-  assert.equal(tactile.includes("reduceMotion"), true, "the reduced-motion gate missing");
-  assert.equal(tactile.includes("interactive-shimmer-ready"), true, "the reveal-ready gate missing");
-  assert.equal(tactile.includes("pendingShimmers"), true, "the pre-reveal pending queue missing");
-  assert.equal(css.includes("@keyframes word-glint"), true, "the word-glint sweep keyframes missing");
-  assert.equal(css.includes(".word-button.is-shimmering::before"), true, "the glint overlay missing");
-  assert.equal(css.includes("word-shimmer"), false, "the old whole-word brightness pulse must be gone");
-  assert.equal(css.includes("filter: brightness"), false, "no whole-word brightness filter anywhere");
+  // the first-load glint fully removed (proximity is the affordance now)
+  assert.equal(tactile.includes("IntersectionObserver"), false, "no IntersectionObserver left in TactileWord");
+  assert.equal(tactile.includes("is-shimmering"), false, "no shimmer class left in TactileWord");
+  assert.equal(css.includes("@keyframes word-glint"), false, "the word-glint keyframes must be gone");
+  assert.equal(css.includes("is-shimmering"), false, "the shimmer CSS must be gone");
+  assert.equal(reveal.includes("interactive-shimmer-ready"), false, "the shimmer-ready event must be gone from PageReveal");
   assert.equal(tactile.includes("is-pressed"), true);
   assert.equal(tactile.includes("aria-label={label}"), true);
   for (const f of ["InferenceWord.tsx", "UCSDWord.tsx", "BasketballWord.tsx"]) {
